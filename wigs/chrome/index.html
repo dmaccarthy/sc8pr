@@ -1,0 +1,77 @@
+<!DOCTYPE html><html><head>
+<meta charset="utf-8"/>
+<title>Speech Synthesis</title>
+<script type="text/javascript" src="http://code.jquery.com/jquery-2.2.0.min.js"> </script>
+<script type="text/javascript">//<!--
+
+var voices, queue = [], counter = [0, 0], loop = true;
+
+function loadVoices() {
+	voices = speechSynthesis.getVoices();
+	if (voices.length == 0) setTimeout(loadVoices, 125);
+	else {
+		var url = "/voice";
+		for (var i=0;i<voices.length;i++)
+			url += (i ? "&" : "?") + encodeURIComponent(voices[i].name);
+		$.ajax({url:url, success:init});
+	}
+}
+
+function init() {
+	update();
+	speak();
+}
+
+function update() {
+	$.ajax({url:"/cmd", success:dataReceived, error:update, dataType:"json"});
+}
+
+function dataReceived(data) {
+	queue = queue.length ? queue.concat(data) : data;
+	counter[1] += queue.length;
+	$("#Recd").html(counter[1]);
+	if (queue.length) if (queue[queue.length-1].end) loop = false;
+	if (loop) update();
+}
+
+function makeUtterance(attr) {
+	var k, u = new SpeechSynthesisUtterance();
+	u.lang = "en-CA";
+	u.rate = 1;
+	u.pitch = 1;
+	u.volume = 0.8;
+	if (attr) for (k in attr) u[k] = attr[k];
+	return u;	
+}
+
+function speak() {
+	if (queue.length) {
+		var data = queue[0];
+		queue = queue.slice(1);
+		data.voice = voices[data.voice];
+		var u = makeUtterance(data);
+		var t = data.pause;
+		u.onend = t ? function() {setTimeout(speak, t)} : speak;
+		counter[0]++;
+		$("#Spoke").html(counter[0]);
+		$("#Text").html(u.text);
+		speechSynthesis.speak(u);
+	}
+	else {
+		$("#Text").html(loop ? "[Waiting]" : "[Done!]");
+		setTimeout(speak, 125);
+	}
+}
+
+$(function() {
+	loadVoices();
+	$("#href").html(location.href);
+});
+
+//--></script>
+</head>
+<body>
+	<p>This page is being used for Speech Synthesis by the server at <b id="href"></b>. You may need to reload this page whenever the server is restarted.</p>
+	<p>Utterance <span id="Spoke">0</span> of <span id="Recd">0</span>: <span id="Text"></span></p>
+</body>
+</html>
