@@ -1,1 +1,1 @@
-version = 0, 1, 6, "a0"
+version = 0, 6, "a"
