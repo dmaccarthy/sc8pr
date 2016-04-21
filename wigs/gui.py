@@ -23,7 +23,7 @@ from wigs.util import fontHeight, handleEvent, getValues, dragging, MOVE
 
 GUI_MIN = pygame.USEREVENT + 100
 GUI_MAX = GUI_MIN + 14
-PyEvent = type(pygame.event.Event(0))
+#PyEvent = pygame.event.EventType
 
 
 def position(srcSize, where=CENTER, margin=0, destSize=None):

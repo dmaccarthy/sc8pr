@@ -646,7 +646,8 @@ class Sketch(PApplet):
         "Bind new draw and eventMap attributes and reset frameNumber property"
         if eventMap:
             if type(eventMap) is not dict: eventMap = {None:eventMap}
-            ev = {} if VIDEORESIZE in eventMap else {VIDEORESIZE:onResize}
+#            ev = {} if VIDEORESIZE in eventMap else {VIDEORESIZE:onResize}
+            ev = {VIDEORESIZE:onResize}
             ev.update(eventMap)
             eventMap = ev
         self._bind(None, draw, eventMap)
