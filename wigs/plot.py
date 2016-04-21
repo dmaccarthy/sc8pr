@@ -16,9 +16,9 @@
 # along with WIGS.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from wigs.image import Image, CENTER, EAST, NORTH, WEST, SOUTH, NE, NW
+from wigs.image import Image
+from wigs.util import rgba, CENTER, EAST, NORTH, WEST, SOUTH, NE, NW
 from wigs.geometry import locus, arrow, tuple_add
-from wigs.util import rgba
 import pygame
 
 
