@@ -171,13 +171,14 @@ class Image:
             if n > 4: img = img.rotate(90 * (n - 4))
         return img
 
-    def plot(self, pts, marker=None, fill=(255,0,0), stroke=(0,0,0), strokeWeight=1, markerSize=(15,15)):
+    def plot(self, pts, marker=None, fill=(255,0,0), stroke=(0,0,0), strokeWeight=1, markerSize=(15,15), closed=False):
         "Plot a sequence of points"
         a = getAlpha(stroke)
         img = self if a == 255 else Image(self.size)
         if type(marker) is int:
             marker = self.renderMarker(marker, markerSize, fill, stroke, strokeWeight)
         first = True
+        if closed: pts = close(pts)
         for pt in pts:
             try:
                 pt = round(pt[0]), round(pt[1])
@@ -425,3 +426,15 @@ class Image:
             g = round(g / n)
             b = round(b / n)
         return pygame.color.Color(r, g, b, a)
+
+
+def flipAll(imgs, xflip=False, yflip=False):
+    "Apply a flip transformation on a sequence of images"
+    return [i.flip(xflip, yflip) for i in imgs]
+
+def close(pts):
+    first = None
+    for pt in pts:
+        yield pt
+        if first is None: first = pt
+    yield first

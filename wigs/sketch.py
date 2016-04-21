@@ -26,8 +26,8 @@ from wigs.image import Image
 from wigs.geometry import distance, polar, unitVector, scalarProduct, intersect_polygon, tuple_times,\
     tuple_sub, tuple_add, segments, closest, eqnOfLine
 from math import hypot, cos, sin, radians, degrees
-import pygame
 from pygame import VIDEORESIZE
+import pygame
 
 
 # Status constants...
@@ -47,10 +47,6 @@ class LockedException(Exception):
     def __init__(self):
         super().__init__("SpriteList modified while iterating")
 
-
-def flipAll(imgs, xflip=False, yflip=False):
-    "Apply a flip transformation on a sequence of images"
-    return [i.flip(xflip, yflip) for i in imgs]
 
 def onResize(sk, ev):
     "Scale all sprites on sketch resize"
