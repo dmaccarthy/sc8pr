@@ -20,7 +20,7 @@ import pygame, os, fnmatch, json
 from wigs.widgets import Button, Slider, MsgBox, TextInput, Label
 from wigs.gui import Widget, Container, GuiEvent
 from wigs.image import Image
-from wigs.util import fontHeight, isEnter, containsAny, wigsPath
+from wigs.util import fontHeight, isEnter, containsAny, wigsPath, EAST, WEST, CENTER
 
 
 # FileDialog modes...
@@ -63,7 +63,7 @@ class ButtonGrid(Container):
 
 
 class FileBrowser(Container):
-    """A Widget for navigating the file system"""
+    "A Widget for navigating the file system"
 
     border = 1
     borderColor = altBdColor = Widget.borderColor
@@ -190,7 +190,7 @@ class FileBrowser(Container):
         path = os.path.abspath(self.cwd + "/" + s.name).replace("\\", "/")
         ev.folder = os.path.isdir(path)
         if ev.folder:
-            self.grid.empty() #widgets = []
+            self.grid.empty()
             self.open(path)
             ev.target = self
         return ev
@@ -225,7 +225,7 @@ class FileDialog(Container):
 
     def __init__(self, mode=OPEN, grid=(2,10), allowClose=True, allowCancel=True, title=None, initFilter="*.*"):
         if not title: title = ("Open File", "Save As", "Select Folder")[mode] + "..."
-        super().__init__(title=title, posn="C")
+        super().__init__(title=title, posn=CENTER)
         self._cwd = None
         self.mode = mode
         self.grid = grid
@@ -247,7 +247,7 @@ class FileDialog(Container):
         btn = Button.grid((("Open", "Save", "Select")[self.mode], "Cancel"))
         self.done, self.cancel = btn.widgets
         if not self.allowCancel: self.cancel.disable()
-        btn.posn = self.browser.below(self.pad, "E", btn.getWidth())
+        btn.posn = self.browser.below(self.pad, EAST, btn.getWidth())
         x = w - btn.getWidth() - fontHeight(Button) // 2
         self._filter = TextInput(txt=self.filter, inner=(x, None), posn=(0, btn.posn[1]))
         self.place(btn, self._filter)
@@ -260,7 +260,7 @@ class FileDialog(Container):
         if self._cwd: self._cwd.remove()
         self._cwd = Label(self.cwd, color=self.borderColor, font=FileItem.font)
         w, h = self._cwd.getSize()
-        self._cwd.crop((bw, h), "E" if w > bw else "W")
+        self._cwd.crop((bw, h), EAST if w > bw else WEST)
         self.place(self._cwd)
 
     @property
@@ -358,7 +358,7 @@ class FileDialog(Container):
 
     @staticmethod
     def confirm(msgBox, ev):
-        """Confirm overwrite of existing file"""
+        "Confirm overwrite of existing file"
         if ev.type == GuiEvent.SUBMIT:
             dlg = msgBox.fileDlg
             if ev.target.index == 0:
@@ -366,7 +366,7 @@ class FileDialog(Container):
                 return dlg.submit(msgBox.event)
 
     def submit(self, ev):
-        """End dialog"""
+        "End dialog"
         ev.value = self.browser.selectedPath
         if not ev.value:
             ev.value = self.filterPath

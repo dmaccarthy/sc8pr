@@ -18,17 +18,12 @@
 
 import pygame
 from time import time
-from wigs.image import Image, Position, CENTER
-from wigs.util import fontHeight, handleEvent, getValues, dragging, MOVE
+from wigs.image import Image
+from wigs.util import fontHeight, handleEvent, getValues, dragging, position,\
+	MOVE, CENTER, EAST, WEST
 
 GUI_MIN = pygame.USEREVENT + 100
 GUI_MAX = GUI_MIN + 14
-#PyEvent = pygame.event.EventType
-
-
-def position(srcSize, where=CENTER, margin=0, destSize=None):
-	if type(where) in (tuple, list): return where 
-	return Position(margin, where).xy(destSize, srcSize)
 
 
 class NoFont(Exception):
@@ -38,7 +33,7 @@ class NoFont(Exception):
 
 
 class GuiEvent:
-	"""Class for describing events intercepted by the GUI"""
+	"Class for describing events intercepted by the GUI"
 
 	names = ("mouseDown", "doubleClick", "mouseOver", "mouseOut", "keyDown", "focus", "blur",
 		"select", "deselect", "enter", "escape", "cancel", "change", "submit", "drag")
@@ -73,7 +68,7 @@ class GuiEvent:
 		return "<{}({}-{} @ {})>".format(type(self).__name__, self.type, self.name, str(self.target))
 
 	def relPosn(self, fromCenter=False):
-		"""Get event position relative to target widget"""
+		"Get event position relative to target widget"
 		x, y = self.target.getAbsPosn()
 		if fromCenter:
 			x += self.target.getWidth() // 2
@@ -83,7 +78,7 @@ class GuiEvent:
 
 
 class GUI():
-	"""Class for drawing GUI and dispatching events to Widgets"""
+	"Class for drawing GUI and dispatching events to Widgets"
 
 	widgets = []
 	hover = None
@@ -172,13 +167,13 @@ class GUI():
 		if dest == None: dest = pygame.display.get_surface()
 		r = []
 		for wdg in self.widgets:
-			posn = position(wdg.getSize(), wdg.getBlitPosn())
+			posn = wdg.getBlitPosn()
 			img = wdg.getImage()
 			if img: r.append(dest.blit(img.surface, posn))
 		return r
 
 	def findHover(self, ev):
-		"""Locate 'hover' and 'focus' widgets"""
+		"Locate 'hover' and 'focus' widgets"
 		f = h = Container.findHover(self, ev.pos)
 		if f == self: return f, None
 		while not (f.focusable):
@@ -191,11 +186,11 @@ class GUI():
 		return False
 
 	def ignore(self, ev):
-		"""Ignore event while modal dialog is running"""
+		"Ignore event while modal dialog is running"
 		self.hover = None
 
 	def overAndOut(self, hover, ev):
-		"""Send MOUSEOUT and MOUSEOVER events"""
+		"Send MOUSEOUT and MOUSEOVER events"
 
 		eventQueue = []
 		if hover or self.hover and not hover is self.hover:
@@ -229,7 +224,7 @@ class GUI():
 		return eventQueue
 
 	def _event(self, ev):
-		"""Fires BLUR, FOCUS, MOUSEDOWN, DBL_CLICK, or KEYDOWN for intercepted events"""
+		"Fires BLUR, FOCUS, MOUSEDOWN, DBL_CLICK, or KEYDOWN for intercepted events"
 
 		# Drag top dialog...
 		if self.drag and self.focus is self.drag:
@@ -321,6 +316,7 @@ class Widget:
 	modal = False
 
 	size = None
+	margin = 0
 	container = None
 	sketch = None
 	eventMap = None
@@ -400,7 +396,7 @@ class Widget:
 
 	@property
 	def dialog(self):
-		"""Return the top-level container"""
+		"Return the top-level container"
 		c = self.container
 		if c == None or type(c) == GUI: return self
 		return c.dialog
@@ -410,12 +406,12 @@ class Widget:
 
 	@property
 	def index(self):
-		"""Return the index of a widget within its container"""
+		"Return the index of a widget within its container"
 		return self.container.widgets.index(self) if self.container else None
 
 	@property
 	def level(self):
-		"""Return the number of containers between the widget and its dialog"""
+		"Return the number of containers between the widget and its dialog"
 		return self.container.level + 1 if self.container else 0
 
 	@property
@@ -427,7 +423,7 @@ class Widget:
 	def find(self, name): return self if name == self.name else None
 
 	def inside(self, c):
-		"""Check if the Widget is contained within a Container"""
+		"Check if the Widget is contained within a Container"
 		if self.container == c: return True
 		if self.isDialog() or self.container == None: return False
 		return self.container.inside(c)
@@ -453,14 +449,14 @@ class Widget:
 # Metrics...
 
 	def centered(self, x=True, y=True):
-		xc, yc = position(self.getSize(), CENTER, 0, self.container.getInnerSize())
+		xc, yc = position(self.getSize(), self.container.getInnerSize(), CENTER)
 		self.posn = xc if x else self.posn[0], yc if y else self.posn[1]
 		return self
 		
 	def posnAsXY(self):
 		xy = self.posn
-		if self.isDialog() or self.container == None:
-			xy = position(self.getSize(), xy)
+		if type(xy) is int and (self.isDialog() or self.container == None):
+			xy = position(self.getSize(), None, xy, self.margin)
 		return xy
 
 	def getEdge(self): return 2 * (self.pad + self.border)
@@ -486,7 +482,7 @@ class Widget:
 	def getHeight(self, s=None): return self.getSize()[1]
 
 	def getBlitPosn(self):
-		"""Position in container where the Widget is to be drawn"""
+		"Position in container where the Widget is to be drawn"
 		c = self.container
 		x, y = self.posnAsXY()
 		if isinstance(c, Container):
@@ -496,7 +492,7 @@ class Widget:
 		return x, y
 
 	def getAbsPosn(self):
-		"""Position on the screen where the Widget is to be drawn"""
+		"Position on the screen where the Widget is to be drawn"
 		c = self.container
 		if isinstance(c, Container):
 			x, y = self.getBlitPosn()
@@ -504,7 +500,8 @@ class Widget:
 			return x + cx, y + cy
 		return self.posnAsXY()
 
-	def getRect(self): return pygame.Rect(self.getAbsPosn(), self.getSize())
+	def getRect(self):
+		return pygame.Rect(self.getAbsPosn(), self.getSize())
 
 	def move(self, rel):
 		self.clear()
@@ -512,11 +509,11 @@ class Widget:
 		self.x += x
 		self.y += y
 
-	def below(self, pad=0, align="W", adjust=0):
+	def below(self, pad=0, align=WEST, adjust=0):
 		x, y = self.posnAsXY()
 		w, h = self.getSize()
 		w -= adjust
-		dx = 0 if align == "W" else (w if align=="E" else w // 2)
+		dx = 0 if align == WEST else (w if align==EAST else w // 2)
 		return x + dx, y + h + pad
 
 	def beside(self, pad=0):
@@ -539,18 +536,18 @@ class Widget:
 # Event handlers...
 
 	def _event(self, ev):
-		"""Internal processing of GUI event; return unhandled event object"""
+		"Internal processing of GUI event; return unhandled event object"
 		assert(isinstance(ev, GuiEvent))
 		return self._onEvent(ev)
 
 	def _onEvent(self, ev):
-		"""Event handler to interact with program"""
+		"Event handler to interact with program"
 		if self.eventMap: return handleEvent(self, ev)
 		c = self.container
 		return ev if self.isDialog() or c == None else c._event(ev)
 
 	def makeGroup(self, *args):
-		"""Create a group of selectable Widgets"""
+		"Create a group of selectable Widgets"
 		self.group = {self}
 		for r in args:
 			self.group.add(r)
@@ -589,7 +586,7 @@ class Container(Widget):
 	def __getitem__(self, i): return self.widgets[i]
 
 	def print(self, level=0):
-		"""Print the widget hierarchy"""
+		"Print the widget hierarchy"
 		print(level * "*", str(self), sep="")
 		level += 1
 		for w in self.widgets:
@@ -633,7 +630,7 @@ class Container(Widget):
 		return fontHeight(self)
 
 	def onTitle(self, posn):
-		"""Determine if the position is within the title bar"""
+		"Determine if the position is within the title bar"
 		bx, by = self.getBlitPosn()
 		x, y = posn
 		x -= bx

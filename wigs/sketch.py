@@ -17,12 +17,12 @@
 
 
 from wigs.papplet import PApplet
-from wigs.util import randColor, step, logError
+from wigs.util import randColor, step, logError, CENTER, rectAnchor
 from wigs.gui import GUI
 from wigs.io import prompt, fileDialog, USERINPUT
 from wigs.grid import OPEN, SAVE, FOLDER
 from wigs.search import search
-from wigs.image import Image, CENTER
+from wigs.image import Image
 from wigs.geometry import distance, polar, unitVector, scalarProduct, intersect_polygon, tuple_times,\
     tuple_sub, tuple_add, segments, closest, eqnOfLine
 from math import hypot, cos, sin, radians, degrees
@@ -340,15 +340,14 @@ class Sprite():
     def rect(self):
         "Rectangle for the rotated sprite"
         size = self.getSize(True)
-        r = pygame.Rect(self.posn + size)
-        return Image.anchor(r, CENTER)
+        return rectAnchor(self.posn, size, CENTER)
 
     def getRect(self, rotated=True):
         "Rectangle for the rotated or unrotated sprite"
         r = self.rect
         if not rotated and self.angle:
             size = self.getSize(False)
-            r = Image.anchor(r.center + size)
+            r = rectAnchor(self.posn, size, CENTER)
         return r
 
     def _corners(self):
@@ -405,7 +404,6 @@ class Sprite():
             dr = tuple_sub(pt, closePt)
             self.posn = tuple_add(self.posn, dr)
 
-        
     def toward(self, posn, mag=1):
         ux, uy = unitVector(self.posn, posn)
         return mag * ux, mag * uy
@@ -646,7 +644,6 @@ class Sketch(PApplet):
         "Bind new draw and eventMap attributes and reset frameNumber property"
         if eventMap:
             if type(eventMap) is not dict: eventMap = {None:eventMap}
-#            ev = {} if VIDEORESIZE in eventMap else {VIDEORESIZE:onResize}
             ev = {VIDEORESIZE:onResize}
             ev.update(eventMap)
             eventMap = ev

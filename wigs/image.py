@@ -16,22 +16,15 @@
 # along with WIGS.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from wigs.util import getAlpha, logError, randPixel
+from wigs.util import getAlpha, logError, randPixel, rectAnchor, position, \
+    NW, CENTER, WEST, EAST 
 from wigs.geometry import locus
 import math, pygame
 from pygame.draw import line
 
 FIT = 1
-CENTER = 0
-WEST = LEFT = 1
-EAST = RIGHT = 2
-NORTH = 4
-SOUTH = 8
-NW = NORTH | WEST
-NE = NORTH | EAST
-SW = SOUTH | WEST
-SE = SOUTH | EAST
-anchorStr = {"N":NORTH, "S":SOUTH, "W":WEST, "E":EAST, "NW":NW, "NE":NE, "SW":SW, "SE":SE, "C":CENTER}
+LEFT = WEST
+RIGHT = EAST
 
 
 class Image:
@@ -42,16 +35,6 @@ class Image:
         "Return a rectangle corner by quadrant"
         q %= 4
         return (r.bottomright, r.bottomleft, r.topleft, r.topright)[q if q >= 0 else q+4]
-
-    @staticmethod
-    def anchor(rect, a=CENTER):
-        "Returns a rectangle relative to the NW corner from coordinates relative to the specified anchor point"
-        if type(a) is str: a = anchorStr[a.upper()]
-        if not isinstance(rect, pygame.Rect): rect = pygame.Rect(rect)
-        w, h = rect.size
-        dx = 0 if a & WEST else w if a & EAST else w // 2
-        dy = 0 if a & NORTH else h if a & SOUTH else h // 2
-        return rect.move(-dx, -dy)
  
     @staticmethod
     def defaultFont(size=14):
@@ -68,7 +51,7 @@ class Image:
         height = len(txt) * lineSz
         width = 1
         lineWidth = []
-        if type(align) is str: align = anchorStr[align.upper()]
+#        if type(align) is str: align = anchorStr[align.upper()]
         for l in txt:
             w = font.size(l)[0]
             if w > width: width = w
@@ -289,7 +272,8 @@ class Image:
         if dest == None: dest = pygame.display.get_surface()
         elif isinstance(dest, Image): dest = dest.surface
         img = self.transform(size, angle, flags) if size or angle else self
-        if anchor != NW: posn = img.anchorTo(posn, anchor)
+        if anchor != NW:
+            posn = rectAnchor(posn, img.size, anchor)
         return dest.blit(img.surface, posn)
 
     def getAspect(self, size=None):
@@ -379,14 +363,10 @@ class Image:
             if square: n *= n / 255
             self.clone().tint((255, 255, 255, int(n))).blitTo(fade)
             yield fade
-        
+
     def position(self, where=CENTER, margin=0, size=None):
         "Get the coordinates corresponding to a corner or side"
-        return Position(margin, where).xy(size, self.size)
-
-    def anchorTo(self, posn, anchor=NW):
-        "Adjust position based on anchor point"
-        return Image.anchor(posn + self.size, anchor).topleft if anchor != NW else posn
+        return position(self.size, size, where, margin)
 
     def style(self, bgColor=None, pad=0, border=0, borderColor=(0,0,0)):
         "Create a new Image with the specified style data"
@@ -445,29 +425,3 @@ class Image:
             g = round(g / n)
             b = round(b / n)
         return pygame.color.Color(r, g, b, a)
-
-class Position:
-    "Describe a position within a rectangle using compass directions"
-
-    def __init__(self, offset=0, where=NW):
-        if type(where) is str:
-            w = where.split(";")
-            where = anchorStr[w[0].upper()]
-            if len(w) == 2 and not offset:
-                offset = int(w[1])
-        self.where = where
-        if type(offset) is int:
-            mx = offset * (1 if where & WEST else -1 if where & EAST else 0)
-            my = offset * (1 if where & NORTH else -1 if where & SOUTH else 0)
-            self.offset = mx, my
-        else: self.offset = offset
-
-    def xy(self, dest=None, src=(0,0)):
-        a = self.where
-        x, y = self.offset
-        w, h = dest if dest else pygame.display.get_surface().get_size()
-        if a & EAST: x += w - src[0]
-        elif not a & WEST: x += (w - src[0]) // 2
-        if a & SOUTH: y += h - src[1]
-        elif not a & NORTH: y += (h - src[1]) // 2
-        return x, y

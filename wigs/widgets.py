@@ -44,7 +44,7 @@ class Status(Label): color = 0, 0, 255
 
 
 class Ghost(Widget):
-	"""Invisible Widget creates minimum size for Container"""
+	"Invisible Widget creates minimum size for Container"
 
 	cursorId = MENU
 	visible = False
@@ -65,7 +65,7 @@ class BaseButton(Widget):
 	def getState(self): return super().getState(self.colors)
 
 	def renderText(self, txt, align=CENTER):
-		"""Convert text to Image for enabled and disabled states"""
+		"Convert text to Image for enabled and disabled states"
 		return Image.text(txt, self.font, self.color, align=align), Image.text(txt, self.font, self.altColor, align)
 
 	def render(self, n=0):
@@ -78,7 +78,7 @@ class BaseButton(Widget):
 		self.imgs[n] = img = img.style(bgColor=self.colors[n], pad=p, border=b, borderColor=self.borderColor)
 
 	def getSize(self, reset=False):
-		"""Calculate and return the outer size of the button"""
+		"Calculate and return the outer size of the button"
 		if self.size == None or reset:
 			w, h = self.data[0].size
 			e = self.getEdge()
@@ -86,7 +86,7 @@ class BaseButton(Widget):
 		return self.size
 
 	def resize(self, size, posn=CENTER, fit=False):
-		"""Adjust the inner size of the Button by fitting or cropping"""
+		"Adjust the inner size of the Button by fitting or cropping"
 		imgs = []
 		for i in self.data:
 			img = i.fit(size, posn) if fit else i.crop(size, posn)
@@ -132,7 +132,7 @@ class Button(BaseButton):
 
 	@staticmethod
 	def getButtons(btns):
-		"""Generate a sequence of buttons within the same container, list, or tuple"""
+		"Generate a sequence of buttons within the same container, list, or tuple"
 		if isinstance(btns, Button): btns = btns.container
 		if isinstance(btns, Container): btns = btns.widgets
 		for b in btns:
@@ -140,7 +140,7 @@ class Button(BaseButton):
 
 	@staticmethod
 	def sameSize(btns, size=None, align=CENTER, fit=False, cols=None, space=4):
-		"""Resize a list of Buttons to have the same inner size"""
+		"Resize a list of Buttons to have the same inner size"
 		e = 0
 		if size == None:
 			w, h = 1, 1
@@ -166,7 +166,7 @@ class Button(BaseButton):
 		return size, e
 
 	def __init__(self, data=None, name=None, posn=(0,0), **kwargs):
-		"""Data may be str, Surface, Image, or list/tuple of Images; if str, kwargs may specify color and altColor"""
+		"Data may be str, Surface, Image, or list/tuple of Images; if str, kwargs may specify color and altColor"
 		super().__init__(name, posn)
 		self.setStyle(**kwargs)
 		if not data: data = name
@@ -432,7 +432,7 @@ class Slider(Widget):
 		self.imgs = {0: img}
 
 	def _event(self, ev):
-		"""Fires CHANGE"""
+		"Fires CHANGE"
 		xy = self.vertical
 		change = True
 		if ev.type in (GuiEvent.MOUSEDOWN, GuiEvent.FOCUS):
@@ -550,7 +550,7 @@ class MsgBox(Container):
 		return self
 
 	def validate(self):
-		"""Run the validator; set status on exception"""
+		"Run the validator; set status on exception"
 		if self.validator == None: return True
 		try:
 			self.value
@@ -560,7 +560,7 @@ class MsgBox(Container):
 		return False
 
 	def valMsgDefault(self, cls=None):
-		"""Set default validator error message"""
+		"Set default validator error message"
 		if not cls: cls = self.validator
 		if cls in (int, float):
 			self.valMsg = "A{} is required!".format(" number" if cls is float else "n integer")
@@ -568,13 +568,13 @@ class MsgBox(Container):
 
 	@property
 	def value(self):
-		"""Obtain input value from validator; raises exception on invalid input"""
+		"Obtain input value from validator; raises exception on invalid input"
 		if self.validator:
 			txt = self.input.txt
 			return self.validator(txt, **self.valArgs) if self.valArgs else self.validator(txt)
 
 	def _event(self, ev):
-		"""Fires CANCEL or SUBMIT"""
+		"Fires CANCEL or SUBMIT"
 		click = ev.type == GuiEvent.MOUSEDOWN and type(ev.target) == Button
 		cancel = click and ev.target is self.cancelButton
 		done = click or ev.type == GuiEvent.ENTER
@@ -592,7 +592,7 @@ class MsgBox(Container):
 
 	@staticmethod
 	def date(s, delims=" .-/", **argDict):
-		"""Validator for date input"""
+		"Validator for date input"
 		dMin, dMax, dlg = getValues("low", "high", "dialog", **argDict)
 		if dlg: dlg.valMsgDefault()
 		d = delims[0]
@@ -614,7 +614,7 @@ class MsgBox(Container):
 
 	@staticmethod
 	def number(s, **argDict):
-		"""Validator for numerical input within a specified range of values"""
+		"Validator for numerical input within a specified range of values"
 		n0, n1, cls, dlg = getValues("low", "high", "integer", "dialog", **argDict)
 		cls = int if cls else float
 		if not cls: cls = float
@@ -628,7 +628,7 @@ class MsgBox(Container):
 
 
 class Checkbox(Widget):
-	"""Class for check box and radio button controls"""
+	"Class for check box and radio button controls"
 
 	border = 1
 	bgColor = None
@@ -643,7 +643,7 @@ class Checkbox(Widget):
 
 	@classmethod
 	def fit(cls, *imgs, font=None):
-		"""Scale images based on font size"""
+		"Scale images based on font size"
 		sz = fontHeight(font if font else cls.font)
 		return [Image(img).scale((sz,sz)) if img else None for img in imgs]
 
@@ -673,7 +673,7 @@ class Checkbox(Widget):
 		return self.imgs[1 if self.selected else 0]
 
 	def label(self, text=None, **kwargs):
-		"""Create a text label and place the Checkbox and Label into a new Container"""
+		"Create a text label and place the Checkbox and Label into a new Container"
 		name = self.name + "_Container" if self.name else None
 		c = Container(name, self.posn)
 		self.posn = (0, 0)
@@ -686,7 +686,7 @@ class Checkbox(Widget):
 		return self
 		
 	def _event(self, ev):
-		"""Fires SELECT, DESELECT"""
+		"Fires SELECT, DESELECT"
 		if ev.type == GuiEvent.MOUSEDOWN:
 			if self.isRadio: self.select()
 			else: self.selected = not self.selected
