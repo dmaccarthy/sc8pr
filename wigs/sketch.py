@@ -97,10 +97,6 @@ def collide_circ(left, right):
     sep = left.radius + right.radius
     return distance(left.posn, right.posn) < sep
 
-def collide_path(sprite, path, radius=None):
-    "Collision between sprite and path"
-    return path.closest(sprite.posn, sprite.radius if radius is None else radius)
-
 def _changeSpin(sprite, dv, pt=None):
     "Adjust spin on bounce from edges or on collision"
     if not sprite.radius:

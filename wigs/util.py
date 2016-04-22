@@ -60,7 +60,7 @@ def getAlpha(c):
     "Get the alpha value of a color"
     if type(c) in (tuple, list):
         return c[3] if len(c) == 4 else 255
-    return c.a
+    return None if c is None else c.a
 
 def keyMod(): return pygame.key.get_mods() & 963 != 0
 def altKey(): return pygame.key.get_mods() & 768 != 0

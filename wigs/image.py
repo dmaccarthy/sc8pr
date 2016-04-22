@@ -172,25 +172,32 @@ class Image:
         return img
 
     def plot(self, pts, marker=None, fill=(255,0,0), stroke=(0,0,0), strokeWeight=1, markerSize=(15,15), closed=False):
-        "Plot a sequence of points"
-        a = getAlpha(stroke)
-        img = self if a == 255 else Image(self.size)
-        if type(marker) is int:
-            marker = self.renderMarker(marker, markerSize, fill, stroke, strokeWeight)
-        first = True
-        if closed: pts = close(pts)
-        for pt in pts:
-            try:
-                pt = round(pt[0]), round(pt[1])
-                if marker: marker.blitTo(img, pt, CENTER)
-                elif first:
-                    first = False
-                    pt0 = pt
-                else:
-                    line(img.surface, stroke, pt0, pt, strokeWeight)
-                    pt0 = pt
-            except: logError()
-        if a < 255: img.blitTo(self)
+        "Plot a sequence of points as markers or lines (but not both!)"
+        if fill and marker is None:
+            if type(pts) not in (list,tuple):
+                pts = tuple(pts)
+            Image.polygon(pts, closed, fill, stroke, strokeWeight, self.size).blitTo(self)
+        else:
+            alpha = stroke and getAlpha(stroke) < 255 or fill and getAlpha(fill) < 255
+            img = Image(self.size) if alpha else self
+            if type(marker) is int:
+                marker = self.renderMarker(marker, markerSize, fill, stroke, strokeWeight)
+            if closed and marker is None:
+                pts = close(pts)
+            first = True
+            for pt in pts:
+                try:
+                    pt = round(pt[0]), round(pt[1])
+                    if marker:
+                        marker.blitTo(img, pt, CENTER)
+                    elif first:
+                        first = False
+                        pt0 = pt
+                    else:
+                        line(img.surface, stroke, pt0, pt, strokeWeight)
+                        pt0 = pt
+                except: logError()
+            if alpha: img.blitTo(self)
         return self
 
     def locus(self, pCurve, t0, t1, steps=None, color=(0,0,255), weight=2, marker=None, **params):

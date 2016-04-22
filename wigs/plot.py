@@ -133,11 +133,6 @@ class Plot(Image):
 
         return self
 
-#     def join(self, pts, closed=True, fill=None, stroke=None, strokeWeight=1):
-#         "Join two or more points"
-#         pts = [self.coords(pt) for pt in pts]
-#         Image.polygon(pts, closed, fill, stroke, strokeWeight, self.size).blitTo(self)
-
     def arrow(self, tail, tip, tailWidth=None, headLength=None, flatness=1, fill=None, stroke=None, strokeWeight=1):
         "Plot an arrow"
         pts = arrow(self.coords(tail), self.coords(tip), tailWidth, headLength, flatness)
@@ -171,7 +166,7 @@ class Plot(Image):
                 marker.blitTo(self, self.coords((x,y)), CENTER)
 
     def plot(self, pts, marker=None, fill=None, stroke=(0,0,0), strokeWeight=1, markerSize=(15,15), closed=False):
-        "Connect a sequence of points"
+        "Plot a sequence of points with markers or lines"
         super().plot(self.coordGen(pts), marker, fill, stroke, strokeWeight, markerSize, closed)
 
     def locus(self, pCurve, t0=None, t1=None, steps=None, color=BLACK, weight=1, marker=None, **params):
