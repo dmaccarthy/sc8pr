@@ -185,17 +185,18 @@ class Image:
             if closed and marker is None:
                 pts = close(pts)
             first = True
+            pt0 = None
             for pt in pts:
                 try:
-                    pt = round(pt[0]), round(pt[1])
-                    if marker:
-                        marker.blitTo(img, pt, CENTER)
-                    elif first:
-                        first = False
-                        pt0 = pt
-                    else:
-                        line(img.surface, stroke, pt0, pt, strokeWeight)
-                        pt0 = pt
+                    if pt is not None:
+                        pt = round(pt[0]), round(pt[1])
+                        if marker:
+                            marker.blitTo(img, pt, CENTER)
+                        elif first:
+                            first = False
+                        elif pt0 is not None:
+                            line(img.surface, stroke, pt0, pt, strokeWeight)
+                    pt0 = pt
                 except: logError()
             if alpha: img.blitTo(self)
         return self
@@ -203,7 +204,7 @@ class Image:
     def locus(self, pCurve, t0, t1, steps=None, color=(0,0,255), weight=2, marker=None, **params):
         "Connect points along a parameterized curve"
         if steps is None: steps = max(1, round(abs(t1-t0)))
-        return self.plot(locus(pCurve, t0, t1, steps, **params), marker, stroke=color, strokeWeight=weight)
+        return self.plot(locus(pCurve, t0, t1, steps, **params), marker, stroke=color, strokeWeight=weight, fill=None)
 
     @staticmethod
     def copy(srf):

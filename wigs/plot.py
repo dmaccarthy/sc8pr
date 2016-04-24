@@ -86,7 +86,7 @@ class Plot(Image):
         return ((x-b)/a, (y-d)/c) if invert else (a*x+b, c*y+d)
 
     def coordGen(self, pts, invert=False):
-        for pt in pts: yield self.coords(pt, invert)
+        for pt in pts: yield self.coords(pt, invert) if pt else None
 
     def gridLabel(self, x, n, formats=(None,None), anchors=(NORTH, EAST), rotate=(0,-90), offsets=((0,0,0,0)), **kwargs):
         "Add labels to the gridlines"

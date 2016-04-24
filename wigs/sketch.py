@@ -26,7 +26,6 @@ from wigs.image import Image
 from wigs.geometry import distance, polar, unitVector, scalarProduct, intersect_polygon, tuple_times,\
     tuple_sub, tuple_add, segments, closest, eqnOfLine
 from math import hypot, cos, sin, radians, degrees
-from pygame import VIDEORESIZE
 import pygame
 
 
@@ -47,16 +46,6 @@ class LockedException(Exception):
     def __init__(self):
         super().__init__("SpriteList modified while iterating")
 
-
-def onResize(sk, ev):
-    "Scale all sprites on sketch resize"
-    sp = sk.sprites
-    h = sp.sketchHeight if hasattr(sp, "sketchHeight") else sk.initHeight
-    f = ev.h / h
-    if f != 1:
-        sp.sketchHeight = ev.h
-        sp.transform(factor=f)
-    return f
 
 def collide_sprite(left, right):
     "Default collision detection"
@@ -480,6 +469,7 @@ class Sprite():
 
 class SpriteList():
     _debugCollide = False
+    sketchHeight = None
     run = True
     _lock = False
     _groups = []
@@ -608,10 +598,11 @@ class Sketch(PApplet):
     "A class for creating sketches with sprite and GUI support"
     _start = 0
     io = None
-    eventMap = {VIDEORESIZE:onResize}
+#    eventMap = {}
     wall = False
 
     def edge(self):
+        "Default edge behaviour for sprites"
         return BOUNCE if self.wall else REMOVE
 
     def __init__(self, setup=None):
@@ -634,20 +625,29 @@ class Sketch(PApplet):
 
     def animate(self, draw=None, eventMap=None):
         "Bind new draw and eventMap attributes and reset frameNumber property"
-        if eventMap:
-            if type(eventMap) is not dict: eventMap = {None:eventMap}
-            ev = {VIDEORESIZE:onResize}
-            ev.update(eventMap)
-            eventMap = ev
+        if eventMap and type(eventMap) is not dict:
+            eventMap = {None:eventMap}
         self._bind(None, draw, eventMap)
         self._start = self.frameCount
 
-    def setBackground(self, bgImage=None, bgColor=None, forceScale=False):
+    def setBackground(self, bgImage=None, bgColor=None):
         "Draw the wall around background image if required"
         if bgImage and self.wall:
             bgImage = Image(bgImage).borderInPlace(1, self.wall)
-        super().setBackground(bgImage, bgColor, forceScale)
+        super().setBackground(bgImage, bgColor)
 
     @property
     def frameNumber(self):
+        "Frames since last call to animate method"
         return self.frameCount - self._start
+
+    def onResize(self):
+        "Scale all sprites on sketch resize"
+        sp = self.sprites
+        h = sp.sketchHeight if sp.sketchHeight else self.initHeight
+        h1 = self.height
+        f = h1 / h
+        if f != 1:
+            sp.sketchHeight = h1
+            sp.transform(factor=f)
+        return f

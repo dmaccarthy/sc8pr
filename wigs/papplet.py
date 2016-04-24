@@ -18,17 +18,14 @@
 
 import pygame, os, json
 from time import time
-from random import randint
 from pygame import display
 from wigs.image import Image, NW
-from wigs.util import logError, setCursor, handleEvent, fontHeight, wigsPath, ARROW, Data,\
-	randPixel
+from wigs.util import logError, setCursor, handleEvent, fontHeight, wigsPath, ARROW, Data, randPixel
 
 
 class PApplet:
 	"Class for creating Processing-style sketches using Pygame 1.9.1 or 1.9.2a0"
 	_fontJson = wigsPath("fonts.json")
-	_bgForceScale = False
 	_quit = False
 	eventMap = {}
 	saveName = "save/image{:05d}.png"
@@ -37,6 +34,7 @@ class PApplet:
 	cursor = ARROW
 	gui = None
 	recordGui = False
+	snapMode = 0
 
 	@staticmethod
 	def _onQuit(): PApplet._quit = True
@@ -47,7 +45,6 @@ class PApplet:
 		self.drawTime = 0.0
 		self.eventTime = 0.0
 		self.screen = None
-#		self.data = Data()
 		self.bgColor = None
 		self._bgImage = None
 		self._frameInterval = None
@@ -167,6 +164,26 @@ class PApplet:
 	@property
 	def centerY(self): return self.center[1]
 
+	@property
+	def aspect(self):
+		"Return the aspect ratio of the background, or None"
+		img = self._bgImage
+		return img.getAspect() if img else None
+
+	def targetSize(self, size=None):
+		"Adjust requested sketch size to match background aspect ratio"
+		w, h = size if size else self.size
+		ratio = self.aspect
+		if ratio:
+			if self.snapMode == 2:      # Snap to height
+				w = round(ratio * h)
+			else:
+				if self.snapMode == 0:  # Snap to area
+					area = w * h
+					w = round((area * ratio) ** 0.5)
+				h = round(w / ratio)    # Snap to width
+		return w, h
+
 	def randPixel(self): return randPixel(self)
 
 	@property
@@ -189,18 +206,16 @@ class PApplet:
 
 	def resize(self, size, mode=None):
 		"Change the sketch size and mode (optional)"
-		if size != self.size or mode not in (None, self._mode):
-			if mode != None: self._mode = mode
-			try:
-				if type(size) not in (tuple, list):
-					img = Image(size)
-					size = img.size
-					self._bgImage = img
-			except:
-				logError()
-				return
-			display.set_mode(size, self._mode)
-			if self.bgImage: self._fitBgImage(self.bgImage)
+		tsize = self.targetSize(size)
+		if mode is None: mode = self._mode
+		if tsize != self.size or mode != self._mode:
+			if self._bgImage:
+				self._bgImage.transform(size=tsize)
+			self.screen = display.set_mode(tsize, mode)
+			self.onResize()
+
+	def onResize(self):
+		print(self.size)
 
 	@property
 	def bgImage(self): return self._bgImage
@@ -209,25 +224,17 @@ class PApplet:
 	def bgImage(self, img):
 		"Set a background image"
 		try:
-			if img: self._fitBgImage(Image(img))
+			if img:
+				self._bgImage = Image(img)
+				tsize = self.targetSize(self.size)
+				tsize = self._bgImage.transform(size=tsize).size
+				if tsize != self.size: display.set_mode(tsize, self._mode)
 			else: self._bgImage = None
 		except: logError()
 		return self._bgImage
 
-	def _fitBgImage(self, img0):
-		"Adjust display width to match aspect ratio of background image"
-		if not self._bgForceScale and img0.height == self.height:
-			img1 = img0
-			img0.noTransform()
-		else:
-			img1 = img0.transform(size=(None,self.height))
-		if img1.width != self.width:
-			self.width = img1.width
-		self._bgImage = img0
-
-	def setBackground(self, bgImage=None, bgColor=None, forceScale=False):
+	def setBackground(self, bgImage=None, bgColor=None):
 		"Set background image and/or color"
-		if forceScale: self._bgForceScale = True
 		if bgImage and bgColor:
 			# Blit image onto background...
 			if not isinstance(bgImage, Image):
@@ -279,6 +286,7 @@ class PApplet:
 
 	@property
 	def scaledBgImage(self):
+		"Return the background image scaled to the sketch size"
 		img = self.bgImage
 		if img:
 			if img._trnsfm: img = img._trnsfm[0]
@@ -329,7 +337,6 @@ class PApplet:
 			size = 32*size, 18*size
 		self.initHeight = size[1]
 		self.resize(size)
-		self.screen = display.get_surface()
 
 	# Initialize sketch...
 		self._fonts = self._fontDict()
@@ -350,7 +357,7 @@ class PApplet:
 
 				# Inspect events...
 					if ev.type == pygame.VIDEORESIZE:
-						if self.size != ev.size: self.resize(ev.size)
+						self.resize(ev.size)
 					elif ev.type == pygame.QUIT:
 						self.quit = not self.gui.modal if self.gui else True
 					elif ev.type == pygame.ACTIVEEVENT:
