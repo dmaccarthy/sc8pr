@@ -629,20 +629,20 @@ class Sketch(PApplet):
         self._bind(None, draw, eventMap)
         self._start = self.frameCount
 
-    def setBackground(self, bgImage=None, bgColor=None):
-        "Draw the wall around background image if required"
-        if bgImage and self.wall:
-            bgImage = Image(bgImage).borderInPlace(1, self.wall)
-        super().setBackground(bgImage, bgColor)
-
+    def _fitImg(self, size):
+        "Add wall when scaling background image to sketch size"
+        self._bgImage.transform(size=size)
+        if self.wall:
+            self.scaledBgImage.borderInPlace(1, self.wall)
+    
     @property
     def frameNumber(self):
         "Frames since last call to animate method"
         return self.frameCount - self._start
 
-    def resize(self, size, mode=None):
+    def resize(self, size, mode=None, ev=None):
         "Scale all sprites on sketch resize"
-        super().resize(size, mode)
+        super().resize(size, mode, ev)
         sp = self.sprites
         h = sp.sketchHeight if sp.sketchHeight else self.initHeight
         h1 = self.height

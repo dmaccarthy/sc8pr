@@ -55,19 +55,19 @@ class PApplet:
 	@classmethod
 	def useFonts(cls, path): cls._fontJson = path
 
-	def _attrError(self, k):
-		"Raise an exception if the instance has the specified attribute"
-		if hasattr(self, k):
-			raise AttributeError("Attribute '{}' already exists".format(k))
-
-	def customAttr(self, *args, **kwargs):
-		"Encapsulate custom attributes after checking that they are not in use"
-		for k in args:
-			self._attrError(k)
-			setattr(self, k, Data())
-		for k in kwargs:
-			self._attrError(k)
-			setattr(self, k, kwargs[k])
+# 	def _attrError(self, k):
+# 		"Raise an exception if the instance has the specified attribute"
+# 		if hasattr(self, k):
+# 			raise AttributeError("Attribute '{}' already exists".format(k))
+# 
+# 	def customAttr(self, *args, **kwargs):
+# 		"Encapsulate custom attributes after checking that they are not in use"
+# 		for k in args:
+# 			self._attrError(k)
+# 			setattr(self, k, Data())
+# 		for k in kwargs:
+# 			self._attrError(k)
+# 			setattr(self, k, kwargs[k])
 
 	def _bind(self, setup=None, draw=None, eventMap=None):
 		"Bind functions to sketch instance"
@@ -93,7 +93,7 @@ class PApplet:
 	@staticmethod
 	def _selectFont(names, sysList=None):
 		"Locate a system font from a list of font names"
-		if sysList == None: sysList = pygame.font.get_fonts()
+		if sysList is None: sysList = pygame.font.get_fonts()
 		for f in names:
 			if f in sysList: return f
 
@@ -111,9 +111,8 @@ class PApplet:
 		font = None
 		sz = max(4, round(0.7 * size)) if lineHeight else size
 		if name in self._fonts: name = self._fonts[name]
-		if name:
-			if os.path.isfile(name):
-				font = pygame.font.Font(name, sz)
+		if name and os.path.isfile(name):
+			font = pygame.font.Font(name, sz)
 		if not font:
 			font = pygame.font.SysFont(name, sz, bold, italic)
 		if lineHeight:
@@ -137,9 +136,6 @@ class PApplet:
 	@property
 	def height(self): return self.size[1]
 
-	@property
-	def hRatio(self): return self.size[1] / self.initHeight
-
 	@size.setter
 	def size(self, size): self.resize(size)
 
@@ -148,9 +144,6 @@ class PApplet:
 
 	@height.setter
 	def height(self, h): self.resize((self.width, h))
-
-	@hRatio.setter
-	def hRatio(self, r): self.resize((self.width, r * self.initHeight))
 
 	@property
 	def center(self):
@@ -164,6 +157,12 @@ class PApplet:
 	@property
 	def centerY(self): return self.center[1]
 
+ 	@property
+ 	def hRatio(self): return self.size[1] / self.initHeight
+ 
+ 	@hRatio.setter
+ 	def hRatio(self, r): self.resize((self.width, r * self.initHeight))
+
 	@property
 	def aspect(self):
 		"Return the aspect ratio of the background, or None"
@@ -172,16 +171,22 @@ class PApplet:
 
 	def targetSize(self, size=None):
 		"Adjust requested sketch size to match background aspect ratio"
-		w, h = size if size else self.size
+		sz = self.size
+		w, h = size if size else sz
 		ratio = self.aspect
 		if ratio:
-			if self.snapMode == 2:      # Snap to height
-				w = round(ratio * h)
+			mode = self.snapMode # 1=Width, 2=Height, 3=Area, 0=Auto
+			if mode == 0:
+				mode = 3
+				if size:
+					if w == sz[0]: mode = 2
+					elif h == sz[1]: mode = 1
+			if mode == 2: w = round(ratio * h)
 			else:
-				if self.snapMode == 0:  # Snap to area
+				if mode == 3:
 					area = w * h
 					w = round((area * ratio) ** 0.5)
-				h = round(w / ratio)    # Snap to width
+				h = round(w / ratio)
 		return w, h
 
 	def randPixel(self): return randPixel(self)
@@ -189,13 +194,13 @@ class PApplet:
 	@property
 	def keyCode(self):
 		"Key code for most recent keyboard event"
-		return None if self.key == None else self.key.key
+		return None if self.key is None else self.key.key
 
 	@property
 	def char(self):
 		"Character from most recent keyboard event"
 		key = self.key
-		if key == None: return ""
+		if key is None: return ""
 		return key.unicode if hasattr(key, "unicode") else ""
 
 	@property
@@ -204,13 +209,17 @@ class PApplet:
 	@property
 	def mouseY(self): return self.mouseXY[1]
 
-	def resize(self, size, mode=None):
+	def _fitImg(self, size):
+		"Create an image scaled to the screen size"
+		self._bgImage.transform(size=size)
+
+	def resize(self, size, mode=None, ev=None):
 		"Change the sketch size and mode (optional)"
 		tsize = self.targetSize(size)
 		if mode is None: mode = self._mode
 		if tsize != self.size or mode != self._mode:
-			if self._bgImage:
-				self._bgImage.transform(size=tsize)
+			if self._bgImage: self._fitImg(tsize)
+			if ev: ev.adjustSize = tsize
 			self.screen = display.set_mode(tsize, mode)
 
 	@property
@@ -223,7 +232,7 @@ class PApplet:
 			if img:
 				self._bgImage = Image(img)
 				tsize = self.targetSize(self.size)
-				tsize = self._bgImage.transform(size=tsize).size
+				self._fitImg(tsize)
 				if tsize != self.size: display.set_mode(tsize, self._mode)
 			else: self._bgImage = None
 		except: logError()
@@ -264,8 +273,8 @@ class PApplet:
 
 	def save(self, fn=None):
 		"Save a surface; default file name is based on frameCount property"
-		if fn == None:
-			if self._frameInterval == None:
+		if fn is None:
+			if self._frameInterval is None:
 				fn = self.saveName.format(self.frameCount)
 			else:
 				s, f = self._recordSequence
@@ -284,8 +293,7 @@ class PApplet:
 	def scaledBgImage(self):
 		"Return the background image scaled to the sketch size"
 		img = self.bgImage
-		if img:
-			if img._trnsfm: img = img._trnsfm[0]
+		if img and img._trnsfm: img = img._trnsfm[0]
 		return img
 
 	def drawBackground(self):
@@ -309,7 +317,7 @@ class PApplet:
 		"Dispatch a list of events to the event handling method"
 		if type(ev) != list: ev = [ev]
 		for e in ev:
-			if e != None: handleEvent(self, e)
+			if e: handleEvent(self, e)
 
 	draw = drawBackground
 	def setup(self): pass
@@ -326,7 +334,7 @@ class PApplet:
 		except: pass
 		pygame.key.set_repeat(400, 80)
 
-	# Configure display...
+	# Set display size and mode...
 		self._mode = mode
 		if type(size) == int:
 			size = round(size/18)
@@ -353,7 +361,7 @@ class PApplet:
 
 				# Inspect events...
 					if ev.type == pygame.VIDEORESIZE:
-						self.resize(ev.size)
+						self.resize(ev.size, ev=ev)
 					elif ev.type == pygame.QUIT:
 						self.quit = not self.gui.modal if self.gui else True
 					elif ev.type == pygame.ACTIVEEVENT:
