@@ -598,7 +598,6 @@ class Sketch(PApplet):
     "A class for creating sketches with sprite and GUI support"
     _start = 0
     io = None
-#    eventMap = {}
     wall = False
 
     def edge(self):
@@ -641,8 +640,9 @@ class Sketch(PApplet):
         "Frames since last call to animate method"
         return self.frameCount - self._start
 
-    def onResize(self):
+    def resize(self, size, mode=None):
         "Scale all sprites on sketch resize"
+        super().resize(size, mode)
         sp = self.sprites
         h = sp.sketchHeight if sp.sketchHeight else self.initHeight
         h1 = self.height
@@ -650,4 +650,3 @@ class Sketch(PApplet):
         if f != 1:
             sp.sketchHeight = h1
             sp.transform(factor=f)
-        return f

@@ -212,10 +212,6 @@ class PApplet:
 			if self._bgImage:
 				self._bgImage.transform(size=tsize)
 			self.screen = display.set_mode(tsize, mode)
-			self.onResize()
-
-	def onResize(self):
-		print(self.size)
 
 	@property
 	def bgImage(self): return self._bgImage
