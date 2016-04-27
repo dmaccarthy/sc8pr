@@ -157,11 +157,11 @@ class PApplet:
 	@property
 	def centerY(self): return self.center[1]
 
- 	@property
- 	def hRatio(self): return self.size[1] / self.initHeight
- 
- 	@hRatio.setter
- 	def hRatio(self, r): self.resize((self.width, r * self.initHeight))
+	@property
+	def hRatio(self): return self.size[1] / self.initHeight
+
+	@hRatio.setter
+	def hRatio(self, r): self.resize((self.width, r * self.initHeight))
 
 	@property
 	def aspect(self):
