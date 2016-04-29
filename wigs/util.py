@@ -56,6 +56,11 @@ def randColor(alpha=False):
     "Return a random color"
     return Color(*[randint(0,255) for i in range(4 if alpha else 3)])
 
+def noise(c, amt=8, alpha=None):
+    c = Color(*[min(255, max(0, val + randint(-amt, amt))) for val in c])
+    if alpha is not None: c.a = alpha
+    return c
+
 def getAlpha(c):
     "Get the alpha value of a color"
     if type(c) in (tuple, list):

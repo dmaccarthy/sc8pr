@@ -49,6 +49,7 @@ class PApplet:
 		self._bgImage = None
 		self._frameInterval = None
 		self._recordSequence = -1, 0
+		self._lumin = []
 		self._bind(setup, draw, eventMap)
 		self._clock = pygame.time.Clock()
 
@@ -255,6 +256,9 @@ class PApplet:
 		"Update the display surface; record frame if requested"
 		cursor = self.cursor
 		if self.light: self.tint(self.light)
+		for img, posn in self._lumin:
+			self.blit(img, posn)
+		self._lumin = []
 		if not self.gui or not self.recordGui: self._captureFrame()
 		if self.gui:
 			if self.gui.widgets: self.gui.draw()
