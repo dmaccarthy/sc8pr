@@ -94,8 +94,10 @@ def _changeSpin(sprite, dv, pt=None):
             rMin = None
             for cx, cy in sprite.corners():
                 r = min(abs(cx), abs(sk.width-1-cx), abs(cy), abs(sk.height-1-cy))
-                if pt is None or r < rMin:
-                    pt = cx, cy
+                if pt is None or r <= rMin:
+                    if r == rMin:
+                        pt = (pt[0] + cx) / 2, (pt[1] + cy) / 2
+                    else: pt = cx, cy
                     rMin = r
         x, y = tuple_sub(pt, sprite.posn)
         dL = x * dv[1] - y * dv[0]
@@ -164,7 +166,7 @@ class Sprite():
 
     @property
     def radius(self):
-        return self._radius * self.zoom
+        return None if self._radius is False else self._radius * self.zoom
 
     @radius.setter
     def radius(self, r):
@@ -308,7 +310,7 @@ class Sprite():
     def _setZoom(self, width=None, height=None):
         "Adjust zoom attribute to give the specified width or height"
         w, h = self._image.size
-        self.zoom = width / w if width else height / h # *=?
+        self.zoom = width / w if width else height / h
         return self
 
     @width.setter
