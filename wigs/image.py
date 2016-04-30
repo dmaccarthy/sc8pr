@@ -430,7 +430,6 @@ class Image:
         a = round(a / n)
         if a:
             n *= a
-            r = round(r / n)
             r = min(255, round(r / n))
             g = min(255, round(g / n))
             b = min(255, round(b / n))
