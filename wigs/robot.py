@@ -80,10 +80,10 @@ class Robot(Sprite):
     mass = 1.0
     elasticity = 0.2
 
-    def __init__(self, sprites, brain=None, colors=None, group=(), **kwargs):
+    def __init__(self, sprites, brain=None, colors=None, *group, **kwargs):
         self.penColor = None
         costumes = self._makeCostumes(colors)
-        super().__init__(sprites, costumes, group, **kwargs)
+        super().__init__(sprites, costumes, *group, **kwargs)
         if self._radius is False:
             self.radius = True
         self.data = Data()
@@ -96,8 +96,7 @@ class Robot(Sprite):
         return self._name if self._name else "Robot_{}".format(id(self))
 
     @name.setter
-    def name(self, name):
-        self._name = name
+    def name(self, name): self._name = name
 
     @property
     def stall(self):
@@ -148,7 +147,9 @@ class Robot(Sprite):
         else: self._sleep()
         if stop: self.motors = 0, 0
 
-    def shutdown(self): pass
+    def shutdown(self):
+        "Override if robot requires any shutdown actions"
+        pass
 
     @property
     def penRadius(self): return round(self.radius / 10)
@@ -171,15 +172,16 @@ class Robot(Sprite):
         "Draw luminous LED indicators"
         fc = self.frontColor
         colors = [self.downColor, fc if fc else (0,0,0), self.penColor]
-        r = self.radius / 2.25
+        r1 = self.radius / 2.5
+        r2 = r1 / 2.5
         a = radians(self.angle + 60)
         x0, y0 = self.posn
         led = []
         for c in colors:
-            x = x0 + r * cos(a)
-            y = y0 + r * sin(a)
+            x = x0 + r1 * cos(a)
+            y = y0 + r1 * sin(a)
             if c is not None:
-                img = Image.ellipse(r/2.5, c, (0,0,0))
+                img = Image.ellipse(r2, c, (0,0,0))
                 xy = rectAnchor((x,y), img.size, CENTER).topleft
                 led.append((img, xy))
             a -= pi / 1.5
@@ -187,8 +189,9 @@ class Robot(Sprite):
         return led
 
     def update(self):
-        super().update()
+        "Draw LEDs before update"
         self.sketch._lumin.extend(self.leds())
+        super().update()
 
     @property
     def uptime(self): return self.sketch.time - self.startTime
@@ -239,7 +242,7 @@ class Robot(Sprite):
 
     def say(self, text): print("{}: {}".format(self.name, text))
 
-    def detectObstacles(self, cone=0, steps=None, group=None):
+    def _detectObstacles(self, cone=0, steps=None, group=None):
         "Detect obstacles in front of the robot"
         sk = self.sketch
         if steps is None: steps = max(1, cone)
@@ -284,9 +287,9 @@ class Robot(Sprite):
             else: steps = -1
         return obst
 
-    def closest_obstacle(self):
+    def _closest_obstacle(self):
         "Locate nearest obstacle"
-        obst = self.detectObstacles(self._obstacleCone)
+        obst = self._detectObstacles(self._obstacleCone)
         prox = None
         sprite = None
         for s in obst:
@@ -375,7 +378,7 @@ class Robot(Sprite):
                 self._stallTime = self.sketch.time if stall else None
         else: self._stallTime = None
         self.downColor = self._downColor()
-        self.closest_obstacle()
+        self._closest_obstacle()
 
         # Adjust wheel speed...
         self.costumeTime = 0 if self.motorsOff else round(36 / (1 + 5 * self.averagePower))
@@ -390,21 +393,25 @@ class Robot(Sprite):
 def remote_control(sk, ev):
     "Use keyboard to control robot motors"
     match = lambda r: isinstance(r, Robot)
-    robot = sk.sprites.search(match=match)[-1]
-    m1, m2 = robot.motors
-    d = 0.1
-    if sk.keyCode == K_UP:
-        m1 += d
-        m2 += d
-    elif sk.keyCode == K_DOWN:
-        m1 -= d
-        m2 -= d
-    elif sk.keyCode == K_LEFT:
-        m1 -= d
-        m2 += d
-    elif sk.keyCode == K_RIGHT:
-        m1 += d
-        m2 -= d
-    elif sk.keyCode == K_SPACE:
-        m1 = m2 = 0
-    robot.motors = round(10 * m1) / 10, round(10 * m2) / 10
+    robot = sk.sprites.search(match=match)
+    if len(robot):
+        robot = robot[-1]
+        m1, m2 = robot.motors
+        d = 0.1
+        if sk.keyCode == K_UP:
+            m1 += d
+            m2 += d
+        elif sk.keyCode == K_DOWN:
+            m1 -= d
+            m2 -= d
+        elif sk.keyCode == K_LEFT:
+            m1 -= d
+            m2 += d
+        elif sk.keyCode == K_RIGHT:
+            m1 += d
+            m2 -= d
+        elif sk.keyCode == K_SPACE:
+            m1 = m2 = 0
+        robot.motors = round(10 * m1) / 10, round(10 * m2) / 10
+    else:
+        print("No robot to control!")

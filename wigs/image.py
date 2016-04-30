@@ -282,7 +282,7 @@ class Image:
         elif isinstance(dest, Image): dest = dest.surface
         img = self.transform(size, angle, flags) if size or angle else self
         if anchor != NW:
-            posn = rectAnchor(posn, img.size, anchor)
+            posn = rectAnchor(posn, img.size, anchor).topleft
         return dest.blit(img.surface, posn)
 
     def getAspect(self, size=None):
@@ -431,8 +431,9 @@ class Image:
         if a:
             n *= a
             r = round(r / n)
-            g = round(g / n)
-            b = round(b / n)
+            r = min(255, round(r / n))
+            g = min(255, round(g / n))
+            b = min(255, round(b / n))
         return pygame.color.Color(r, g, b, a)
 
 

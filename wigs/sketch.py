@@ -129,7 +129,7 @@ class Sprite():
     spinDrag = 0.0
     bounceThreshhold = 0
 
-    def __init__(self, sprites, costumes, group=(), **kwargs):
+    def __init__(self, sprites, costumes, *group, **kwargs):
         if type(costumes) in (str, Image, pygame.surface.Surface):
             costumes = costumes,
         costumes = [Image(c) for c in costumes]
@@ -142,7 +142,7 @@ class Sprite():
         if not isinstance(sprites, SpriteList):
             sprites = sprites.sprites
         self.spriteList = sprites
-        sprites.append(self, group)
+        sprites.append(self, *group)
         self.config(**kwargs)
         if kwargs.get("posn") is None:
             self.posn = self.sketch.center
