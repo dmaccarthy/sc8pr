@@ -2,8 +2,10 @@
 A [Python 3](http://www.python.org) package for educational programming. Features include:
 * a simple framework for creating interactive animations
 * image manipulation
-* sprite management
 * GUI
+* graph plotting
+* sprite management
+* physics-based collisions
 * robotics simulator
 
 # Installation
@@ -14,4 +16,4 @@ As wigs is entirely Python 3 source code, no special installation is required. S
 [Download](https://github.com/dmaccarthy/wigs/releases) the wigs source code.
 
 # Documentation
-Please visit the [documentation page](http://dmaccarthy.github.io).
+Please visit the [documentation page](http://dmaccarthy.github.io/wigsRef/).
