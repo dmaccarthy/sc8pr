@@ -433,9 +433,9 @@ class Sprite():
             if s is not self and s._statusFilter(status) and collided(self, s):
                 yield s
 
-    def collisions(self, group=None, status=None, collided=collide_sprite):
+    def collisions(self, group=None, status=None, collided=collide_sprite, seqType=set):
         "Return a set of colliding sprites"
-        return set(self.collisionGen(group, status, collided))
+        return seqType(self.collisionGen(group, status, collided))
 
     def transform(self, shift=(0,0), factor=1):
         "Apply a shift and/or scale transformation to the sprite's geometry"
@@ -594,6 +594,10 @@ class SpriteList():
                 c1.add(s)
                 c2 |= tmp
         return c1, c2
+
+    def sort(self, group):
+        "Order by sprite list index"
+        return [s for s in self if s in group]
 
 
 class Sketch(PApplet):

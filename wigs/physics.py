@@ -16,7 +16,7 @@
 # along with WIGS.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from wigs.sketch import Sketch, VISIBLE, _changeSpin
+from wigs.sketch import Sketch, VISIBLE, HIDDEN, _changeSpin
 from wigs.geometry import tuple_add, tuple_times, tuple_sub, segments, polar, distance, scalarProduct,\
     closest, direction_of_line, eqnOfLine, intersect_segment_circle, intersect_polygon, tuple_avg
 from math import pi, sin, cos
@@ -24,12 +24,11 @@ from math import pi, sin, cos
 
 class Environment(Sketch):
     "Representation of a physics-based environment suitable for robotics simulations"
-    robotTime = 10
 
     @staticmethod
     def collidable(sprite):
         "Determine which sprites participate in collisions"
-        return sprite.status == VISIBLE and hasattr(sprite, "mass") and sprite.mass > 0
+        return sprite.status in (VISIBLE, HIDDEN) and hasattr(sprite, "mass") and sprite.mass > 0
 
     def run(self, size=(800,600), caption="Environment", icon=None, mode=0):
         "Override default arguments"

@@ -79,6 +79,7 @@ class Robot(Sprite):
     downColor = None
     mass = 1.0
     elasticity = 0.2
+    arenaTime = 12
 
     def __init__(self, sprites, brain=None, colors=None, *group, **kwargs):
         self.penColor = None
@@ -90,6 +91,8 @@ class Robot(Sprite):
         if brain is not None:
             self._thread = RobotThread(self, brain)
             self._thread.start()
+
+    def __str__(self): return "<Robot [{}]>".format(self.name)
 
     @property
     def name(self):
@@ -200,7 +203,7 @@ class Robot(Sprite):
     def maxSpeed(self):
         "Calculate the maximum robot speed corresponding to full power"
         sk = self.sketch
-        return (sk.width - 2 * self.radius) / (sk.robotTime * sk.frameRate)
+        return (sk.width - 2 * self.radius) / (self.arenaTime * sk.frameRate)
 
     @property
     def averagePower(self):
@@ -390,28 +393,32 @@ class Robot(Sprite):
     _update = frameStep
 
 
+def control_robot(robot, k, d=0.1):
+    "Adjust motors based on key code"
+    m1, m2 = robot.motors
+    if k == K_UP:
+        m1 += d
+        m2 += d
+    elif k == K_DOWN:
+        m1 -= d
+        m2 -= d
+    elif k == K_LEFT:
+        m1 -= d
+        m2 += d
+    elif k == K_RIGHT:
+        m1 += d
+        m2 -= d
+    elif k == K_SPACE:
+        m1 = m2 = 0
+    robot.motors = d * round(m1 / d), d * round(m2 / d)
+
+_rc_robot = None
+
 def remote_control(sk, ev):
     "Use keyboard to control robot motors"
-    match = lambda r: isinstance(r, Robot)
-    robot = sk.sprites.search(match=match)
-    if len(robot):
-        robot = robot[-1]
-        m1, m2 = robot.motors
-        d = 0.1
-        if sk.keyCode == K_UP:
-            m1 += d
-            m2 += d
-        elif sk.keyCode == K_DOWN:
-            m1 -= d
-            m2 -= d
-        elif sk.keyCode == K_LEFT:
-            m1 -= d
-            m2 += d
-        elif sk.keyCode == K_RIGHT:
-            m1 += d
-            m2 -= d
-        elif sk.keyCode == K_SPACE:
-            m1 = m2 = 0
-        robot.motors = round(10 * m1) / 10, round(10 * m2) / 10
-    else:
-        print("No robot to control!")
+    global _rc_robot
+    if _rc_robot is None:
+        match = lambda r: isinstance(r, Robot)
+        robots = sk.sprites.search(match=match)
+        _rc_robot = robots[-1]
+    control_robot(_rc_robot, sk.keyCode)

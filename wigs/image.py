@@ -427,13 +427,14 @@ class Image:
                     g += pixel.g * pixel.a
                     b += pixel.b * pixel.a
         n = w * h
-        a = round(a / n)
+#        a = round(a / n)
         if a:
+            a /= n
             n *= a
             r = min(255, round(r / n))
             g = min(255, round(g / n))
             b = min(255, round(b / n))
-        return pygame.color.Color(r, g, b, a)
+        return pygame.color.Color(r, g, b, round(a))
 
 
 def flipAll(imgs, xflip=False, yflip=False):
