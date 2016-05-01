@@ -27,6 +27,7 @@ class PApplet:
 	"Class for creating Processing-style sketches using Pygame 1.9.1 or 1.9.2a0"
 	_fontJson = wigsPath("fonts.json")
 	_quit = False
+	_maxSize = None
 	eventMap = {}
 	saveName = "save/image{:05d}.png"
 	recordName = "save/seq{:03d}_{:05d}.png"
@@ -129,6 +130,19 @@ class PApplet:
 		return time() - self._t0
 
 	@property
+	def maxSize(self): return self._maxSize
+	
+	@maxSize.setter
+	def maxSize(self, val):
+		if val is True:
+			try:
+				with open("maxSize.json", "r") as f:
+					self._maxSize = tuple(json.load(f))
+			except:
+				self._maxSize = (1024, 768)
+		else: self._maxSize = val
+
+	@property
 	def size(self): return self.screen.get_size() if self.screen else None
 
 	@property
@@ -174,6 +188,10 @@ class PApplet:
 		"Adjust requested sketch size to match background aspect ratio"
 		sz = self.size
 		w, h = size if size else sz
+		if self.maxSize:
+			wMax, hMax = self.maxSize
+			if w > wMax: w = wMax
+			if h > hMax: h = hMax
 		ratio = self.aspect
 		if ratio:
 			mode = self.snapMode # 1=Width, 2=Height, 3=Area, 0=Auto
@@ -219,6 +237,7 @@ class PApplet:
 		tsize = self.targetSize(size)
 		if mode is None: mode = self._mode
 		if tsize != self.size or mode != self._mode:
+#			if self.size: self.screen.fill((0,0,0))
 			if self._bgImage: self._fitImg(tsize)
 			if ev: ev.adjustSize = tsize
 			self.screen = display.set_mode(tsize, mode)
