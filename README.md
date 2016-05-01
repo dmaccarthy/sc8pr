@@ -2,7 +2,6 @@
 A [Python 3](http://www.python.org) package for educational programming. Features include:
 * a simple framework for creating interactive animations
 * image manipulation
-* graph plotting
 * sprite management
 * GUI
 * robotics simulator
