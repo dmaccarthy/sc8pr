@@ -1,4 +1,4 @@
-# Copyright 2015-2016 D.G. MacCarthy <devwigs@gmail.com>
+# Copyright 2015-2016 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "scropr".
 #

@@ -16,4 +16,4 @@ As scropr is entirely Python 3 source code, no special installation is required.
 [Download](https://github.com/dmaccarthy/scropr/releases) the scropr source code.
 
 # Documentation
-Please visit the [documentation page](http://dmaccarthy.github.io/wigsRef/).
+Please visit the [documentation page](http://dmaccarthy.github.io/scropr/).
