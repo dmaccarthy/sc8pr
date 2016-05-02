@@ -20,10 +20,15 @@ from traceback import format_exc
 from sys import stderr
 from zipfile import ZipFile as zf, ZIP_DEFLATED
 from random import randint
-import pygame, wigs, os
 from pygame.color import Color
+from pygame.rect import Rect
+import pygame, wigs, os
 
 
+def nothing(*args): pass
+def logError(): print(format_exc(), file=stderr)
+
+# Cursors...
 ARROW = pygame.cursors.arrow
 DIAMOND = pygame.cursors.diamond
 MOVE = ((16,16),(9,8),(1,128,3,192,7,224,1,128,1,128,17,136,49,140,127,254,127,254,49,140,17,136,1,128,1,128,7,224,3,192,1,128),(3,192,7,224,15,240,7,224,3,192,59,220,127,254,255,255,255,255,127,254,59,220,3,192,7,224,15,240,7,224,3,192))
@@ -37,27 +42,30 @@ def setCursor(c):
     if not c: c = ARROW
     pygame.mouse.set_cursor(*c)
 
-def nothing(*args): pass
-def logError(): print(format_exc(), file=stderr)
-
 def randPixel(obj):
+    "Return random coordinates within an image, sketch, or similar object"
     w, h = obj.size
     return randint(0, w-1), randint(0, h-1)
 
 def rgba(*args):
+    "Return a color or list of colors from str or tuple data"
     c = [Color(*c) if type(c) is tuple else Color(c) for c in args]
     return c[0] if len(c) == 1 else c
 
-#def rgb(h): return Color(h<<8 | 255)
-#def rgbList(*args): return [rgb(c) for c in args]
-
 def randColor(alpha=False):
+    "Return a random color"
     return Color(*[randint(0,255) for i in range(4 if alpha else 3)])
 
+def noise(c, amt=8, alpha=None):
+    c = Color(*[min(255, max(0, val + randint(-amt, amt))) for val in c])
+    if alpha is not None: c.a = alpha
+    return c
+
 def getAlpha(c):
+    "Get the alpha value of a color"
     if type(c) in (tuple, list):
         return c[3] if len(c) == 4 else 255
-    return c.a
+    return None if c is None else c.a
 
 def keyMod(): return pygame.key.get_mods() & 963 != 0
 def altKey(): return pygame.key.get_mods() & 768 != 0
@@ -83,10 +91,12 @@ def isIncr(k): return k.key in (pygame.K_UP, pygame.K_RIGHT) or k.key in (pygame
 def isDecr(k): return k.key in (pygame.K_DOWN, pygame.K_LEFT) or k.key in (pygame.K_KP2, pygame.K_KP4) and k.unicode == ""
 
 def copyAttr(src, dest):
+    "Copy all attributes from an object or dict to another object"
     if type(src) != dict: src = src.__dict__
     for k in src: setattr(dest, k, src[k])
 
 def getValues(*args, **kwargs):
+    "Extract multiple items from a dict"
     return tuple([kwargs.get(k) for k in args])
 
 def eventKey(ev, eMap):
@@ -112,10 +122,6 @@ def saveZip(zName, fName, data=None):
     z.close()
     return z
 
-# def array(n, val=0):
-#     "Create a list of n items initialized to the given value"
-#     return [val for i in range(n)]
-
 def containsAny(obj, items='*?|<>"'):
     for i in items:
         if i in obj: return True
@@ -126,6 +132,48 @@ def wigsPath(rel=""):
     path = wigs.__path__[0]
     if rel: path += "/" + rel
     return os.path.normpath(path)
+
+# Anchoring...
+
+CENTER = 0
+WEST = 1
+EAST = 2
+NORTH = 4
+SOUTH = 8
+NW = NORTH | WEST
+NE = NORTH | EAST
+SW = SOUTH | WEST
+SE = SOUTH | EAST
+
+def rectAnchor(posn, size, anchor=NW):
+    "Returns a rectangle using a position relative to the specified anchor point"
+    w, h = size
+    r = Rect(posn + size)
+    dx = 0 if anchor & WEST else w if anchor & EAST else w // 2
+    dy = 0 if anchor & NORTH else h if anchor & SOUTH else h // 2
+    return r.move(-dx, -dy)
+
+def coords(size, anchor=NW, offset=0):
+    "Return coordinates relative to an anchor point of the image"
+    r = Rect((0,0) + size)
+    x = 0 if anchor & WEST else (r.right-1) if anchor & EAST else r.centerx
+    y = 0 if anchor & NORTH else (r.bottom-1) if anchor & SOUTH else r.centery
+    if offset:
+        if type(offset) is int:
+            mx = offset * (1 if anchor & WEST else -1 if anchor & EAST else 0)
+            my = offset * (1 if anchor & NORTH else -1 if anchor & SOUTH else 0)
+        else:
+            mx, my = offset
+        x += mx
+        y += my
+    return x, y
+
+def position(srcSize, destSize=None, anchor=NW, offset=0):
+    "Position one rectangle within another"
+    if destSize is None:
+        destSize = pygame.display.get_surface().get_size()
+    posn = coords(destSize, anchor, offset)
+    return rectAnchor(posn, srcSize, anchor).topleft
 
 
 # Numerical integration...

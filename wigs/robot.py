@@ -20,11 +20,11 @@ from wigs.sketch import Sprite, VISIBLE
 from wigs.image import Image
 from wigs.geometry import tuple_add, tuple_neg, tuple_times, distance,\
     intersect_segment_circle, intersect_segments, eqnOfLine, segments
-from wigs.util import wigsPath, Data, logError
+from wigs.util import wigsPath, Data, logError, rectAnchor, CENTER, noise
 from pygame.draw import circle, line
 from pygame import Rect, Color, K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE
 from pygame.pixelarray import PixelArray
-from math import degrees, radians, cos, sin
+from math import degrees, radians, cos, sin, pi
 from threading import Thread
 from time import sleep
 from sys import stderr
@@ -75,14 +75,16 @@ class Robot(Sprite):
     _downRect = None
     _stallTime = None
     _name = None
+    sensorNoise = 12
     downColor = None
     mass = 1.0
     elasticity = 0.2
+    arenaTime = 12
 
-    def __init__(self, sprites, brain=None, colors=None, group=(), **kwargs):
+    def __init__(self, sprites, brain=None, colors=None, *group, **kwargs):
         self.penColor = None
         costumes = self._makeCostumes(colors)
-        super().__init__(sprites, costumes, group, **kwargs)
+        super().__init__(sprites, costumes, *group, **kwargs)
         if self._radius is False:
             self.radius = True
         self.data = Data()
@@ -90,13 +92,14 @@ class Robot(Sprite):
             self._thread = RobotThread(self, brain)
             self._thread.start()
 
+    def __str__(self): return "<Robot [{}]>".format(self.name)
+
     @property
     def name(self):
         return self._name if self._name else "Robot_{}".format(id(self))
 
     @name.setter
-    def name(self, name):
-        self._name = name
+    def name(self, name): self._name = name
 
     @property
     def stall(self):
@@ -147,7 +150,9 @@ class Robot(Sprite):
         else: self._sleep()
         if stop: self.motors = 0, 0
 
-    def shutdown(self): pass
+    def shutdown(self):
+        "Override if robot requires any shutdown actions"
+        pass
 
     @property
     def penRadius(self): return round(self.radius / 10)
@@ -166,31 +171,30 @@ class Robot(Sprite):
         m1, m2 = self.motors
         return m1 == 0.0 and m2 == 0.0
 
-    @property
-    def image(self):
-        "Return a zoomed, rotated image"
-        img = super().image.clone()
-        r = self.radius / 2.5
-        r1 = round(r / 2.5)
-        w, h = img.size
-        w /= 2
-        h /= 2
-        da = -60
+    def leds(self):
+        "Draw luminous LED indicators"
         fc = self.frontColor
-        leds = [self.downColor, fc if fc else (0,0,0), self.penColor]
-        for i in range(3):
-            c = leds[i]
-            if c is not None or i == 2:
-                a = radians(self.angle + da)
-                x = round(w + r * cos(a))
-                y = round(h + r * sin(a))
+        colors = [self.downColor, fc if fc else (0,0,0), self.penColor]
+        r1 = self.radius / 2.5
+        r2 = r1 / 2.5
+        a = radians(self.angle + 60)
+        x0, y0 = self.posn
+        led = []
+        for c in colors:
+            x = x0 + r1 * cos(a)
+            y = y0 + r1 * sin(a)
             if c is not None:
-                circle(img.surface, c, (x,y), r1)
-                circle(img.surface, (0, 0, 0), (x,y), r1, 1)
-            da += 120
-        x, y = tuple_add(self.posn, (x-w, y-h))
-        self.penPosn = round(x), round(y)
-        return img
+                img = Image.ellipse(r2, c, (0,0,0))
+                xy = rectAnchor((x,y), img.size, CENTER).topleft
+                led.append((img, xy))
+            a -= pi / 1.5
+        if c: self.penPosn = round(x), round(y)
+        return led
+
+    def update(self):
+        "Draw LEDs before update"
+        self.sketch._lumin.extend(self.leds())
+        super().update()
 
     @property
     def uptime(self): return self.sketch.time - self.startTime
@@ -199,7 +203,7 @@ class Robot(Sprite):
     def maxSpeed(self):
         "Calculate the maximum robot speed corresponding to full power"
         sk = self.sketch
-        return (sk.width - 2 * self.radius) / (sk.robotTime * sk.frameRate)
+        return (sk.width - 2 * self.radius) / (self.arenaTime * sk.frameRate)
 
     @property
     def averagePower(self):
@@ -230,12 +234,18 @@ class Robot(Sprite):
     @property
     def frontColor(self):
         "Return front colour-sensor value"
-        try: return self._proximity[3]
-        except: return Color(0, 0, 0)
+        try:
+            c = self._proximity[3]
+            if self.sketch.light:
+                x = tuple_times(self.sketch.light, 1/255)
+                c = [round(c[i] * x[i]) for i in range(4)]
+        except: c = None
+        c = noise(c if c else (0, 0, 0), self.sensorNoise, alpha=255)
+        return c
 
     def say(self, text): print("{}: {}".format(self.name, text))
 
-    def detectObstacles(self, cone=0, steps=None, group=None):
+    def _detectObstacles(self, cone=0, steps=None, group=None):
         "Detect obstacles in front of the robot"
         sk = self.sketch
         if steps is None: steps = max(1, cone)
@@ -280,9 +290,9 @@ class Robot(Sprite):
             else: steps = -1
         return obst
 
-    def closest_obstacle(self):
+    def _closest_obstacle(self):
         "Locate nearest obstacle"
-        obst = self.detectObstacles(self._obstacleCone)
+        obst = self._detectObstacles(self._obstacleCone)
         prox = None
         sprite = None
         for s in obst:
@@ -331,7 +341,7 @@ class Robot(Sprite):
                 if srf: img.surface.blit(srf, (0,0))
             else:
                 img = Image(srf)
-            return img.averageColor()
+            return noise(img.averageColor(), self.sensorNoise, alpha=255)
         except: return None
 
     def frameStep(self):
@@ -371,7 +381,7 @@ class Robot(Sprite):
                 self._stallTime = self.sketch.time if stall else None
         else: self._stallTime = None
         self.downColor = self._downColor()
-        self.closest_obstacle()
+        self._closest_obstacle()
 
         # Adjust wheel speed...
         self.costumeTime = 0 if self.motorsOff else round(36 / (1 + 5 * self.averagePower))
@@ -383,24 +393,32 @@ class Robot(Sprite):
     _update = frameStep
 
 
+def control_robot(robot, k, d=0.1):
+    "Adjust motors based on key code"
+    m1, m2 = robot.motors
+    if k == K_UP:
+        m1 += d
+        m2 += d
+    elif k == K_DOWN:
+        m1 -= d
+        m2 -= d
+    elif k == K_LEFT:
+        m1 -= d
+        m2 += d
+    elif k == K_RIGHT:
+        m1 += d
+        m2 -= d
+    elif k == K_SPACE:
+        m1 = m2 = 0
+    robot.motors = d * round(m1 / d), d * round(m2 / d)
+
+_rc_robot = None
+
 def remote_control(sk, ev):
     "Use keyboard to control robot motors"
-    match = lambda r: isinstance(r, Robot)
-    robot = sk.sprites.search(match=match)[-1]
-    m1, m2 = robot.motors
-    d = 0.1
-    if sk.keyCode == K_UP:
-        m1 += d
-        m2 += d
-    elif sk.keyCode == K_DOWN:
-        m1 -= d
-        m2 -= d
-    elif sk.keyCode == K_LEFT:
-        m1 -= d
-        m2 += d
-    elif sk.keyCode == K_RIGHT:
-        m1 += d
-        m2 -= d
-    elif sk.keyCode == K_SPACE:
-        m1 = m2 = 0
-    robot.motors = round(10 * m1) / 10, round(10 * m2) / 10
+    global _rc_robot
+    if _rc_robot is None:
+        match = lambda r: isinstance(r, Robot)
+        robots = sk.sprites.search(match=match)
+        _rc_robot = robots[-1]
+    control_robot(_rc_robot, sk.keyCode)

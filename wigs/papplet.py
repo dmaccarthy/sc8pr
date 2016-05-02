@@ -18,18 +18,16 @@
 
 import pygame, os, json
 from time import time
-from random import randint
 from pygame import display
 from wigs.image import Image, NW
-from wigs.util import logError, setCursor, handleEvent, fontHeight, wigsPath, ARROW, Data,\
-	randPixel
+from wigs.util import logError, setCursor, handleEvent, fontHeight, wigsPath, ARROW, Data, randPixel
 
 
 class PApplet:
 	"Class for creating Processing-style sketches using Pygame 1.9.1 or 1.9.2a0"
 	_fontJson = wigsPath("fonts.json")
-	_bgForceScale = False
 	_quit = False
+	_maxSize = None
 	eventMap = {}
 	saveName = "save/image{:05d}.png"
 	recordName = "save/seq{:03d}_{:05d}.png"
@@ -37,6 +35,7 @@ class PApplet:
 	cursor = ARROW
 	gui = None
 	recordGui = False
+	snapMode = 0
 
 	@staticmethod
 	def _onQuit(): PApplet._quit = True
@@ -47,30 +46,30 @@ class PApplet:
 		self.drawTime = 0.0
 		self.eventTime = 0.0
 		self.screen = None
-#		self.data = Data()
 		self.bgColor = None
 		self._bgImage = None
 		self._frameInterval = None
 		self._recordSequence = -1, 0
+		self._lumin = []
 		self._bind(setup, draw, eventMap)
 		self._clock = pygame.time.Clock()
 
 	@classmethod
 	def useFonts(cls, path): cls._fontJson = path
 
-	def _attrError(self, k):
-		"Raise an exception if the instance has the specified attribute"
-		if hasattr(self, k):
-			raise AttributeError("Attribute '{}' already exists".format(k))
-
-	def customAttr(self, *args, **kwargs):
-		"Encapsulate custom attributes after checking that they are not in use"
-		for k in args:
-			self._attrError(k)
-			setattr(self, k, Data())
-		for k in kwargs:
-			self._attrError(k)
-			setattr(self, k, kwargs[k])
+# 	def _attrError(self, k):
+# 		"Raise an exception if the instance has the specified attribute"
+# 		if hasattr(self, k):
+# 			raise AttributeError("Attribute '{}' already exists".format(k))
+# 
+# 	def customAttr(self, *args, **kwargs):
+# 		"Encapsulate custom attributes after checking that they are not in use"
+# 		for k in args:
+# 			self._attrError(k)
+# 			setattr(self, k, Data())
+# 		for k in kwargs:
+# 			self._attrError(k)
+# 			setattr(self, k, kwargs[k])
 
 	def _bind(self, setup=None, draw=None, eventMap=None):
 		"Bind functions to sketch instance"
@@ -96,7 +95,7 @@ class PApplet:
 	@staticmethod
 	def _selectFont(names, sysList=None):
 		"Locate a system font from a list of font names"
-		if sysList == None: sysList = pygame.font.get_fonts()
+		if sysList is None: sysList = pygame.font.get_fonts()
 		for f in names:
 			if f in sysList: return f
 
@@ -114,9 +113,8 @@ class PApplet:
 		font = None
 		sz = max(4, round(0.7 * size)) if lineHeight else size
 		if name in self._fonts: name = self._fonts[name]
-		if name:
-			if os.path.isfile(name):
-				font = pygame.font.Font(name, sz)
+		if name and os.path.isfile(name):
+			font = pygame.font.Font(name, sz)
 		if not font:
 			font = pygame.font.SysFont(name, sz, bold, italic)
 		if lineHeight:
@@ -132,6 +130,19 @@ class PApplet:
 		return time() - self._t0
 
 	@property
+	def maxSize(self): return self._maxSize
+	
+	@maxSize.setter
+	def maxSize(self, val):
+		if val is True:
+			try:
+				with open("maxSize.json", "r") as f:
+					self._maxSize = tuple(json.load(f))
+			except:
+				self._maxSize = (1024, 768)
+		else: self._maxSize = val
+
+	@property
 	def size(self): return self.screen.get_size() if self.screen else None
 
 	@property
@@ -139,9 +150,6 @@ class PApplet:
 
 	@property
 	def height(self): return self.size[1]
-
-	@property
-	def hRatio(self): return self.size[1] / self.initHeight
 
 	@size.setter
 	def size(self, size): self.resize(size)
@@ -151,9 +159,6 @@ class PApplet:
 
 	@height.setter
 	def height(self, h): self.resize((self.width, h))
-
-	@hRatio.setter
-	def hRatio(self, r): self.resize((self.width, r * self.initHeight))
 
 	@property
 	def center(self):
@@ -167,18 +172,54 @@ class PApplet:
 	@property
 	def centerY(self): return self.center[1]
 
+	@property
+	def hRatio(self): return self.size[1] / self.initHeight
+
+	@hRatio.setter
+	def hRatio(self, r): self.resize((self.width, r * self.initHeight))
+
+	@property
+	def aspect(self):
+		"Return the aspect ratio of the background, or None"
+		img = self._bgImage
+		return img.getAspect() if img else None
+
+	def targetSize(self, size=None):
+		"Adjust requested sketch size to match background aspect ratio"
+		sz = self.size
+		w, h = size if size else sz
+		if self.maxSize:
+			wMax, hMax = self.maxSize
+			if w > wMax: w = wMax
+			if h > hMax: h = hMax
+		ratio = self.aspect
+		if ratio:
+			mode = self.snapMode # 1=Width, 2=Height, 3=Area, 0=Auto
+			if mode == 0:
+				mode = 3
+				if size:
+					if w == sz[0]: mode = 2
+					elif h == sz[1]: mode = 1
+			if mode == 2: w = round(ratio * h)
+			else:
+				if mode == 3:
+					area = w * h
+					w = round((area * ratio) ** 0.5)
+				h = round(w / ratio)
+		return w, h
+
 	def randPixel(self): return randPixel(self)
 
 	@property
 	def keyCode(self):
 		"Key code for most recent keyboard event"
-		return None if self.key == None else self.key.key
+		return None if self.key is None else self.key.key
 
 	@property
 	def char(self):
 		"Character from most recent keyboard event"
 		key = self.key
-		if key == None: return ""
+		if key is None: return ""
 		return key.unicode if hasattr(key, "unicode") else ""
 
 	@property
@@ -187,20 +228,19 @@ class PApplet:
 	@property
 	def mouseY(self): return self.mouseXY[1]
 
-	def resize(self, size, mode=None):
+	def _fitImg(self, size):
+		"Create an image scaled to the screen size"
+		self._bgImage.transform(size=size)
+
+	def resize(self, size, mode=None, ev=None):
 		"Change the sketch size and mode (optional)"
-		if size != self.size or mode not in (None, self._mode):
-			if mode != None: self._mode = mode
-			try:
-				if type(size) not in (tuple, list):
-					img = Image(size)
-					size = img.size
-					self._bgImage = img
-			except:
-				logError()
-				return
-			display.set_mode(size, self._mode)
-			if self.bgImage: self._fitBgImage(self.bgImage)
+		tsize = self.targetSize(size)
+		if mode is None: mode = self._mode
+		if tsize != self.size or mode != self._mode:
+#			if self.size: self.screen.fill((0,0,0))
+			if self._bgImage: self._fitImg(tsize)
+			if ev: ev.adjustSize = tsize
+			self.screen = display.set_mode(tsize, mode)
 
 	@property
 	def bgImage(self): return self._bgImage
@@ -209,25 +249,17 @@ class PApplet:
 	def bgImage(self, img):
 		"Set a background image"
 		try:
-			if img: self._fitBgImage(Image(img))
+			if img:
+				self._bgImage = Image(img)
+				tsize = self.targetSize(self.size)
+				self._fitImg(tsize)
+				if tsize != self.size: display.set_mode(tsize, self._mode)
 			else: self._bgImage = None
 		except: logError()
 		return self._bgImage
 
-	def _fitBgImage(self, img0):
-		"Adjust display width to match aspect ratio of background image"
-		if not self._bgForceScale and img0.height == self.height:
-			img1 = img0
-			img0.noTransform()
-		else:
-			img1 = img0.transform(size=(None,self.height))
-		if img1.width != self.width:
-			self.width = img1.width
-		self._bgImage = img0
-
-	def setBackground(self, bgImage=None, bgColor=None, forceScale=False):
+	def setBackground(self, bgImage=None, bgColor=None):
 		"Set background image and/or color"
-		if forceScale: self._bgForceScale = True
 		if bgImage and bgColor:
 			# Blit image onto background...
 			if not isinstance(bgImage, Image):
@@ -243,6 +275,9 @@ class PApplet:
 		"Update the display surface; record frame if requested"
 		cursor = self.cursor
 		if self.light: self.tint(self.light)
+		for img, posn in self._lumin:
+			self.blit(img, posn)
+		self._lumin = []
 		if not self.gui or not self.recordGui: self._captureFrame()
 		if self.gui:
 			if self.gui.widgets: self.gui.draw()
@@ -261,8 +296,8 @@ class PApplet:
 
 	def save(self, fn=None):
 		"Save a surface; default file name is based on frameCount property"
-		if fn == None:
-			if self._frameInterval == None:
+		if fn is None:
+			if self._frameInterval is None:
 				fn = self.saveName.format(self.frameCount)
 			else:
 				s, f = self._recordSequence
@@ -279,9 +314,9 @@ class PApplet:
 
 	@property
 	def scaledBgImage(self):
+		"Return the background image scaled to the sketch size"
 		img = self.bgImage
-		if img:
-			if img._trnsfm: img = img._trnsfm[0]
+		if img and img._trnsfm: img = img._trnsfm[0]
 		return img
 
 	def drawBackground(self):
@@ -305,7 +340,7 @@ class PApplet:
 		"Dispatch a list of events to the event handling method"
 		if type(ev) != list: ev = [ev]
 		for e in ev:
-			if e != None: handleEvent(self, e)
+			if e: handleEvent(self, e)
 
 	draw = drawBackground
 	def setup(self): pass
@@ -322,14 +357,13 @@ class PApplet:
 		except: pass
 		pygame.key.set_repeat(400, 80)
 
-	# Configure display...
+	# Set display size and mode...
 		self._mode = mode
 		if type(size) == int:
 			size = round(size/18)
 			size = 32*size, 18*size
 		self.initHeight = size[1]
 		self.resize(size)
-		self.screen = display.get_surface()
 
 	# Initialize sketch...
 		self._fonts = self._fontDict()
@@ -350,7 +384,7 @@ class PApplet:
 
 				# Inspect events...
 					if ev.type == pygame.VIDEORESIZE:
-						if self.size != ev.size: self.resize(ev.size)
+						self.resize(ev.size, ev=ev)
 					elif ev.type == pygame.QUIT:
 						self.quit = not self.gui.modal if self.gui else True
 					elif ev.type == pygame.ACTIVEEVENT:

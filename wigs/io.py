@@ -16,7 +16,7 @@
 # along with WIGS.  If not, see <http://www.gnu.org/licenses/>.
 
 
-"""Simplified GUI input and output"""
+"Simplified GUI input and output"
 
 import pygame
 from wigs.widgets import Widget, MsgBox, Container
@@ -31,7 +31,7 @@ number = MsgBox.number
 
 
 class SimpleFileDialog(FileDialog):
-    """A class for creating simple file system dialogs from within a sketch"""
+    "A class for creating simple file system dialogs from within a sketch"
     
     def __init__(self, mode, allowCancel, initFilter):
         super().__init__(mode, allowCancel=allowCancel, initFilter=initFilter)
@@ -44,7 +44,7 @@ class SimpleFileDialog(FileDialog):
 
 
 def fileDialog(sk, mode=0, allowCancel=True, initFilter="*.*"):
-    """Place a SimpleFileDialog instance and encapsulate it in the sketch"""
+    "Place a SimpleFileDialog instance and encapsulate it in the sketch"
     if not Container.font: Container.font = sk.loadFont(_font, _size + 2, True, lineHeight=False)
     if not Widget.font: Widget.font = sk.loadFont(_font, _size, lineHeight=False)
     if sk.io: raise(_error)
@@ -54,7 +54,7 @@ def fileDialog(sk, mode=0, allowCancel=True, initFilter="*.*"):
 
 
 class SimplePrompt(MsgBox):
-    """A class for creating simple user I/O message boxes from within a sketch"""
+    "A class for creating simple user I/O message boxes from within a sketch"
 
     def __init__(self, msg, title, validator, default, minSize, **kwargs):
         if validator is bool:
@@ -78,7 +78,7 @@ class SimplePrompt(MsgBox):
 
 
 def prompt(sk, msg, validator=str, default="", title=None, minSize=(144,1), **kwargs):
-    """Place a Prompt instance and encapsulate it in the sketch"""
+    "Place a Prompt instance and encapsulate it in the sketch"
     assert sk.gui, "GUI manager has not been initialized"
     if not Container.font: Container.font = sk.loadFont(_font, _size + 2, True, lineHeight=False)
     if not Widget.font: Widget.font = sk.loadFont(_font, _size, lineHeight=False)

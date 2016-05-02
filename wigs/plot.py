@@ -16,9 +16,9 @@
 # along with WIGS.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from wigs.image import Image, CENTER, EAST, NORTH, WEST, SOUTH, NE, NW
+from wigs.image import Image
+from wigs.util import rgba, CENTER, EAST, NORTH, WEST, SOUTH, NE, NW
 from wigs.geometry import locus, arrow, tuple_add
-from wigs.util import rgba
 import pygame
 
 
@@ -86,7 +86,7 @@ class Plot(Image):
         return ((x-b)/a, (y-d)/c) if invert else (a*x+b, c*y+d)
 
     def coordGen(self, pts, invert=False):
-        for pt in pts: yield self.coords(pt, invert)
+        for pt in pts: yield self.coords(pt, invert) if pt else None
 
     def gridLabel(self, x, n, formats=(None,None), anchors=(NORTH, EAST), rotate=(0,-90), offsets=((0,0,0,0)), **kwargs):
         "Add labels to the gridlines"
@@ -133,11 +133,6 @@ class Plot(Image):
 
         return self
 
-    def join(self, pts, closed=True, fill=None, stroke=None, strokeWeight=1):
-        "Join two or more points"
-        pts = [self.coords(pt) for pt in pts]
-        Image.polygon(pts, closed, fill, stroke, strokeWeight, self.size).blitTo(self)
-
     def arrow(self, tail, tip, tailWidth=None, headLength=None, flatness=1, fill=None, stroke=None, strokeWeight=1):
         "Plot an arrow"
         pts = arrow(self.coords(tail), self.coords(tip), tailWidth, headLength, flatness)
@@ -170,9 +165,9 @@ class Plot(Image):
             if marker:
                 marker.blitTo(self, self.coords((x,y)), CENTER)
 
-    def plot(self, pts, marker=None, fill=None, stroke=(0,0,0), strokeWeight=1, markerSize=(15,15)):
-        "Connect a sequence of points"
-        super().plot(self.coordGen(pts), marker, fill, stroke, strokeWeight, markerSize)
+    def plot(self, pts, marker=None, fill=None, stroke=(0,0,0), strokeWeight=1, markerSize=(15,15), closed=False):
+        "Plot a sequence of points with markers or lines"
+        super().plot(self.coordGen(pts), marker, fill, stroke, strokeWeight, markerSize, closed)
 
     def locus(self, pCurve, t0=None, t1=None, steps=None, color=BLACK, weight=1, marker=None, **params):
         "Connect points along a parameterized curve"

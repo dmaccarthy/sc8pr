@@ -17,17 +17,16 @@
 
 
 from wigs.papplet import PApplet
-from wigs.util import randColor, step, logError
+from wigs.util import randColor, step, logError, CENTER, rectAnchor
 from wigs.gui import GUI
 from wigs.io import prompt, fileDialog, USERINPUT
 from wigs.grid import OPEN, SAVE, FOLDER
 from wigs.search import search
-from wigs.image import Image, CENTER
+from wigs.image import Image
 from wigs.geometry import distance, polar, unitVector, scalarProduct, intersect_polygon, tuple_times,\
     tuple_sub, tuple_add, segments, closest, eqnOfLine
 from math import hypot, cos, sin, radians, degrees
 import pygame
-from pygame import VIDEORESIZE
 
 
 # Status constants...
@@ -47,20 +46,6 @@ class LockedException(Exception):
     def __init__(self):
         super().__init__("SpriteList modified while iterating")
 
-
-def flipAll(imgs, xflip=False, yflip=False):
-    "Apply a flip transformation on a sequence of images"
-    return [i.flip(xflip, yflip) for i in imgs]
-
-def onResize(sk, ev):
-    "Scale all sprites on sketch resize"
-    sp = sk.sprites
-    h = sp.sketchHeight if hasattr(sp, "sketchHeight") else sk.initHeight
-    f = ev.h / h
-    if f != 1:
-        sp.sketchHeight = ev.h
-        sp.transform(factor=f)
-    return f
 
 def collide_sprite(left, right):
     "Default collision detection"
@@ -101,10 +86,6 @@ def collide_circ(left, right):
     sep = left.radius + right.radius
     return distance(left.posn, right.posn) < sep
 
-def collide_path(sprite, path, radius=None):
-    "Collision between sprite and path"
-    return path.closest(sprite.posn, sprite.radius if radius is None else radius)
-
 def _changeSpin(sprite, dv, pt=None):
     "Adjust spin on bounce from edges or on collision"
     if not sprite.radius:
@@ -113,8 +94,10 @@ def _changeSpin(sprite, dv, pt=None):
             rMin = None
             for cx, cy in sprite.corners():
                 r = min(abs(cx), abs(sk.width-1-cx), abs(cy), abs(sk.height-1-cy))
-                if pt is None or r < rMin:
-                    pt = cx, cy
+                if pt is None or r <= rMin:
+                    if r == rMin:
+                        pt = (pt[0] + cx) / 2, (pt[1] + cy) / 2
+                    else: pt = cx, cy
                     rMin = r
         x, y = tuple_sub(pt, sprite.posn)
         dL = x * dv[1] - y * dv[0]
@@ -146,7 +129,7 @@ class Sprite():
     spinDrag = 0.0
     bounceThreshhold = 0
 
-    def __init__(self, sprites, costumes, group=(), **kwargs):
+    def __init__(self, sprites, costumes, *group, **kwargs):
         if type(costumes) in (str, Image, pygame.surface.Surface):
             costumes = costumes,
         costumes = [Image(c) for c in costumes]
@@ -159,7 +142,7 @@ class Sprite():
         if not isinstance(sprites, SpriteList):
             sprites = sprites.sprites
         self.spriteList = sprites
-        sprites.append(self, group)
+        sprites.append(self, *group)
         self.config(**kwargs)
         if kwargs.get("posn") is None:
             self.posn = self.sketch.center
@@ -183,7 +166,7 @@ class Sprite():
 
     @property
     def radius(self):
-        return self._radius * self.zoom
+        return None if self._radius is False else self._radius * self.zoom
 
     @radius.setter
     def radius(self, r):
@@ -327,7 +310,7 @@ class Sprite():
     def _setZoom(self, width=None, height=None):
         "Adjust zoom attribute to give the specified width or height"
         w, h = self._image.size
-        self.zoom = width / w if width else height / h # *=?
+        self.zoom = width / w if width else height / h
         return self
 
     @width.setter
@@ -340,15 +323,14 @@ class Sprite():
     def rect(self):
         "Rectangle for the rotated sprite"
         size = self.getSize(True)
-        r = pygame.Rect(self.posn + size)
-        return Image.anchor(r, CENTER)
+        return rectAnchor(self.posn, size, CENTER)
 
     def getRect(self, rotated=True):
         "Rectangle for the rotated or unrotated sprite"
         r = self.rect
         if not rotated and self.angle:
             size = self.getSize(False)
-            r = Image.anchor(r.center + size)
+            r = rectAnchor(self.posn, size, CENTER)
         return r
 
     def _corners(self):
@@ -405,7 +387,6 @@ class Sprite():
             dr = tuple_sub(pt, closePt)
             self.posn = tuple_add(self.posn, dr)
 
-        
     def toward(self, posn, mag=1):
         ux, uy = unitVector(self.posn, posn)
         return mag * ux, mag * uy
@@ -452,9 +433,9 @@ class Sprite():
             if s is not self and s._statusFilter(status) and collided(self, s):
                 yield s
 
-    def collisions(self, group=None, status=None, collided=collide_sprite):
+    def collisions(self, group=None, status=None, collided=collide_sprite, seqType=set):
         "Return a set of colliding sprites"
-        return set(self.collisionGen(group, status, collided))
+        return seqType(self.collisionGen(group, status, collided))
 
     def transform(self, shift=(0,0), factor=1):
         "Apply a shift and/or scale transformation to the sprite's geometry"
@@ -490,6 +471,7 @@ class Sprite():
 
 class SpriteList():
     _debugCollide = False
+    sketchHeight = None
     run = True
     _lock = False
     _groups = []
@@ -613,15 +595,19 @@ class SpriteList():
                 c2 |= tmp
         return c1, c2
 
+    def sort(self, group):
+        "Order by sprite list index"
+        return [s for s in self if s in group]
+
 
 class Sketch(PApplet):
     "A class for creating sketches with sprite and GUI support"
     _start = 0
     io = None
-    eventMap = {VIDEORESIZE:onResize}
     wall = False
 
     def edge(self):
+        "Default edge behaviour for sprites"
         return BOUNCE if self.wall else REMOVE
 
     def __init__(self, setup=None):
@@ -644,21 +630,29 @@ class Sketch(PApplet):
 
     def animate(self, draw=None, eventMap=None):
         "Bind new draw and eventMap attributes and reset frameNumber property"
-        if eventMap:
-            if type(eventMap) is not dict: eventMap = {None:eventMap}
-#            ev = {} if VIDEORESIZE in eventMap else {VIDEORESIZE:onResize}
-            ev = {VIDEORESIZE:onResize}
-            ev.update(eventMap)
-            eventMap = ev
+        if eventMap and type(eventMap) is not dict:
+            eventMap = {None:eventMap}
         self._bind(None, draw, eventMap)
         self._start = self.frameCount
 
-    def setBackground(self, bgImage=None, bgColor=None, forceScale=False):
-        "Draw the wall around background image if required"
-        if bgImage and self.wall:
-            bgImage = Image(bgImage).borderInPlace(1, self.wall)
-        super().setBackground(bgImage, bgColor, forceScale)
-
+    def _fitImg(self, size):
+        "Add wall when scaling background image to sketch size"
+        self._bgImage.transform(size=size)
+        if self.wall:
+            self.scaledBgImage.borderInPlace(1, self.wall)
+    
     @property
     def frameNumber(self):
+        "Frames since last call to animate method"
         return self.frameCount - self._start
+
+    def resize(self, size, mode=None, ev=None):
+        "Scale all sprites on sketch resize"
+        super().resize(size, mode, ev)
+        sp = self.sprites
+        h = sp.sketchHeight if sp.sketchHeight else self.initHeight
+        h1 = self.height
+        f = h1 / h
+        if f != 1:
+            sp.sketchHeight = h1
+            sp.transform(factor=f)
