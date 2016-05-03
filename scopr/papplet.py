@@ -220,12 +220,12 @@ class PApplet:
 		if size != size0:
 			self.screen = display.set_mode(size, mode)
 			display.flip()
-		if self._bgImage: self._fitImg(tsize)
 		if tsize != self.size:
 			ds = tuple_sub(tsize, self.size)
 			if scalarProduct(ds, ds) > 1:
 				if ev: ev.adjustSize = tsize
 				self.screen = display.set_mode(tsize, mode)
+		if self._bgImage: self._fitImg(self.size)
 
 	@property
 	def bgImage(self): return self._bgImage

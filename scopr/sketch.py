@@ -209,8 +209,8 @@ class Sprite():
             if x < x1 or x > x2:
                 if wx not in {WRAP, BOUNCE}: self._setStatus(wx)
                 else:
+                    v = self.velocity[dim]
                     if wx == BOUNCE:
-                        v = self.velocity[dim]
                         x = 2 * (x1 if x < x1 else x2) - x
                         vx, vy = self.velocity
                         if dim == 0:
@@ -224,8 +224,9 @@ class Sprite():
                         self.velocity = vx, vy
                         _changeSpin(self, dv)
                     else:
-                        if x > x2: x = x1
-                        else: x = x2
+                        if x > x2 and v >= 0: x = x1
+                        elif x < x1 and v <= 0: x = x2
+                        else: return False
                     xy = self.posn
                     self.posn = (x, xy[1]) if dim == 0 else (xy[0], x)
                 return True
