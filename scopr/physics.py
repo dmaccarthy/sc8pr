@@ -20,6 +20,7 @@ from scropr.sketch import Sketch, VISIBLE, HIDDEN, _changeSpin
 from scropr.geometry import tuple_add, tuple_times, tuple_sub, segments, polar, distance, scalarProduct,\
     closest, direction_of_line, eqnOfLine, intersect_segment_circle, intersect_polygon, tuple_avg
 from math import pi, sin, cos
+import pygame
 
 
 class Environment(Sketch):
@@ -30,7 +31,7 @@ class Environment(Sketch):
         "Determine which sprites participate in collisions"
         return sprite.status in (VISIBLE, HIDDEN) and hasattr(sprite, "mass") and sprite.mass > 0
 
-    def run(self, size=(800,600), caption="Environment", icon=None, mode=0):
+    def run(self, size=(800,600), caption="Environment", icon=None, mode=pygame.RESIZABLE):
         "Override default arguments"
         super().run(size, caption, icon, mode)
 
