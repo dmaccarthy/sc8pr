@@ -653,7 +653,6 @@ class Sketch(PApplet):
         sp = self.sprites
         h = sp.sketchHeight if sp.sketchHeight else self.initHeight
         h1 = self.height
-        f = h1 / h
-        if f != 1:
+        if h1 != h:
             sp.sketchHeight = h1
-            sp.transform(factor=f)
+            sp.transform(factor=h1/f)
