@@ -1,4 +1,6 @@
 # scropr
+(Rhymes with "hopper")
+
 A [Python 3](http://www.python.org) package for educational programming. This repository aims to bring the best features of [Processing](http://www.processing.org), [Scratch](http://scratch.mit.edu), and robotics programming to Python. Features include:
 * a simple framework for creating interactive animations
 * image manipulation
