@@ -7,12 +7,12 @@ setup(name="scropr", version="0.7a", packages = ["scropr"],
     author_email = "devwigs@gmail.com",
 
     # Details
-    url = "http://pypi.python.org/pypi/?/",
-    license = "LICENSE",
+    url = "http://dmaccarthy.github.io/scropr",
+    license = "GPLv3",
     description = "Interactive animation programming",
     long_description = open("README.md").read(),
-    include_package_data = True,
+#    include_package_data = True,
 
     # Dependencies
-    install_requires = ["pygame"]
+#    install_requires = ["pygame"]
 )
