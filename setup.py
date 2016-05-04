@@ -1,6 +1,8 @@
 from distutils.core import setup
 
-setup(name="scropr", version="0.7a", packages = ["scropr"],
+setup(name="scropr", version="0.7a", license = "GPLv3",
+    packages = ["scropr"],
+    package_data={'': ['icons/*.*', 'robot/*.*']},
 
     # Author
     author = "David MacCarthy",
@@ -8,11 +10,6 @@ setup(name="scropr", version="0.7a", packages = ["scropr"],
 
     # Details
     url = "http://dmaccarthy.github.io/scropr",
-    license = "GPLv3",
-    description = "Interactive animation programming",
-    long_description = open("README.md").read(),
-#    include_package_data = True,
-
-    # Dependencies
-#    install_requires = ["pygame"]
+    description = "Create interactive animations in Python 3 (uses Pygame). Features inspied by Scratch, Processing, and robotics",
+    long_description = open("README.txt").read()
 )

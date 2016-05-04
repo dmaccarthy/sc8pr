@@ -1,0 +1,2 @@
+recursive-include scropr/icons *
+recursive-include scropr/robot *
