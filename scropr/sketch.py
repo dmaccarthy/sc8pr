@@ -655,4 +655,4 @@ class Sketch(PApplet):
         h1 = self.height
         if h1 != h:
             sp.sketchHeight = h1
-            sp.transform(factor=h1/f)
+            sp.transform(factor=h1/h)
