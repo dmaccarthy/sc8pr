@@ -1,9 +1,9 @@
 from distutils.core import setup
 
 setup(name="scropr", version="0.7a0", license = "GPLv3",
-#    package_dir = {"": "scropr-master"},
     packages = ["scropr"],
-    package_data={'': ['icons/*.*', 'robot/*.*']},
+    package_data={"": ["icons/*.*", "robot/*.*"]},
+    requires = ["pygame"],
 
     # Author
     author = "David MacCarthy",
