@@ -1,6 +1,6 @@
 from distutils.core import setup
 
-setup(name="scropr", version="0.7a", license = "GPLv3",
+setup(name="scropr", version="0.7a0", license = "GPLv3",
     package_dir = {"": "scropr-master"},
     packages = ["scropr"],
     package_data={'': ['icons/*.*', 'robot/*.*']},
