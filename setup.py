@@ -1,5 +1,7 @@
 from distutils.core import setup
 
+with open("README.txt") as f: desc = f.read()
+
 setup(name="scropr", version="0.7a0", license = "GPLv3",
     packages = ["scropr"],
     package_data={"": ["icons/*.*", "robot/*.*", "*.json"]},
@@ -11,6 +13,6 @@ setup(name="scropr", version="0.7a0", license = "GPLv3",
 
     # Details
     url = "http://dmaccarthy.github.io/scropr",
-    description = "Create interactive animations in Python 3 (uses Pygame). Features inspied by Scratch, Processing, and robotics",
-    long_description = open("README.txt").read()
+    description = "Create interactive animations in Python 3 (uses Pygame). Features inspired by Scratch, Processing, and robotics",
+    long_description = desc
 )
