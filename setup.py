@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(name="scropr", version="0.7a0", license = "GPLv3",
     packages = ["scropr"],
-    package_data={"": ["icons/*.*", "robot/*.*"]},
+    package_data={"": ["icons/*.*", "robot/*.*", "*.json"]},
     requires = ["pygame(>=1.9.1)"],
 
     # Author
