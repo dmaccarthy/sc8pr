@@ -28,6 +28,7 @@ class PApplet:
 	"Class for creating Processing-style sketches using Pygame 1.9.1 or 1.9.2a0"
 	_fontJson = scroprPath("fonts.json")
 	_quit = False
+	_snapMode = 0
 	eventMap = {}
 	saveName = "save/image{:05d}.png"
 	recordName = "save/seq{:03d}_{:05d}.png"
@@ -35,7 +36,6 @@ class PApplet:
 	cursor = ARROW
 	gui = None
 	recordGui = False
-	snapMode = 0
 
 	@staticmethod
 	def _onQuit(): PApplet._quit = True
@@ -171,13 +171,13 @@ class PApplet:
 		img = self._bgImage
 		return img.getAspect() if img else None
 
-	def targetSize(self, size=None):
+	def _targetSize(self, size=None):
 		"Adjust requested sketch size to match background aspect ratio"
 		sz = self.size
 		w, h = size if size else sz
 		ratio = self.aspect
 		if ratio:
-			mode = self.snapMode # 1=Width, 2=Height, 3=Fit, 0=Auto
+			mode = self._snapMode # 1=Width, 2=Height, 3=Fit, 0=Auto
 			if mode == 0:
 				mode = 3
 				if size:
@@ -214,7 +214,7 @@ class PApplet:
 
 	def resize(self, size, mode=None, ev=None):
 		"Change the sketch size and mode (optional)"
-		tsize = self.targetSize(size)
+		tsize = self._targetSize(size)
 		size0 = self.size
 		if mode is None: mode = self._mode
 		if size != size0:
@@ -236,7 +236,7 @@ class PApplet:
 		try:
 			if img:
 				self._bgImage = Image(img)
-				tsize = self.targetSize(self.size)
+				tsize = self._targetSize(self.size)
 				self._fitImg(tsize)
 				if tsize != self.size: display.set_mode(tsize, self._mode)
 			else: self._bgImage = None

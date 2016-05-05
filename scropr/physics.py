@@ -37,7 +37,7 @@ class Environment(Sketch):
 
     def physicsDraw(self):
         "Transfer momentum between colliding masses before drawing"
-        self.physics()
+        if self.sprites.run: self.physics()
         self.simpleDraw()
 
     def physics(self):
