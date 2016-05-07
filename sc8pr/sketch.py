@@ -555,7 +555,8 @@ class SpriteList():
         if not srf: srf = pygame.display.get_surface()
         for s in self:
             if s.status == VISIBLE:
-                s.image.blitTo(srf, s.posn, CENTER)
+                srf.blit(s.image.surface, s.rect)
+#                s.image.blitTo(srf, s.posn, CENTER)
                 if self._debugCollide:
                     if s.radius:
                         x, y = s.posn
@@ -606,6 +607,10 @@ class SpriteList():
                 for c in coll:
                     if c in group1:
                         self._addToMap(cMap, c, {s})
+#         if len(cMap):
+#             print(self.sketch.frameCount)
+#             for s in cMap:
+#                 print(s, cMap[s])
         return cMap
 
     def collisions(self, group=None, collided=collide_sprite):

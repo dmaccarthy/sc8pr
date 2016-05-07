@@ -57,20 +57,6 @@ class PApplet:
 	@classmethod
 	def useFonts(cls, path): cls._fontJson = path
 
-# 	def _attrError(self, k):
-# 		"Raise an exception if the instance has the specified attribute"
-# 		if hasattr(self, k):
-# 			raise AttributeError("Attribute '{}' already exists".format(k))
-# 
-# 	def customAttr(self, *args, **kwargs):
-# 		"Encapsulate custom attributes after checking that they are not in use"
-# 		for k in args:
-# 			self._attrError(k)
-# 			setattr(self, k, Data())
-# 		for k in kwargs:
-# 			self._attrError(k)
-# 			setattr(self, k, kwargs[k])
-
 	def _bind(self, setup=None, draw=None, eventMap=None):
 		"Bind functions to sketch instance"
 		if setup != None: self.setup = setup.__get__(self, self.__class__)
@@ -276,19 +262,19 @@ class PApplet:
 		"Start or stop automatic recording of frames"
 		self.frameRecord = self.frameCount + 1
 		self._frameInterval = interval
-		if interval != None:
+		if interval is not None:
 			self._recordSequence = self._recordSequence[0] + 1, 1
 
-	def save(self, fn=None):
+	def save(self, path=None):
 		"Save a surface; default file name is based on frameCount property"
-		if fn is None:
+		if path is None:
 			if self._frameInterval is None:
-				fn = self.saveName.format(self.frameCount)
+				path = self.saveName.format(self.frameCount)
 			else:
 				s, f = self._recordSequence
-				fn = self.recordName.format(s, f)
+				path = self.recordName.format(s, f)
 				self._recordSequence = s, f + 1
-		pygame.image.save(self.screen, fn)
+		pygame.image.save(self.screen, path)
 
 	def _captureFrame(self):
 		"Save a single frame when recording is enabled"
@@ -310,7 +296,7 @@ class PApplet:
 		if self.bgColor: srf.fill(self.bgColor)
 		img = self.scaledBgImage
 		if img: srf.blit(img.surface, (0,0))
-		return self
+#		return self
 
 	def tint(self, rgba):
 		"Apply tint operation to the entire sketch"
