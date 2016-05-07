@@ -1,19 +1,19 @@
 # Copyright 2015-2016 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
-# This file is part of "scropr".
+# This file is part of "sc8pr".
 #
-# "scropr" is free software: you can redistribute it and/or modify
+# "sc8pr" is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# "scropr" is distributed in the hope that it will be useful,
+# "sc8pr" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with "scropr".  If not, see <http://www.gnu.org/licenses/>.
+# along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
 from traceback import format_exc
@@ -22,7 +22,7 @@ from zipfile import ZipFile as zf, ZIP_DEFLATED
 from random import randint
 from pygame.color import Color
 from pygame.rect import Rect
-import pygame, scropr, os
+import pygame, sc8pr, os
 
 
 def nothing(*args): pass
@@ -127,9 +127,9 @@ def containsAny(obj, items='*?|<>"'):
         if i in obj: return True
     return False
 
-def scroprPath(rel=""):
-    "Return path to scropr folder"
-    path = scropr.__path__[0]
+def sc8prPath(rel=""):
+    "Return path to sc8pr folder"
+    path = sc8pr.__path__[0]
     if rel: path += "/" + rel
     return os.path.normpath(path)
 

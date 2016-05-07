@@ -1,29 +1,29 @@
 # Copyright 2015-2016 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
-# This file is part of "scropr".
+# This file is part of "sc8pr".
 #
-# "scropr" is free software: you can redistribute it and/or modify
+# "sc8pr" is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# "scropr" is distributed in the hope that it will be useful,
+# "sc8pr" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with "scropr".  If not, see <http://www.gnu.org/licenses/>.
+# along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from scropr.papplet import PApplet
-from scropr.util import randColor, step, logError, CENTER, rectAnchor
-from scropr.gui import GUI
-from scropr.io import prompt, fileDialog, USERINPUT
-from scropr.grid import OPEN, SAVE, FOLDER
-from scropr.search import search
-from scropr.image import Image
-from scropr.geometry import distance, polar, unitVector, scalarProduct, intersect_polygon, tuple_times,\
+from sc8pr.papplet import PApplet
+from sc8pr.util import randColor, step, logError, CENTER, rectAnchor
+from sc8pr.gui import GUI
+from sc8pr.io import prompt, fileDialog, USERINPUT
+from sc8pr.grid import OPEN, SAVE, FOLDER
+from sc8pr.search import search
+from sc8pr.image import Image
+from sc8pr.geometry import distance, polar, unitVector, scalarProduct, intersect_polygon, tuple_times,\
     tuple_sub, tuple_add, segments, closest, eqnOfLine
 from math import hypot, cos, sin, radians, degrees
 import pygame
@@ -650,7 +650,7 @@ class Sketch(PApplet):
         self.sprites = SpriteList(self)
         self.gui = GUI(self)
 
-        # Bind scropr.io input functions...
+        # Bind sc8pr.io input functions...
         self.prompt = prompt.__get__(self, self.__class__)
         self.fileDialog = fileDialog.__get__(self, self.__class__)
 

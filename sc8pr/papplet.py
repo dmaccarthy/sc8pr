@@ -1,32 +1,32 @@
 # Copyright 2015-2016 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
-# This file is part of "scropr".
+# This file is part of "sc8pr".
 #
-# "scropr" is free software: you can redistribute it and/or modify
+# "sc8pr" is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# "scropr" is distributed in the hope that it will be useful,
+# "sc8pr" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with "scropr".  If not, see <http://www.gnu.org/licenses/>.
+# along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
 import pygame, os, json
 from time import time
 from pygame import display
-from scropr.image import Image, NW
-from scropr.util import logError, setCursor, handleEvent, fontHeight, scroprPath, ARROW, Data, randPixel
-from scropr.geometry import scalarProduct, tuple_sub
+from sc8pr.image import Image, NW
+from sc8pr.util import logError, setCursor, handleEvent, fontHeight, sc8prPath, ARROW, Data, randPixel
+from sc8pr.geometry import scalarProduct, tuple_sub
 
 
 class PApplet:
 	"Class for creating Processing-style sketches using Pygame 1.9.1 or 1.9.2a0"
-	_fontJson = scroprPath("fonts.json")
+	_fontJson = sc8prPath("fonts.json")
 	_quit = False
 	_snapMode = 0
 	eventMap = {}

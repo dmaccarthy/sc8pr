@@ -1,26 +1,26 @@
 # Copyright 2015-2016 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
-# This file is part of "scropr".
+# This file is part of "sc8pr".
 #
-# "scropr" is free software: you can redistribute it and/or modify
+# "sc8pr" is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# "scropr" is distributed in the hope that it will be useful,
+# "sc8pr" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with "scropr".  If not, see <http://www.gnu.org/licenses/>.
+# along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from scropr.sketch import Sprite, VISIBLE
-from scropr.image import Image
-from scropr.geometry import tuple_add, tuple_neg, tuple_times, distance,\
+from sc8pr.sketch import Sprite, VISIBLE
+from sc8pr.image import Image
+from sc8pr.geometry import tuple_add, tuple_neg, tuple_times, distance,\
     intersect_segment_circle, intersect_segments, eqnOfLine, segments
-from scropr.util import scroprPath, Data, logError, rectAnchor, CENTER, noise
+from sc8pr.util import sc8prPath, Data, logError, rectAnchor, CENTER, noise
 from pygame.draw import circle, line
 from pygame import Rect, Color, K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE
 from pygame.pixelarray import PixelArray
@@ -119,7 +119,7 @@ class Robot(Sprite):
     def _makeCostumes(cls, colors=None):
         "Create robot costumes from the specified colours"
         if cls._costumes is None:
-            cls._costumes = Image(scroprPath("robot/robot.png"))
+            cls._costumes = Image(sc8prPath("robot/robot.png"))
         img = cls._costumes.clone()
         if colors:
             px = PixelArray(img.surface)

@@ -1,26 +1,26 @@
 # Copyright 2015-2016 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
-# This file is part of "scropr".
+# This file is part of "sc8pr".
 #
-# "scropr" is free software: you can redistribute it and/or modify
+# "sc8pr" is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# "scropr" is distributed in the hope that it will be useful,
+# "sc8pr" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with "scropr".  If not, see <http://www.gnu.org/licenses/>.
+# along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
 import pygame, os, fnmatch, json
-from scropr.widgets import Button, Slider, MsgBox, TextInput, Label
-from scropr.gui import Widget, Container, GuiEvent
-from scropr.image import Image
-from scropr.util import fontHeight, isEnter, containsAny, scroprPath, EAST, WEST, CENTER
+from sc8pr.widgets import Button, Slider, MsgBox, TextInput, Label
+from sc8pr.gui import Widget, Container, GuiEvent
+from sc8pr.image import Image
+from sc8pr.util import fontHeight, isEnter, containsAny, sc8prPath, EAST, WEST, CENTER
 
 
 # FileDialog modes...
@@ -68,8 +68,8 @@ class FileBrowser(Container):
     border = 1
     borderColor = altBdColor = Widget.borderColor
     cwd = "."
-    iconPath = scroprPath("icons/{}.png")
-    iconJson = scroprPath("icons/fileBrowser.json")
+    iconPath = sc8prPath("icons/{}.png")
+    iconJson = sc8prPath("icons/fileBrowser.json")
     groups = {}
 
     def __init__(self, items=".", grid=(3,10), name=None, posn=(0,0), itemFilter=None, **kwargs):
@@ -460,7 +460,7 @@ class Menu(ButtonGrid):
         if main:
             items = []
             h = fontHeight(MenuItem)
-            MenuItem.back = Image(scroprPath("icons/menu.png")).scale((h, h))
+            MenuItem.back = Image(sc8prPath("icons/menu.png")).scale((h, h))
         else:
             items = [MenuItem(name, MenuItem.back, iconSize=(1,0)).backLink()]
         for i in data:
