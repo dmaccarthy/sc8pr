@@ -130,6 +130,24 @@ class Sprite():
     bounceThreshhold = 0
 
     def __init__(self, sprites, costumes, *group, **kwargs):
+        self.costumes = costumes
+        if not isinstance(sprites, SpriteList):
+            sprites = sprites.sprites
+        self.spriteList = sprites
+        sprites.append(self, *group)
+        if kwargs.get("posn") is None:
+            self.posn = self.sketch.center
+        self.config(**kwargs)
+        edge = kwargs.get("edge")
+        if edge is None:
+            self.edge = self.sketch.edge()
+
+    @property
+    def costumes(self): return self._costumes
+
+    @costumes.setter
+    def costumes(self, costumes):
+        "Convert costumes to Image instances and scale to a single size; initialize costume sequence"
         if type(costumes) in (str, Image, pygame.surface.Surface):
             costumes = costumes,
         costumes = [Image(c) for c in costumes]
@@ -137,19 +155,9 @@ class Sprite():
         for i in range(1, len(costumes)):
             if costumes[i].size != size:
                 costumes[i] = costumes[i].scale(size)
-        self.costumes = costumes
+        self._costumes = costumes
         self._seq = tuple(range(len(self.costumes)))
-        if not isinstance(sprites, SpriteList):
-            sprites = sprites.sprites
-        self.spriteList = sprites
-        sprites.append(self, *group)
-        self.config(**kwargs)
-        if kwargs.get("posn") is None:
-            self.posn = self.sketch.center
-        edge = kwargs.get("edge")
-        if edge is None:
-            self.edge = self.sketch.edge()
-
+    
     def config(self, **kwargs):
         "Set multiple attributes"
         r = kwargs.get("radius")
@@ -157,6 +165,7 @@ class Sprite():
             if k != "radius":
                 setattr(self, k, kwargs[k])
         if r: self.radius = r
+        self.calcRect()
         return self
 
     @property
@@ -254,6 +263,7 @@ class Sprite():
                 n = self.currentCostume + 1
                 self.currentCostume = 0 if n >= len(self._seq) else n
                 self._nextChange = self._costumeTime
+        self.calcRect()
 
     _update = frameStep
 
@@ -285,7 +295,7 @@ class Sprite():
     def getSize(self, rotated):
         "Calculate the sprite's rotated or unrotated size"
         w, h = self._image.size
-        if rotated:
+        if rotated and self.angle:
             a = radians(self.angle)
             c, s = abs(cos(a)), abs(sin(a))
             w, h = w * c + h * s, w * s + h * c
@@ -320,19 +330,22 @@ class Sprite():
     @height.setter
     def height(self, h): return self._setZoom(height=h)
 
-    @property
-    def rect(self):
-        "Rectangle for the rotated sprite"
+    def calcRect(self):
+        "Determine the sprite's blit rectangle"
         size = self.getSize(True)
-        return rectAnchor(self.posn, size, CENTER)
+        self._rect = rectAnchor(self.posn, size, CENTER)
+        return self._rect
 
-    def getRect(self, rotated=True):
-        "Rectangle for the rotated or unrotated sprite"
-        r = self.rect
-        if not rotated and self.angle:
-            size = self.getSize(False)
-            r = rectAnchor(self.posn, size, CENTER)
-        return r
+    @property
+    def rect(self): return self._rect
+
+#     def getRect(self, rotated=True):
+#         "Rectangle for the rotated or unrotated sprite"
+#         r = self.rect
+#         if not rotated and self.angle:
+#             size = self.getSize(False)
+#             r = rectAnchor(self.posn, size, CENTER)
+#         return r
 
     def _corners(self):
         "Generate corners of the rotated sprite"
@@ -419,24 +432,24 @@ class Sprite():
         elif status is not None: return self.status == status
         else: return True
 
-    def colliding(self, group=None, status=None, collided=collide_sprite):
+    def colliding(self, group=None, collided=collide_sprite):
         "Test if sprite is currently colliding"
         if group is None: group = self.spriteList
         for s in group:
-            if s is not self and s._statusFilter(status) and collided(self, s):
+            if s is not self and collided(self, s):
                 return True
         return False
 
-    def collisionGen(self, group=None, status=None, collided=collide_sprite):
+    def collisionGen(self, group=None, collided=collide_sprite):
         "Generate a sequence of colliding sprites"
         if group is None: group = self.spriteList
         for s in group:
-            if s is not self and s._statusFilter(status) and collided(self, s):
+            if s is not self and collided(self, s):
                 yield s
 
-    def collisions(self, group=None, status=None, collided=collide_sprite, seqType=set):
+    def collisions(self, group=None, collided=collide_sprite, seqType=set):
         "Return a set of colliding sprites"
-        return seqType(self.collisionGen(group, status, collided))
+        return seqType(self.collisionGen(group, collided))
 
     def transform(self, shift=(0,0), factor=1):
         "Apply a shift and/or scale transformation to the sprite's geometry"
@@ -575,25 +588,44 @@ class SpriteList():
             s = self[n]
             if s.contains(posn): return s       
 
-    def collisions(self, group=None, status=None, collided=collide_sprite):
+    @staticmethod
+    def _addToMap(m, key, items):
+        if key in m: m[key] |= items
+        else: m[key] = items
+    
+    def collisionMap(self, group1=None, group2=None, collided=collide_sprite):
+        if group1 is None: group1 = self
+        if group2 is None: group2 = group1
+        cMap = {}
+        for s in group1:
+            if s in cMap: group = set(group2) - cMap[s]
+            else: group = group2
+            coll = s.collisions(group)
+            if len(coll):
+                self._addToMap(cMap, s, coll)
+                for c in coll:
+                    if c in group1:
+                        self._addToMap(cMap, c, {s})
+        return cMap
+
+    def collisions(self, group=None, collided=collide_sprite):
         "Return a set of sprites from the group that are colliding with ANY sprite"
         if group is None: group = self
         coll = set()
         for s in group:
-            if s not in coll and s._statusFilter(status):
-                if s.colliding(self, status, collided):
+            if s not in coll:
+                if s.colliding(self, collided):
                     coll.add(s)
         return coll
 
-    def collisionsBetween(self, group1, group2=None, status=None, collided=collide_sprite):
+    def collisionsBetween(self, group1, group2=None, collided=collide_sprite):
         "Return the collisions between two groups as a 2-tuple of sprite sets"
-        c1, c2 = set(), set()
-        if group2 is None: group2 = group1
-        for s in group1:
-            tmp = s.collisions(group2, status, collided)
-            if len(tmp):
-                c1.add(s)
-                c2 |= tmp
+        cMap = self.collisionMap(group1, group2, collided)
+        c1 = set()
+        c2 = set()
+        for s in cMap:
+            c1.add(s)
+            c2 |= cMap[s]
         return c1, c2
 
     def sort(self, group):

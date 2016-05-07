@@ -42,29 +42,32 @@ class Environment(Sketch):
 
     def physics(self):
         "Locate colliding masses and apply the law of momentum conservation"
-        allMasses = self.sprites.search(match=self.collidable)
-        masses = self.sprites.collisionsBetween(allMasses)[0]
+        allMasses = [m for m in self.sprites if self.collidable(m)]
+        cMap = self.sprites.collisionMap(allMasses)
+        masses = set(cMap.keys())
         self.sprites.config(set(allMasses) - masses, collideUpdate = False)
         if masses:
             masses = list(masses)
             i = 1
             for s1 in masses[:-1]:
-                for s2 in s1.collisions(masses[i:]):
-                    impDir = contact(s1,s2)
-                    if impDir is not None:
-                        elas = (s1.elasticity + s2.elasticity) / 2
-                        pt, angle = impDir
-                        v1 = s1.velocity
-                        v2 = s2.velocity
-                        dp = impulse(s1.mass, v1, s2.mass, v2, angle, elas)
-                        dv = tuple_times(dp, 1 / s1.mass)
-                        s1.velocity = tuple_add(v1, dv)
-                        _changeSpin(s1, dv, pt)
-                        dv = tuple_times(dp, -1 / s2.mass)
-                        s2.velocity = tuple_add(v2, dv)
-                        _changeSpin(s2, dv, pt)
-                        s1.collideUpdate = True
-                        s2.collideUpdate = True
+                for s2 in cMap[s1]:
+                    if masses.index(s2) >= i:
+                        impDir = contact(s1,s2)
+                        if impDir is not None:
+                            elas = (s1.elasticity + s2.elasticity) / 2
+                            pt, angle = impDir
+                            v1 = s1.velocity
+                            v2 = s2.velocity
+                            dp = impulse(s1.mass, v1, s2.mass, v2, angle, elas)
+                            dv = tuple_times(dp, 1 / s1.mass)
+                            s1.velocity = tuple_add(v1, dv)
+                            _changeSpin(s1, dv, pt)
+                            dv = tuple_times(dp, -1 / s2.mass)
+                            s2.velocity = tuple_add(v2, dv)
+                            _changeSpin(s2, dv, pt)
+                            s1.collideUpdate = True
+                            s2.collideUpdate = True
+                i += 1
             return masses
     
     draw = physicsDraw
