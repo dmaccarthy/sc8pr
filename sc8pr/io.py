@@ -45,8 +45,8 @@ class SimpleFileDialog(FileDialog):
 
 def fileDialog(sk, mode=0, allowCancel=True, initFilter="*.*"):
     "Place a SimpleFileDialog instance and encapsulate it in the sketch"
-    if not Container.font: Container.font = sk.loadFont(_font, _size + 2, True, lineHeight=False)
-    if not Widget.font: Widget.font = sk.loadFont(_font, _size, lineHeight=False)
+    if not Container.font: Container.font = sk.loadFont(_font, _size + 2, True)
+    if not Widget.font: Widget.font = sk.loadFont(_font, _size)
     if sk.io: raise(_error)
     sk.io = SimpleFileDialog(mode, allowCancel, initFilter)
     sk.gui.place(sk.io)
@@ -80,8 +80,8 @@ class SimplePrompt(MsgBox):
 def prompt(sk, msg, validator=str, default="", title=None, minSize=(144,1), **kwargs):
     "Place a Prompt instance and encapsulate it in the sketch"
     assert sk.gui, "GUI manager has not been initialized"
-    if not Container.font: Container.font = sk.loadFont(_font, _size + 2, True, lineHeight=False)
-    if not Widget.font: Widget.font = sk.loadFont(_font, _size, lineHeight=False)
+    if not Container.font: Container.font = sk.loadFont(_font, _size + 2, True)
+    if not Widget.font: Widget.font = sk.loadFont(_font, _size)
     if sk.io: raise(_error)
     sk.io = SimplePrompt(msg, title, validator, default, minSize, **kwargs)
     sk.gui.place(sk.io)

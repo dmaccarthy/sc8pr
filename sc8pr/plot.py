@@ -27,11 +27,13 @@ BLACK, WHITE, GREY = rgba("black", "white", "grey")
 
 class Plot(Image):
 
-    def __init__(self, img, xrange, yrange=None, margin=(0,0,0,0)):
+    def __init__(self, img, xrange, yrange=None, margin=0):
         "Encapsulate an Image with an associated coordinate system"
         super().__init__(img)
         w, h = self.size
         xmin, xmax = xrange
+        if type(margin) is int:
+            margin = [margin for i in range(4)]
         mx1, mx2, my2, my1 = margin
         xscale = (w - 1 - (mx1 + mx2)) / (xmax - xmin)
         if yrange is None or type(yrange) in (int, float):
@@ -48,7 +50,7 @@ class Plot(Image):
         self.limit = xmin, xmax, ymin, ymax
 
     @property
-    def scale(self):
+    def unit(self):
         x = self.coeff[0]
         y = self.coeff[2]
         r = abs(x * y) ** 0.5
