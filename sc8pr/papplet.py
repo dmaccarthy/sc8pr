@@ -20,7 +20,7 @@ import pygame, os, json
 from time import time
 from pygame import display
 from sc8pr.image import Image, NW
-from sc8pr.util import logError, setCursor, handleEvent, fontHeight, sc8prPath, ARROW, Data, randPixel
+from sc8pr.util import logError, setCursor, handleEvent, fontHeight, sc8prPath, ARROW, randPixel
 from sc8pr.geometry import scalarProduct, tuple_sub
 
 
