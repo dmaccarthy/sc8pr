@@ -42,6 +42,7 @@ class PApplet:
 
 	def __init__(self, setup=None, draw=None, eventMap=None):
 		"Initialize properties"
+		self.frameCount = 0
 		self.frameRate = 60
 		self.drawTime = 0.0
 		self.eventTime = 0.0
@@ -339,7 +340,7 @@ class PApplet:
 	# Initialize sketch...
 		self._fonts = self._fontDict()
 		self.quit = False
-		self.frameCount = 0
+#		self.frameCount = 0
 		self.key = None
 		self.mouse = None
 		self.mouseXY = 0, 0
