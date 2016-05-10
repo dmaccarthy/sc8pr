@@ -1,3 +1,21 @@
+# Copyright 2015-2016 D.G. MacCarthy <http://dmaccarthy.github.io>
+#
+# This file is part of "sc8pr".
+#
+# "sc8pr" is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# "sc8pr" is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
+
+
 from sc8pr.image import Image
 from pygame.pixelarray import PixelArray
 import pygame
@@ -6,9 +24,9 @@ import pygame
 class Effect:
     "Base class for layer effects"
 
-    def __init__(self, frame, length):
-        self.frame = frame
+    def __init__(self, length, frame):
         self.length = length
+        self.frame = frame
 
     def apply(self, img, frame):
         n = (frame - self.frame) / self.length
@@ -30,27 +48,31 @@ class Effect:
 class Fade(Effect):
     "Fade layer in or out"
 
-    def __init__(self, frame, length, color=None):
-        super().__init__(frame, length)
+    def __init__(self, length, color=None, frame=None):
+        super().__init__(length, frame)
         self.color = color
 
     def transform(self, img, n):
         img = self.alphaClone(img, round(255 * n))
         if self.color:
-            pass
+            newImg = Image(img.size, self.color)
+            img.blitTo(newImg)
+            img = newImg
         return img
 
 
 class Wipe(Effect):
     "Vertical or horizontal wipe effect"
 
-    def __init__(self, frame, length, direction=1):
-        super().__init__(frame, length)
+    def __init__(self, length, direction=0, frame=None):
+        super().__init__(length, frame)
         self.direction = direction
 
     def rects(self, size, n):
+        "Return a tuple of rectangles to set to transparent"
         w, h = size
         d = self.direction
+        if d > 8: return self.irisRect(size, 1 - n),
         x = round((w if d % 2 else h) * (1 - n))
         if d > 6: x = x // 2
         size = (x, h) if d % 2 else (w, x)
@@ -64,7 +86,27 @@ class Wipe(Effect):
         else: x = 0, 0
         return pygame.Rect(x, size),
 
+    def irisRect(self, size, n):
+        "Determine the central rectangle for an 'iris' effect"
+        w, h = size
+        w1 = round(w * n)
+        h1 = round(h * n)
+        x = (w - w1) // 2
+        y = (h - h1) // 2
+        return pygame.Rect((x,y), (w1,h1))
+         
+    def iris(self, img, n):
+        "Apply 'iris' effect"
+        size = img.size
+        r = self.irisRect(size, n)
+        newImg = Image(size)
+        Image(img.surface.subsurface(r)).blitTo(newImg, r.topleft)
+        return newImg
+
     def transform(self, img, n):
+        "Apply wipe effect"
+        if self.direction == 0:
+            return self.iris(img, n)
         img = self.alphaClone(img)
         for r in self.rects(img.size, n):
             img.surface.subsurface(r).fill((0,0,0,0))
@@ -74,12 +116,13 @@ class Wipe(Effect):
 class EqnFilter(Effect):
     "Layer effect based on y < f(x) or y > f(x)"
 
-    def __init__(self, frame, length, eqn, **kwargs):
-        super().__init__(frame, length)
+    def __init__(self, length, eqn, frame=None, **kwargs):
+        super().__init__(length, frame)
         self.eqn = eqn
         self.params = kwargs
 
     def transform(self, img, n):
+        "Modify image based on equation provided"
         img = self.alphaClone(img)
         size = img.size
         h = size[1]
@@ -100,14 +143,15 @@ class EqnFilter(Effect):
 
 
 class Diagonal(EqnFilter):
+    "Diagonal wipe layer effect"
     
-    def __init__(self, frame, length, quad=1):
-        super().__init__(frame, length, self.diag, quad=quad)
+    def __init__(self, length, quad=1, frame=None):
+        super().__init__(length, self.diag, frame, quad=quad)
 
     @staticmethod
     def diag(x, n, size, quad=1):
         w, h = size
-        m = w / h
+        m = h / w
         if quad % 2 == 0: m = -m
         if quad == 1: b = 1 - 2 * n
         elif quad == 2: b = 2 * (1 - n)

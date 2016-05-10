@@ -140,7 +140,8 @@ class Sprite():
         self.config(**kwargs)
         edge = kwargs.get("edge")
         if edge is None:
-            self.edge = self.sketch.edge()
+            try: self.edge = self.sketch.edge()
+            except: self.edge = REMOVE
 
     @property
     def costumes(self): return self._costumes
@@ -607,10 +608,6 @@ class SpriteList():
                 for c in coll:
                     if c in group1:
                         self._addToMap(cMap, c, {s})
-#         if len(cMap):
-#             print(self.sketch.frameCount)
-#             for s in cMap:
-#                 print(s, cMap[s])
         return cMap
 
     def collisions(self, group=None, collided=collide_sprite):
