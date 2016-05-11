@@ -29,20 +29,23 @@ class Effect:
         self.frame = frame
 
     def apply(self, img, frame):
-        n = (frame - self.frame) / self.length
-        if n >= 0 and n < 1:
+        n = self.length
+        if n is not None: n = (frame - self.frame) / n
+        if n is None or n >= 0 and n < 1:
             img = self.transform(img, n)
         return img
 
-    @staticmethod
-    def alphaClone(img, a=None):
-        srf = img.surface
-        if srf.get_bitsize() < 32:
-            img = Image(srf.convert_alpha())
-        else:
-            img = img.clone()
-        if a is not None: img.setAlpha(a)
-        return img
+
+class Scale(Effect):
+    "Adjust the size of the layer image"
+
+    def __init__(self, size=None):
+        super().__init__(None, None)
+        self.size = size
+
+    def transform(self, img, n):
+        size = self.size if self.size else img.fitAspect(self.layer.clip.size)
+        return img.transform(size)
 
 
 class Fade(Effect):
@@ -53,7 +56,7 @@ class Fade(Effect):
         self.color = color
 
     def transform(self, img, n):
-        img = self.alphaClone(img, round(255 * n))
+        img = img.clone().setAlpha(round(255 * n))
         if self.color:
             newImg = Image(img.size, self.color)
             img.blitTo(newImg)
@@ -107,29 +110,28 @@ class Wipe(Effect):
         "Apply wipe effect"
         if self.direction == 0:
             return self.iris(img, n)
-        img = self.alphaClone(img)
+        img = img.clone()
         for r in self.rects(img.size, n):
             img.surface.subsurface(r).fill((0,0,0,0))
         return img
 
 
-class EqnFilter(Effect):
+class MathEffect(Effect):
     "Layer effect based on y < f(x) or y > f(x)"
 
-    def __init__(self, length, frame=None, eqn=None, **kwargs):
+    def __init__(self, length, frame=None, eqn=None):
         super().__init__(length, frame)
-        if eqn: self.eqn = eqn
-        self.params = kwargs
+        if eqn: self.eqn = eqn.__get__(self, self.__class__)
 
     def transform(self, img, n):
         "Modify image based on equation provided"
-        img = self.alphaClone(img)
+        img = img.clone()
         size = img.size
         h = size[1]
         pxa = PixelArray(img.surface)
         x = 0
         for pxCol in pxa:
-            y, above = self.eqn(x, n, size, **self.params)
+            y, above = self.eqn(x, n, size)
             if above:
                 if y < h - 1:
                     if y < 0: y = 0
@@ -142,19 +144,20 @@ class EqnFilter(Effect):
         return img
 
 
-class Diagonal(EqnFilter):
+class Diagonal(MathEffect):
     "Diagonal wipe layer effect"
     
     def __init__(self, length, quad=1, frame=None):
-        super().__init__(length, frame, self.diag, quad=quad)
+        super().__init__(length, frame)
+        self.quad = quad
 
-    @staticmethod
-    def diag(x, n, size, quad=1):
+    def eqn(self, x, n, size):
+        q = self.quad
         w, h = size
         m = h / w
-        if quad % 2 == 0: m = -m
-        if quad == 1: b = 1 - 2 * n
-        elif quad == 2: b = 2 * (1 - n)
-        elif quad == 3: b = 2 * n - 1
+        if q % 2 == 0: m = -m
+        if q == 1: b = 1 - 2 * n
+        elif q == 2: b = 2 * (1 - n)
+        elif q == 3: b = 2 * n - 1
         else: b = 2 * n
-        return round(m * x + b * h), quad > 2
+        return round(m * x + b * h), q > 2

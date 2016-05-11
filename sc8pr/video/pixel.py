@@ -26,8 +26,9 @@ class PixelEffect(Effect):
 
     def transform(self, img, n):
         "Apply pixel-by-pixel effect"
-        img = self.alphaClone(img)
+        img = img.clone()
         pxa = PixelArray(img.surface)
+        self.mask = img.surface.get_masks()[3]
         c = 0
         for pxCol in pxa:
             for r in range(len(pxCol)):
@@ -40,14 +41,17 @@ class PixelEffect(Effect):
 class Dissolve(PixelEffect):
     "Dissolve from transparency, solid color, or noise"
 
-    def __init__(self, length, color=False, frame=None):
+    def __init__(self, length, color=False, transparent=False, frame=None):
         super().__init__(length, frame)
         self.color = (0,0,0,0) if color is False else color
+        self.transparent = transparent
 
     def pixel(self, n, x, y, color, img):
         "Calculate pixel color"
-        if random() > n:
+        if (self.transparent or color & self.mask) and random() > n:
             return randColor() if self.color is True else self.color
 
 
-def noise(img, color=True, n=0): return Dissolve(1, color).transform(img, n)
+def noise(img, color=True, n=0):
+    "Add noise to an image"
+    return Dissolve(1, color).transform(img, n)

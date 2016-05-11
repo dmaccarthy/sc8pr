@@ -212,9 +212,12 @@ class Image:
         if isinstance(srf, Image): srf = srf.surface
         return Image(srf.copy())
 
-    def convert(self, *args):
-        return Image(self.surface.convert(*args))
-    
+    def convert(self, alpha=True, *args):
+        "Convert the pixel format"
+        srf = self.surface
+        srf = srf.convert_alpha(*args) if alpha else srf.convert(*args)
+        return Image(srf)
+
     def clone(self): return self.copy(self)
     def setAsIcon(self): pygame.display.set_icon(self.surface)
 

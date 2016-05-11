@@ -1,21 +1,21 @@
-from sc8pr.video.effects import Effect, EqnFilter
+from sc8pr.video.effects import Effect, MathEffect
 from random import uniform
 from math import sqrt
 
 
-class PaintDrops(EqnFilter):
+class PaintDrops(MathEffect):
     "Paint drop effect"
     
     def __init__(self, length, frame=None, drops=64):
         Effect.__init__(self, length, frame)
-        self.params = {"side": length > 0}
+        self.side = length > 0
         self.drops = [self.makeDrop() for i in range(drops)]
         n = sum([d[0] for d in self.drops])
         for d in self.drops: d[0] /= n
 
-    def eqn(self, x, n, size, side):
+    def eqn(self, x, n, size):
         "Calculate paint boundary"
-        if not side: n = 1 - n
+        if not self.side: n = 1 - n
         w, h = size
         y = 0
         xc = 0
@@ -29,7 +29,7 @@ class PaintDrops(EqnFilter):
                 Y = (h + R) * self.posn(n, *d[1:]) + dy - R
                 if Y > y: y = Y
             xc += r
-        return round(y), side
+        return round(y), self.side
 
     def posn(self, n, t1, t2):
         "Calculate drop position"

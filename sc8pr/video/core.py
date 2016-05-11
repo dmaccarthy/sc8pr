@@ -17,8 +17,8 @@
 
 
 from sc8pr.sketch import Sketch, SpriteList
-from sc8pr.image import NW, Image
-from sc8pr.util import rectAnchor
+from sc8pr.image import Image
+from sc8pr.util import rectAnchor, CENTER, NW
 from sc8pr.video.effects import Effect
 from os.path import isfile
 
@@ -26,8 +26,9 @@ from os.path import isfile
 class VideoClip:
 	"A class for represented sequences of images composed from layers"
 
-	def __init__(self, base):
+	def __init__(self, base, length=True):
 		self.base = base
+		self.length = length
 		self.layers = []
 		self.quit = False
 
@@ -48,6 +49,7 @@ class VideoClip:
 	def add(self, layer):
 		"Add a layer to the clip"
 		self.layers.append(layer)
+		layer.clip = self
 
 	def image(self, frame):
 		"Render an image for one frame"
@@ -68,6 +70,13 @@ class VideoClip:
 					n += 1
 		return n
 
+	def done(self, frame):
+		"Video clip is complete?"
+		n = self.length
+		if n is None: return False
+		if n is True: return self.count(frame, True) == 0
+		return frame >= n
+
 
 class Layer:
 	"Base class for creating video clip layers"
@@ -76,8 +85,6 @@ class Layer:
 	_effect = []
 
 	def __init__(self, clip, first=1, length=None):
-		self.clip = clip
-		self.size = clip.size  # Change to False for no resizing or True for best fit
 		self.first = first
 		self.length = length
 		clip.add(self)
@@ -90,14 +97,16 @@ class Layer:
 		if isinstance(eff, Effect):
 			eff = eff,
 		for e in eff:
-			if e.frame is None:
+			e.layer = self
+			if e.frame is None and e.length:
 				e.frame = 0 if e.length > 0 else self.length
 		self._effect = eff
 
 	@property
 	def last(self):
+		"Last frame number"
 		n = self.length
-		return self.first + n - 1 if n else None
+		return self.first + n - 1 if n is not None else None
 
 	def config(self, **kwargs):
 		"Set multiple attributes"
@@ -113,13 +122,11 @@ class Layer:
 				img = e.apply(img, frame)
 		return img
 
-	def scaleImage(self, img):
-		if self.size is True:
-#			self.size = img.fitAspect(self.clip.size)
-			img = img.fit(self.clip.size)
-		elif self.size and img.size != self.size:
-			img = img.scale(self.size)
-		return img
+	def center(self):
+		"Center the layer in the video clip"
+		self.posn = self.clip.base.center
+		self.anchor = CENTER
+		return self
 
 
 class ImageLayer(Layer):
@@ -133,8 +140,7 @@ class ImageLayer(Layer):
 		"Return frame image before effects are applied"
 		n = self.length
 		if i >= 0 and (n is None or i < n):
-			img = self.img
-			return self.scaleImage(img)
+			return self.img
 
 
 class GenLayer(Layer):
@@ -148,7 +154,7 @@ class GenLayer(Layer):
 		"Return frame image before effects are applied"
 		n = self.length
 		if i >= 0 and (n is None or i < n):
-			return self.scaleImage(next(self.gen))
+			return next(self.gen)
 
 
 class FileSeq(GenLayer):
@@ -166,7 +172,7 @@ class FileSeq(GenLayer):
 	@staticmethod
 	def images(files):
 		"Generate images"
-		for f in files: yield Image(f)
+		for f in files: yield Image(f).convert()
 
 	@staticmethod
 	def names(pattern, seq):
@@ -190,7 +196,7 @@ class SpriteLayer(Layer):
 	def __getitem__(self, i):
 		n = self.length
 		if i >= 0 and (n is None or i < n):
-			img = Image(self.size)
+			img = Image(self.clip.size)
 			self.sprites.draw(img.surface)
 			return img
 
@@ -206,12 +212,11 @@ def draw(sk):
 	sk.sprites.draw()
 	if sk.clip.quit:
 		sk.quit = True
-	elif sk.clip.quit is False and sk.clip.count(n, True) == 0:
+	elif sk.clip.done(n):
 		sk.clip.quit = True
 
 def play(clip, record=None, fps=30):
 	sk = Sketch(setup)
-	sk.done = False
 	sk._clip = clip
 	if record:
 		sk.record()
