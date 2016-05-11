@@ -116,9 +116,9 @@ class Wipe(Effect):
 class EqnFilter(Effect):
     "Layer effect based on y < f(x) or y > f(x)"
 
-    def __init__(self, length, eqn, frame=None, **kwargs):
+    def __init__(self, length, frame=None, eqn=None, **kwargs):
         super().__init__(length, frame)
-        self.eqn = eqn
+        if eqn: self.eqn = eqn
         self.params = kwargs
 
     def transform(self, img, n):
@@ -146,7 +146,7 @@ class Diagonal(EqnFilter):
     "Diagonal wipe layer effect"
     
     def __init__(self, length, quad=1, frame=None):
-        super().__init__(length, self.diag, frame, quad=quad)
+        super().__init__(length, frame, self.diag, quad=quad)
 
     @staticmethod
     def diag(x, n, size, quad=1):
