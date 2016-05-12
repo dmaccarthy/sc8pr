@@ -215,12 +215,14 @@ def draw(sk):
 	elif sk.clip.done(n):
 		sk.clip.quit = True
 
-def play(clip, record=None, fps=30):
+def play(clip, record=None, fps=True):
 	sk = Sketch(setup)
 	sk._clip = clip
 	if record:
 		sk.record()
 		if record is not True:
 			sk.recordName = record
-	if fps: sk.frameRate = fps
+	if fps is True:
+		sk.frameRate = 9999 if record else 30
+	elif fps: sk.frameRate = fps
 	sk.run(caption="sk8pr Video", mode=0)
