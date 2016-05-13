@@ -23,14 +23,77 @@ from sc8pr.video.effects import Effect
 from os.path import isfile
 
 
-class VideoClip:
+class Layer:
+	"Base class for creating video clip layers"
+	posn = 0, 0
+	anchor = NW
+	_effect = []
+
+	def __init__(self, clip, first=1, length=None):
+		self.first = first
+		self.length = length
+		if clip: clip.add(self)
+
+	@property
+	def effect(self): return self._effect
+
+	@effect.setter
+	def effect(self, eff):
+		if isinstance(eff, Effect):
+			eff = eff,
+		for e in eff:
+			e.layer = self
+			if e.frame is None and e.length:
+				e.frame = 0 if e.length > 0 else self.length
+		self._effect = eff
+
+	@property
+	def last(self):
+		"Last frame number"
+		n = self.length
+		return self.first + n - 1 if n is not None else None
+
+	def after(self, n): return n + self.last
+
+	def config(self, **kwargs):
+		"Set multiple attributes"
+		for key in kwargs:
+			setattr(self, key, kwargs[key])
+		return self
+
+	def applyEffects(self, img, frame):
+		if img:
+			for e in self.effect:
+				img = e.apply(img, frame)
+		return img
+		
+	def image(self, frame):
+		"Return frame image after effects are applied"
+		return self.applyEffects(self[frame], frame)
+
+	def centered(self):
+		"Center the layer in the video clip"
+		self.posn = self.clip.base.center
+		self.anchor = CENTER
+		return self
+
+
+class VideoClip(Layer):
 	"A class for represented sequences of images composed from layers"
 
-	def __init__(self, base, length=True):
+	def __init__(self, base, first=1, length=None, clip=None):
+		super().__init__(clip, first, length)
 		self.base = base
-		self.length = length
 		self.layers = []
-		self.quit = False
+
+	@property
+	def currentLength(self):
+		n = 0
+		for layer in self.layers:
+			i = layer.last
+			if i is None: return None
+			elif i > n: n = i
+		return n
 
 	@property
 	def size(self): return self.base.size
@@ -53,13 +116,14 @@ class VideoClip:
 
 	def image(self, frame):
 		"Render an image for one frame"
+		if frame < 1 or frame > self.length: return None
 		frameImg = self.base.clone()
 		for layer in self.layers:
 			img = layer.image(frame - layer.first)
 			if img:
 				posn = rectAnchor(layer.posn, img.size, layer.anchor)
 				img.blitTo(frameImg, posn)
-		return frameImg
+		return self.applyEffects(frameImg, frame)
 
 	def count(self, frame, pending=False):
 		"Count current layers or layers to be completed"
@@ -70,71 +134,13 @@ class VideoClip:
 					n += 1
 		return n
 
-	def done(self, frame):
-		"Video clip is complete?"
-		n = self.length
-		if n is None: return False
-		if n is True: return self.count(frame, True) == 0
-		return frame >= n
-
-
-class Layer:
-	"Base class for creating video clip layers"
-	posn = 0, 0
-	anchor = NW
-	_effect = []
-
-	def __init__(self, clip, first=1, length=None):
-		self.first = first
-		self.length = length
-		clip.add(self)
-
-	@property
-	def effect(self): return self._effect
-
-	@effect.setter
-	def effect(self, eff):
-		if isinstance(eff, Effect):
-			eff = eff,
-		for e in eff:
-			e.layer = self
-			if e.frame is None and e.length:
-				e.frame = 0 if e.length > 0 else self.length
-		self._effect = eff
-
-	@property
-	def last(self):
-		"Last frame number"
-		n = self.length
-		return self.first + n - 1 if n is not None else None
-
-	def config(self, **kwargs):
-		"Set multiple attributes"
-		for key in kwargs:
-			setattr(self, key, kwargs[key])
-		return self
-
-	def image(self, frame):
-		"Return frame image after effects are applied"
-		img = self[frame]
-		if img:
-			for e in self.effect:
-				img = e.apply(img, frame)
-		return img
-
-	def center(self):
-		"Center the layer in the video clip"
-		self.posn = self.clip.base.center
-		self.anchor = CENTER
-		return self
-
 
 class ImageLayer(Layer):
 	"A video layer comprising a single static image"
 
 	def __init__(self, clip, img, first=1, length=None):
 		super().__init__(clip, first, length)
-		self.img = img
+		self.img = Image(img).convert()
 
 	def __getitem__(self, i):
 		"Return frame image before effects are applied"
@@ -203,17 +209,24 @@ class SpriteLayer(Layer):
 
 def setup(sk):
 	sk.clip = sk._clip(sk)
-	sk.size = sk.clip.size
-	sk.animate(draw)
+	if sk.clip.last is None:
+		print("Video clip length has not been specified.")
+		sk.quit = True
+	else:
+		sk.size = sk.clip.size
+		sk.animate(draw)
+		print("Rendering", sk.clip)
+
+def printFrame(t, n):
+		print("{:7.1f} s: {}".format(t, n))
 
 def draw(sk):
 	n = sk.frameCount
+	if n >= sk.clip.last: sk.quit = True
+	if n % 25 == 0 or sk.quit:
+		printFrame(sk.time, n)
 	sk.clip.image(n).blitTo(sk.screen)
 	sk.sprites.draw()
-	if sk.clip.quit:
-		sk.quit = True
-	elif sk.clip.done(n):
-		sk.clip.quit = True
 
 def play(clip, record=None, fps=True):
 	sk = Sketch(setup)
