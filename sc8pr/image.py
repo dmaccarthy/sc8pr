@@ -288,6 +288,10 @@ class Image:
             posn = rectAnchor(posn, img.size, anchor).topleft
         return dest.blit(img.surface, posn)
 
+    def blit(self, img, posn=(0,0), anchor=NW):
+        Image(img).blitTo(self, posn, anchor)
+        return self
+
     def getAspect(self, size=None):
         "Calculate aspect ratio"
         if size == None: size = self.size
