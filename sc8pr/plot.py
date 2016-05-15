@@ -99,7 +99,7 @@ class Plot(Image):
             posn = tuple_add(self.coords(posn), offsets[2*n:2*n+2])
             img.blitTo(self, posn, anchors[n])
 
-    def grid(self, delta=(1,1), axisStyle=(BLACK,3), gridStyle=(GREY,1), **kwargs):
+    def grid(self, delta=(1,1), axisStyle=(BLACK,3), gridStyle=(GREY,1), zero=(True,False), **kwargs):
         "Draw a coordinate grid on the image"
         srf = self.surface
         xmin, xmax, ymin, ymax = self.limit
@@ -112,16 +112,18 @@ class Plot(Image):
                 p0 = self.coords((x,ymin))
                 p1 = self.coords((x,ymax))
                 pygame.draw.line(srf, c, p0, p1, w)
-            self.gridLabel(x, 0, **kwargs)
-            x += delta[0]
+            if (zero[0] or x != 0):
+                self.gridLabel(x, 0, **kwargs)
+            x = delta[0] * int(1 + x / delta[0])
         y = delta[1] * int(ymin / delta[1])
         while y <= ymax:
             if gridStyle:
                 p0 = self.coords((xmin,y))
                 p1 = self.coords((xmax,y))
                 pygame.draw.line(srf, c, p0, p1, w)
-            self.gridLabel(y, 1, **kwargs)
-            y += delta[1]
+            if (zero[1] or y != 0):
+                self.gridLabel(y, 1, **kwargs)
+            y = delta[1] * int(1 + y / delta[1])
 
         # Draw axes...
         if axisStyle:

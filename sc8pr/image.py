@@ -324,7 +324,7 @@ class Image:
 
     def crop(self, size=None, posn=CENTER, bgColor=None):
         "Crop an Image using the specified size and position"
-        w, h = self.size if size == None else size
+        w, h = self.size if size is None else size
         srf = self.surface
         if w == None: w = srf.get_width()
         if h == None: h = srf.get_height()

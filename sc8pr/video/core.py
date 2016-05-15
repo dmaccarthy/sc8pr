@@ -27,9 +27,9 @@ class Layer:
 	"Base class for creating video clip layers"
 	posn = 0, 0
 	anchor = NW
-	_effect = []
 
 	def __init__(self, clip, first=1, length=None):
+		self._effect = []
 		self.first = first
 		self.length = length
 		if clip: clip.add(self)
@@ -45,7 +45,7 @@ class Layer:
 			e.layer = self
 			if e.frame is None and e.length:
 				e.frame = 0 if e.length > 0 else self.length
-		self._effect = eff
+		self._effect.extend(eff)
 
 	@property
 	def last(self):
@@ -71,9 +71,10 @@ class Layer:
 		"Return frame image after effects are applied"
 		return self.applyEffects(self[frame], frame)
 
-	def centered(self):
+	def centered(self, offset=0):
 		"Center the layer in the video clip"
-		self.posn = self.clip.base.center
+		x, y = self.clip.base.center
+		self.posn = x, y + offset
 		self.anchor = CENTER
 		return self
 

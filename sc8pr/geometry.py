@@ -41,6 +41,9 @@ def distance(p1, p2):
     x2, y2 = p2
     return hypot(x2 - x1, y2 - y1)
 
+def midpoint(p1, p2):
+    return tuple_times(tuple_add(p1, p2), 0.5)
+
 def polar(pt, deg=False):
     "Convert a point from (x,y) to (r,a) form"
     x, y = pt

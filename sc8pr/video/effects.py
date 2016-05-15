@@ -16,9 +16,11 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from sc8pr.image import Image
+from sc8pr.image import Image, CENTER
 from pygame.pixelarray import PixelArray
 import pygame
+from random import uniform, randint
+from math import sqrt
 
 
 class Effect:
@@ -34,6 +36,20 @@ class Effect:
         if n is None or n >= 0 and n < 1:
             img = self.transform(img, n)
         return img
+
+
+class Crop(Effect):
+    "Crop the image"
+
+    def __init__(self, size=None, posn=CENTER, bgColor=None):
+        super().__init__(None, None)
+        self.size = size
+        self.posn = posn
+        self.bgColor = bgColor
+
+    def transform(self, img, n):
+        size = self.size if self.size else self.layer.clip.size
+        return img.crop(size, self.posn, self.bgColor) 
 
 
 class Scale(Effect):
@@ -114,6 +130,57 @@ class Wipe(Effect):
         for r in self.rects(img.size, n):
             img.surface.subsurface(r).fill((0,0,0,0))
         return img
+
+
+class Tiles(Effect):
+    rects = None
+
+    def createTile(self):
+        vx, vy, s = uniform(-0.5, 0.5), uniform(1, 2), uniform(-720,720)
+        if randint(0,1): vy = -vy
+        return vx, vy, s
+
+    @staticmethod
+    def randCut(n):
+        avg = 1 / n
+        var = avg / 3
+        return [0] + [i * avg + uniform(-var, var) for i in range(1,n)] + [1]
+
+    def makeRects(self, w, h):
+        x, y = self.corners
+        self.rects = []
+        for r in range(len(y) - 1):
+            for c in range(len(x) - 1):
+                x0 = w * x[c]
+                y0 = h * y[r]
+                w0 = w * (x[c+1] - x[c])
+                h0 = h * (y[r+1] - y[r])
+                self.rects.append(pygame.Rect((x0, y0), (w0,h0)))
+
+    def __init__(self, length, frame=None, tiles=(7,4), power=0.6):
+        super().__init__(length, frame)
+        c, r = tiles
+        self.corners = self.randCut(c), self.randCut(r)
+        self.tiles = [self.createTile() for i in range(c*r)]
+        self.power = power
+
+    def transform(self, img, n):
+        if self.rects is None:
+            self.makeRects(*img.size)
+        i = 0
+        n = (1 - n) ** self.power
+        w, h = img.size
+        imgTr = Image(img.size)
+        for r in self.rects:
+            tile = Image(img.surface.subsurface(r))
+            vx, vy, s = self.tiles[i]
+            x, y = r.center
+            diag = sqrt(r.width**2 + r.height**2) / 2
+            x += vx * (diag + max(x, w-x)) * n
+            y += vy * (diag + max(y, h-y)) * n
+            i += 1
+            tile.rotate(s*n).blitTo(imgTr, (x,y), CENTER)
+        return imgTr
 
 
 class MathEffect(Effect):
