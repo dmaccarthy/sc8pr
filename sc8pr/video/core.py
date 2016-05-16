@@ -16,11 +16,12 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from sc8pr.sketch import Sketch, SpriteList
+from sc8pr.sketch import Sketch, Sprite, SpriteList
 from sc8pr.image import Image
 from sc8pr.util import rectAnchor, CENTER, NW
 from sc8pr.video.effects import Effect
 from os.path import isfile
+from random import randint
 
 
 class Layer:
@@ -69,6 +70,7 @@ class Layer:
 		
 	def image(self, frame):
 		"Return frame image after effects are applied"
+		self.frame = frame
 		return self.applyEffects(self[frame], frame)
 
 	def centered(self, offset=0):
@@ -117,6 +119,7 @@ class VideoClip(Layer):
 
 	def image(self, frame):
 		"Render an image for one frame"
+		self.frame = frame
 		if frame < 1 or frame > self.length: return None
 		frameImg = self.base.clone()
 		for layer in self.layers:
@@ -167,7 +170,7 @@ class GenLayer(Layer):
 class FileSeq(GenLayer):
 	"Generate a layer from a sequence of file names"
 
-	def __init__(self, clip, pattern, first, start=1, length=None, reverse=False):
+	def __init__(self, clip, pattern, first, length=None, start=1, reverse=False):
 		if length is None: length = self.findEnd(pattern, start)
 		if reverse:
 			r = start + length - 1, start - 1, -1
@@ -193,12 +196,42 @@ class FileSeq(GenLayer):
 		return n - 1
 
 
+class RandomFile(FileSeq):
+	"Return a random frame from a file"
+	
+	def __init__(self, clip, pattern, first, length=None, start=1):
+		super().__init__(clip, pattern, first, None, start)
+		self.count = self.length
+		self.length = length
+		self.start = start
+		self.pattern = pattern
+
+	def __getitem__(self, i):
+		"Return frame image before effects are applied"
+		n = self.length
+		if i >= 0 and (n is None or i < n):
+			s = self.start
+			i = randint(s, s + self.count - 1)
+			return Image(self.pattern.format(i)).convert()
+
+
+class VideoSprite(Sprite):
+	"Sprites with references to their layer and video clip"
+
+	@property
+	def clip(self): return self.spriteList.sketch
+
+	@property
+	def layer(self): return self.spriteList.layer
+
+
 class SpriteLayer(Layer):
 	"A video layer of sprites"
 	
 	def __init__(self, clip, first=1, length=None):
 		super().__init__(clip, first, length)
 		self.sprites = SpriteList(clip)
+		self.sprites.layer = self
 
 	def __getitem__(self, i):
 		n = self.length

@@ -114,6 +114,7 @@ class Sprite():
     spriteList = None
     status = VISIBLE
     currentCostume = 0
+    tint = None
     posn = 0, 0
     velocity = 0, 0
     accel = 0, 0
@@ -283,7 +284,8 @@ class Sprite():
     @property
     def _image(self):
         "Return the current unzoomed and unrotated costume image"
-        return self.costumes[self._seq[self.currentCostume]]
+        img = self.costumes[self._seq[self.currentCostume]]
+        return img
 
     @property
     def image(self):
@@ -291,6 +293,7 @@ class Sprite():
         img = self._image
         if self.zoom != 1 or self.angle:
             img = img.transform(self.getSize(False), self.angle if self.angle else None)
+        if self.tint: img = img.clone().tint(self.tint)
         return img
 
     def getSize(self, rotated):
@@ -557,7 +560,6 @@ class SpriteList():
         for s in self:
             if s.status == VISIBLE:
                 srf.blit(s.image.surface, s.rect)
-#                s.image.blitTo(srf, s.posn, CENTER)
                 if self._debugCollide:
                     if s.radius:
                         x, y = s.posn
