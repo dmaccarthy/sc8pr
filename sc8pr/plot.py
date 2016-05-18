@@ -49,6 +49,12 @@ class Plot(Image):
         self.coeff = xscale, mx1 - xscale * xmin, yscale, my1 - yscale * ymax
         self.limit = xmin, xmax, ymin, ymax
 
+    def clone(self):
+        r = self.limit
+        plot = Plot(self, r[:2], r[2:])
+        plot.coeff = self.coeff
+        return plot
+
     @property
     def unit(self):
         x = self.coeff[0]
@@ -106,6 +112,8 @@ class Plot(Image):
 
         # Draw gridlines...
         if gridStyle: c, w = gridStyle
+        if type(delta) not in (tuple, list):
+            delta = delta, delta
         x = delta[0] * int(xmin / delta[0])
         while x <= xmax:
             if gridStyle:

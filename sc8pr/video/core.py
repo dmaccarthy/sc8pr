@@ -227,7 +227,7 @@ class VideoSprite(Sprite):
 
 class SpriteLayer(Layer):
 	"A video layer of sprites"
-	
+
 	def __init__(self, clip, first=1, length=None):
 		super().__init__(clip, first, length)
 		self.sprites = SpriteList(clip)
@@ -247,7 +247,7 @@ def setup(sk):
 		print("Video clip length has not been specified.")
 		sk.quit = True
 	else:
-		sk.size = sk.clip.size
+		sk.size = sk.clip.center if sk.half else sk.clip.size
 		sk.animate(draw)
 		print("Rendering", sk.clip)
 
@@ -259,11 +259,17 @@ def draw(sk):
 	if n >= sk.clip.last: sk.quit = True
 	if n % 25 == 0 or sk.quit:
 		printFrame(sk.time, n)
-	sk.clip.image(n).blitTo(sk.screen)
-	sk.sprites.draw()
+	img = sk.clip.image(n)
+	if sk.half:
+		assert len(sk.sprites) == 0, "Half size preview is not allowed when sprites are used"
+		img.scale(sk.size).blitTo(sk.screen)
+	else:
+		img.blitTo(sk.screen)
+		sk.sprites.draw()
 
-def play(clip, record=None, fps=True):
+def play(clip, record=None, fps=True, half=False):
 	sk = Sketch(setup)
+	sk.half = half
 	sk._clip = clip
 	if record:
 		sk.record()
