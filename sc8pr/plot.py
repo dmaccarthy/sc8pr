@@ -51,7 +51,7 @@ class Plot(Image):
 
     def clone(self):
         r = self.limit
-        plot = Plot(self, r[:2], r[2:])
+        plot = Plot(super().clone(), r[:2], r[2:])
         plot.coeff = self.coeff
         return plot
 

@@ -15,20 +15,27 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
+"Apply transition effects to an image"
+
 
 from sc8pr.image import Image, CENTER
+from sc8pr.util import randColor
 from pygame.pixelarray import PixelArray
 import pygame
-from random import uniform, randint
+from random import uniform, randint, random
 from math import sqrt
 
 
 class Effect:
     "Base class for layer effects"
+    
+    length = None
+    frame = None
 
-    def __init__(self, length, frame):
+    def time(self, length, frame=None):
         self.length = length
         self.frame = frame
+        return self
 
     def apply(self, img, frame):
         n = self.length
@@ -37,42 +44,44 @@ class Effect:
             img = self.transform(img, n)
         return img
 
+    @staticmethod
+    def n(frame, t0, t1, length=60):
+        return min(frame-t0, t1-frame) / length
+
 
 class Crop(Effect):
     "Crop the image"
 
-    def __init__(self, size=None, posn=CENTER, bgColor=None):
-        super().__init__(None, None)
+    def __init__(self, size, posn=CENTER, bgColor=None):
         self.size = size
         self.posn = posn
         self.bgColor = bgColor
 
     def transform(self, img, n):
-        size = self.size if self.size else self.layer.clip.size
-        return img.crop(size, self.posn, self.bgColor) 
+        return img.crop(self.size, self.posn, self.bgColor) 
 
 
 class Scale(Effect):
     "Adjust the size of the layer image"
 
-    def __init__(self, size=None):
-        super().__init__(None, None)
+    def __init__(self, size):
         self.size = size
 
     def transform(self, img, n):
-        size = self.size if self.size else img.fitAspect(self.layer.clip.size)
+        size = self.size
+        if type(size) not in (tuple, list):
+            size = img.fitAspect(size.size)
         return img.transform(size)
 
 
 class Fade(Effect):
     "Fade layer in or out"
 
-    def __init__(self, length, color=None, frame=None):
-        super().__init__(length, frame)
-        self.color = color
+    def __init__(self, color=None): self.color = color
 
     def transform(self, img, n):
-        img = img.clone().setAlpha(round(255 * n))
+        if n >= 1: return img
+        img = img.clone().setAlpha(round(255 * max(0, n)))
         if self.color:
             newImg = Image(img.size, self.color)
             img.blitTo(newImg)
@@ -83,9 +92,7 @@ class Fade(Effect):
 class Wipe(Effect):
     "Vertical or horizontal wipe effect"
 
-    def __init__(self, length, direction=0, frame=None):
-        super().__init__(length, frame)
-        self.direction = direction
+    def __init__(self, direction=0): self.direction = direction
 
     def rects(self, size, n):
         "Return a tuple of rectangles to set to transparent"
@@ -124,6 +131,8 @@ class Wipe(Effect):
 
     def transform(self, img, n):
         "Apply wipe effect"
+        if n >= 1: return img
+        if n < 0: n = 0
         if self.direction == 0:
             return self.iris(img, n)
         img = img.clone()
@@ -157,16 +166,14 @@ class Tiles(Effect):
                 h0 = h * (y[r+1] - y[r])
                 self.rects.append(pygame.Rect((x0, y0), (w0,h0)))
 
-    def __init__(self, length, frame=None, tiles=(7,4), power=0.6):
-        super().__init__(length, frame)
-        c, r = tiles
-        self.corners = self.randCut(c), self.randCut(r)
-        self.tiles = [self.createTile() for i in range(c*r)]
+    def __init__(self, cols=7, rows=4, power=1):
+        self.corners = self.randCut(cols), self.randCut(rows)
+        self.tiles = [self.createTile() for i in range(cols * rows)]
         self.power = power
 
     def transform(self, img, n):
-        if self.rects is None:
-            self.makeRects(*img.size)
+        if n >= 1: return img
+        if self.rects is None: self.makeRects(*img.size)
         i = 0
         n = (1 - n) ** self.power
         w, h = img.size
@@ -186,8 +193,7 @@ class Tiles(Effect):
 class MathEffect(Effect):
     "Layer effect based on y < f(x) or y > f(x)"
 
-    def __init__(self, length, frame=None, eqn=None):
-        super().__init__(length, frame)
+    def __init__(self, eqn=None):
         if eqn: self.eqn = eqn.__get__(self, self.__class__)
 
     def transform(self, img, n):
@@ -214,9 +220,7 @@ class MathEffect(Effect):
 class Diagonal(MathEffect):
     "Diagonal wipe layer effect"
     
-    def __init__(self, length, quad=1, frame=None):
-        super().__init__(length, frame)
-        self.quad = quad
+    def __init__(self, quad=1): self.quad = quad
 
     def eqn(self, x, n, size):
         q = self.quad
@@ -228,3 +232,75 @@ class Diagonal(MathEffect):
         elif q == 3: b = 2 * n - 1
         else: b = 2 * n
         return round(m * x + b * h), q > 2
+
+
+class PaintDrops(MathEffect):
+    "Paint drop effect"
+    
+    def __init__(self, drops=64):
+        self.side = drops > 0
+        self.drops = [self.makeDrop() for i in range(abs(drops))]
+        n = sum([d[0] for d in self.drops])
+        for d in self.drops: d[0] /= n
+
+    def eqn(self, x, n, size):
+        "Calculate paint boundary"
+        if not self.side: n = 1 - n
+        w, h = size
+        y = 0
+        xc = 0
+        for d in self.drops:
+            r = d[0] * w / 2
+            R = 1.1 * r
+            xc += r
+            dx = abs(x - xc)
+            if dx <= R:
+                dy = sqrt(R * R - dx * dx)
+                Y = (h + R) * self.posn(n, *d[1:]) + dy - R
+                if Y > y: y = Y
+            xc += r
+        return round(y), self.side
+
+    def posn(self, n, t1, t2):
+        "Calculate drop position"
+        if n < t1: return 0
+        elif n > t2: return 1
+        return (n - t1) / (t2 - t1)
+
+    @staticmethod
+    def makeDrop():
+        "Create random diameter, start and end time"
+        t1 = uniform(0, 0.8)
+        t2 = uniform(t1 + 0.1, 1)
+        return [uniform(0.1,1), min(t1, t2), max(t1, t2)]
+
+
+class PixelEffect(Effect):
+
+    def transform(self, img, n):
+        "Apply pixel-by-pixel effect"
+        if n >= 1: return img
+        if n < 0 : n = 0
+        img = img.clone()
+        pxa = PixelArray(img.surface)
+        self.mask = img.surface.get_masks()[3]
+        c = 0
+        for pxCol in pxa:
+            for r in range(len(pxCol)):
+                px = self.pixel(n, c, r, pxCol[r], img)
+                if px: pxCol[r] = px
+            c += 1
+        return img
+
+
+class Dissolve(PixelEffect):
+    "Dissolve from transparency, solid color, or noise"
+
+    def __init__(self, color=False, transparent=False):
+        self.color = (0,0,0,0) if color is False else color
+        self.transparent = transparent
+
+    def pixel(self, n, x, y, color, img):
+        "Calculate pixel color"
+        if (self.transparent or color & self.mask) and random() > n:
+            return randColor() if self.color is True else self.color

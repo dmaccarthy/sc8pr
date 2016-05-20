@@ -19,7 +19,7 @@
 from sc8pr.sketch import Sketch, Sprite, SpriteList
 from sc8pr.image import Image
 from sc8pr.util import rectAnchor, CENTER, NW
-from sc8pr.video.effects import Effect
+from sc8pr.effects import Effect
 from os.path import isfile
 from random import randint
 
@@ -43,7 +43,7 @@ class Layer:
 		if isinstance(eff, Effect):
 			eff = eff,
 		for e in eff:
-			e.layer = self
+#			e.layer = self
 			if e.frame is None and e.length:
 				e.frame = 0 if e.length > 0 else self.length
 		self._effect.extend(eff)
