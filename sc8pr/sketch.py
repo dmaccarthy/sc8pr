@@ -364,10 +364,10 @@ class Sprite():
 
     def corners(self): return tuple(self._corners())
 
-    def contains(self, pts):
+    def contains(self, *pts):
         "Determine if the sprite contains any of a sequence of points"
-        if len(pts) == 2 and type(pts[0]) in (int, float):
-            pts = pts,
+#         if len(pts) == 2 and type(pts[0]) in (int, float):
+#             pts = pts,
         if self.radius:
             for p in pts:
                 if distance(p, self.posn) < self.radius:
@@ -409,15 +409,15 @@ class Sprite():
         ux, uy = unitVector(self.posn, posn)
         return mag * ux, mag * uy
 
-    def moveTo(self, path, speed=None):
-        "Reposition the sprite on the path and make its velocity parallel to the path"
-        self.posn, seg = path.closest(self.posn)[1:]
-        u = unitVector(*seg)
-        v = scalarProduct(u, self.velocity)
-        if speed is not None:
-            v = speed * (1 if v==0 else v / abs(v))
-        self.velocity = v * u[0], v * u[1]
-        return self
+#     def moveTo(self, path, speed=None):
+#         "Reposition the sprite on the path and make its velocity parallel to the path"
+#         self.posn, seg = path.closest(self.posn)[1:]
+#         u = unitVector(*seg)
+#         v = scalarProduct(u, self.velocity)
+#         if speed is not None:
+#             v = speed * (1 if v==0 else v / abs(v))
+#         self.velocity = v * u[0], v * u[1]
+#         return self
 
     def costumeSequence(self, costume=0, end=-1, oscillate=False):
         "Specify which costumes to use and their order"

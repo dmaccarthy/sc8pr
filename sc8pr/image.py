@@ -371,15 +371,6 @@ class Image:
 
     def saveAs(self, fn): pygame.image.save(self.surface, fn)
 
-    def fadeTo(self, bgColor=(0,0,0), frames=90, square=False):
-        "Generate a sequence of faded images"
-        for frame in range(frames + 1):
-            fade = Image(self.size, bgColor, False)
-            n = 255 * (1 - frame / frames)
-            if square: n *= n / 255
-            self.clone().tint((255, 255, 255, int(n))).blitTo(fade)
-            yield fade
-
     def position(self, where=CENTER, margin=0, size=None):
         "Get the coordinates corresponding to a corner or side"
         return position(self.size, size, where, margin)
