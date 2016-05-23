@@ -222,7 +222,7 @@ class PApplet:
 		"Set a background image"
 		try:
 			if img:
-				self._bgImage = Image(img)
+				self._bgImage = img if isinstance(img, Image) else Image(img)
 				tsize = self._targetSize(self.size)
 				self._fitImg(tsize)
 				if tsize != self.size: display.set_mode(tsize, self._mode)
