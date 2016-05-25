@@ -150,6 +150,12 @@ class Robot(Sprite):
         else: self._sleep()
         if stop: self.motors = 0, 0
 
+    def loadSounds(self, *args):
+        self.sketch.loadSounds(*args)
+        
+    def sound(self, key, **kwargs):
+        return self.sketch.sound(key, **kwargs)
+
     def shutdown(self):
         "Override if robot requires any shutdown actions"
         pass

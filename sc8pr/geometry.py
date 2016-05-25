@@ -188,11 +188,23 @@ def intersect(c1, c2):
         y = (a1 * x + c1) / (-b1) if b1 else (a1 * x + c1) / (-b1)
     return x, y
 
+def _intersect_same(s1, s2, eqn):
+    "Intersection of two colinear segments"
+    pts = []
+    for pt in s1:
+        if withinSegment(s2[0], s2[1], pt):
+            pts.append(pt)
+    for pt in s2:
+        if withinSegment(s1[0], s1[1], pt):
+            pts.append(pt)
+    return tuple_avg(*pts) if len(pts) else False
+
 def intersect_segments(s1, s2, c1=None, c2=None):
     "Find the intersection of two line segments"
     if c1 is None: c1 = eqnOfLine(*s1)
     if c2 is None: c2 = eqnOfLine(*s2)
-    p = intersect(c1, c2)
+    if c1 == c2: p = _intersect_same(s1, s2, c1)
+    else: p = intersect(c1, c2)
     if p is False: return False
     return p if withinSegment(*s1, p=p) and withinSegment(*s2, p=p) else False
 

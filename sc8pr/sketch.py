@@ -27,6 +27,7 @@ from sc8pr.geometry import distance, polar, unitVector, scalarProduct, intersect
     tuple_sub, tuple_add, segments, closest, eqnOfLine
 from math import hypot, cos, sin, radians, degrees
 import pygame
+from pygame.mixer import Sound
 
 
 # Status constants...
@@ -51,11 +52,20 @@ def collide_sprite(left, right):
     "Default collision detection"
     if not left.rect.colliderect(right.rect):
         return False
+    if left.mask and right.mask:
+        return collide_mask(left, right)
     if left.radius:
         return collide_circ(left, right) if right.radius else collide_circ_rect(left, right)
-    elif right.radius:
+    if right.radius:
         return collide_circ_rect(right, left)
     return collide_rect_advanced(left, right)
+
+def collide_mask(left, right, point=False):
+    "Collision between sprites with masks"
+    x, y = tuple_sub(left.rect.topleft, right.rect.topleft)
+    offset = round(x), round(y)
+    collide = right.mask.overlap(left.mask, offset)
+    return collide is not None
 
 def collide_circ_rect(circ, rect):
     "Collision between a circular sprite and a rectangular sprite"
@@ -111,6 +121,7 @@ class Sprite():
     _costumeTime = 0
     _nextChange = 0
     _radius = False
+    mask = None
     spriteList = None
     status = VISIBLE
     currentCostume = 0
@@ -183,6 +194,9 @@ class Sprite():
     def radius(self, r):
         if r is True: r = sum(self.getSize(False)) / 4
         self._radius = r / self.zoom
+
+    def calcMask(self):
+        self.mask = pygame.mask.from_surface(self.image.surface)
 
     @property
     def speed(self): return hypot(*self.velocity)
@@ -640,6 +654,7 @@ class SpriteList():
 class Sketch(PApplet):
     "A class for creating sketches with sprite and GUI support"
     _start = 0
+    _sounds = {}
     io = None
     wall = False
 
@@ -692,3 +707,20 @@ class Sketch(PApplet):
         if h1 != h:
             sp.sketchHeight = h1
             sp.transform(factor=h1/h)
+
+    def loadSounds(self, *args):
+        "Pre-load sound files into the '_sounds' buffer"
+        for s in args:
+            try: self._sounds[s] = Sound(s)
+            except: logError()
+
+    def sound(self, key, cache=True, **kwargs):
+        "Play a sound"
+        snd = self._sounds.get(key)
+        if not cache or snd is None:
+            try:
+                snd = Sound(key)
+                if cache: self._sounds[key] = snd
+            except: logError()
+        if snd: snd.play(**kwargs)
+        return snd
