@@ -18,13 +18,12 @@
 
 from sc8pr.sketch import Sprite, VISIBLE
 from sc8pr.image import Image
-from sc8pr.geometry import tuple_add, tuple_neg, tuple_times, distance,\
-    intersect_segment_circle, intersect_segments, eqnOfLine, segments
+from sc8pr.geom import DEG, vsum, add, sub, times, vec2d, distSq, Segment, Polygon2D
 from sc8pr.util import sc8prPath, Data, logError, rectAnchor, CENTER, noise
 from pygame.draw import circle, line
 from pygame import Rect, Color, K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE
 from pygame.pixelarray import PixelArray
-from math import degrees, radians, cos, sin, pi
+from math import cos, sin, pi, sqrt
 from threading import Thread
 from time import sleep
 from sys import stderr
@@ -60,6 +59,7 @@ class RobotThread(Thread):
             b(r)
         except: logError()
         r.shutdown()
+        r.startTime = None
         if self.log:
             print('{} is shutting down in "{}".'.format(*args), file=stderr)
 
@@ -78,21 +78,24 @@ class Robot(Sprite):
     sensorNoise = 12
     downColor = None
     mass = 1.0
-    elasticity = 0.2
+    elasticity = 0.9
     arenaTime = 12
+    startTime = None
 
     def __init__(self, sprites, brain=None, colors=None, *group, **kwargs):
         self.penColor = None
         costumes = self._makeCostumes(colors)
         super().__init__(sprites, costumes, *group, **kwargs)
-        if self._radius is False:
-            self.radius = True
         self.data = Data()
+        self.circle()
         if brain is not None:
             self._thread = RobotThread(self, brain)
             self._thread.start()
 
     def __str__(self): return "<Robot [{}]>".format(self.name)
+
+    @property
+    def radius(self): return self.shape.radius
 
     @property
     def name(self):
@@ -181,9 +184,9 @@ class Robot(Sprite):
         "Draw luminous LED indicators"
         fc = self.frontColor
         colors = [self.downColor, fc if fc else (0,0,0), self.penColor]
-        r1 = self.radius / 2.5
+        r1 = self.width / 5
         r2 = r1 / 2.5
-        a = radians(self.angle + 60)
+        a = (self.angle + 60) * DEG
         x0, y0 = self.posn
         led = []
         for c in colors:
@@ -200,16 +203,19 @@ class Robot(Sprite):
     def update(self):
         "Draw LEDs before update"
         self.sketch._lumin.extend(self.leds())
-        super().update()
+        self.frameStep()
+#        super().update()
 
     @property
-    def uptime(self): return self.sketch.time - self.startTime
+    def uptime(self):
+        t = self.startTime
+        return self.sketch.time - t if t else None
 
     @property
     def maxSpeed(self):
         "Calculate the maximum robot speed corresponding to full power"
         sk = self.sketch
-        return (sk.width - 2 * self.radius) / (self.arenaTime * sk.frameRate)
+        return (sk.width - 2 * self.radius) / (self.arenaTime * 60) #sk.frameRate)
 
     @property
     def averagePower(self):
@@ -243,7 +249,7 @@ class Robot(Sprite):
         try:
             c = self._proximity[3]
             if self.sketch.light:
-                x = tuple_times(self.sketch.light, 1/255)
+                x = times(self.sketch.light, 1 / 255)
                 c = [round(c[i] * x[i]) for i in range(4)]
         except: c = None
         c = noise(c if c else (0, 0, 0), self.sensorNoise, alpha=255)
@@ -258,38 +264,28 @@ class Robot(Sprite):
         if group is None:
             group = self.spriteList.search(status=VISIBLE)
         if sk.wall:
-            w, h = sk.size
-            wall = segments(((-1,-1), (w,-1), (w,h), (-1,h)))
-            group = set(group) | {wall}
+            group = set(group) | set(self.sketch._wallPoly.segments)
 
         obst = {}
         r = sum(sk.size)
-        x, y = self.posn
         stepAngle = cone / steps
         angle = -cone / 2
         while steps >= 0:
-            a = radians(self.angle + angle)
-            seg = self.posn, (x + r * cos(a), y + r * sin(a))
+            a = (self.angle + angle) * DEG
+            seg = Segment(self.posn, add(self.posn, vec2d(r, a)))
             if sk.sprites._debugCollide:
-                line(sk.screen, (0,0,0), *seg)
-            eqn = eqnOfLine(*seg)
+                line(sk.surface, (0,0,0), self.posn, seg.eval())
             for s in group:
-                raw = type(s) is tuple
                 if s is not self:
-                    if not raw and s.radius:
-                        pts = intersect_segment_circle(seg, s.posn, s.radius, eqn)
-                    else:
-                        segs = s if raw else segments(s.corners())
-                        pts = [intersect_segments(seg, side, eqn) for side in segs]
-                        pts = [pt for pt in pts if pt is not False]
+                    shape = s.shape if isinstance(s, Sprite) else s
+                    pts = shape.intersect2d(seg)
                     minSep = None
                     for pt in pts:
-                        sep = distance(self.posn, pt)
-                        if minSep is None or sep < minSep:
-                            minSep = sep
+                        r2 = distSq(pt, self.posn)
+                        if minSep is None or r2 < minSep:
+                            minSep = r2
                     if minSep:
-                        k = None if raw else s
-                        obst[k] = min(minSep, obst[k]) if k in obst else minSep
+                        obst[None if s is shape else s] = sqrt(minSep)
             if cone:
                 angle += stepAngle
                 steps -= 1
@@ -328,12 +324,11 @@ class Robot(Sprite):
 
     def _downColor(self):
         "Calculate downward colour-sensor value"
-        a = radians(self.angle)
         d = self.radius // 8
         r = 2 * d
         size = r, r
         r = 0.75 * self.radius
-        posn = tuple_add(self.posn, (r*cos(a), r*sin(a)), (-d,-d))
+        posn = vsum(vec2d(r, self.angle * DEG), self.posn, (-d, -d))
         sk = self.sketch
         self._downRect = Rect(posn + size)
         if sk.sprites._debugCollide:
@@ -361,7 +356,7 @@ class Robot(Sprite):
 
         # Angular speed and turning radius...
         w = (v1 - v2) / (2 * self.radius)
-        self.spin = degrees(w)
+        self.spin = w / DEG
         if w:
             R = (v1 + v2) / (2 * w)
             v = w * R
@@ -369,8 +364,8 @@ class Robot(Sprite):
             v = v1
 
         # Acceleration...
-        v = tuple_times(self.unitVector, v)
-        self.accel = tuple_times(tuple_add(v, tuple_neg(self.velocity)), 0.05)
+        v = times(self.unitVector, v)
+        self.accel = times(sub(v, self.velocity), 0.05)
 
         # Update...
         super().frameStep()

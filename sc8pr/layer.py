@@ -262,9 +262,9 @@ def draw(sk):
 	img = sk.clip.image(n)
 	if sk.half:
 		assert len(sk.sprites) == 0, "Half size preview is not allowed when sprites are used"
-		img.scale(sk.size).blitTo(sk.screen)
+		img.scale(sk.size).blitTo(sk.surface)
 	else:
-		img.blitTo(sk.screen)
+		img.blitTo(sk.surface)
 		sk.sprites.draw()
 
 def play(clip, record=None, fps=True, half=False):

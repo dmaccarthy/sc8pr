@@ -21,7 +21,7 @@ from time import time
 from pygame import display
 from sc8pr.image import Image, NW
 from sc8pr.util import logError, setCursor, handleEvent, fontHeight, sc8prPath, ARROW, randPixel
-from sc8pr.geometry import scalarProduct, tuple_sub
+from sc8pr.geom import distSq
 
 
 class PApplet:
@@ -38,6 +38,9 @@ class PApplet:
 	recordGui = False
 
 	@staticmethod
+	def display(): return Image(pygame.display.get_surface())
+
+	@staticmethod
 	def _onQuit(): PApplet._quit = True
 
 	def __init__(self, setup=None, draw=None, eventMap=None):
@@ -46,7 +49,7 @@ class PApplet:
 		self.frameRate = 60
 		self.drawTime = 0.0
 		self.eventTime = 0.0
-		self.screen = None
+		self.surface = None
 		self.bgColor = None
 		self._bgImage = None
 		self._frameInterval = None
@@ -117,7 +120,7 @@ class PApplet:
 		return time() - self._t0
 
 	@property
-	def size(self): return self.screen.get_size() if self.screen else None
+	def size(self): return self.surface.get_size() if self.surface else None
 
 	@property
 	def width(self): return self.size[0]
@@ -205,13 +208,12 @@ class PApplet:
 		size0 = self.size
 		if mode is None: mode = self._mode
 		if size != size0:
-			self.screen = display.set_mode(size, mode)
+			self.surface = display.set_mode(size, mode)
 			display.flip()
 		if tsize != self.size:
-			ds = tuple_sub(tsize, self.size)
-			if scalarProduct(ds, ds) > 1:
+			if distSq(tsize, self.size) > 1:
 				if ev: ev.adjustSize = tsize
-				self.screen = display.set_mode(tsize, mode)
+				self.surface = display.set_mode(tsize, mode)
 		if self._bgImage: self._fitImg(self.size)
 
 	@property
@@ -275,7 +277,7 @@ class PApplet:
 				s, f = self._recordSequence
 				path = self.recordName.format(s, f)
 				self._recordSequence = s, f + 1
-		pygame.image.save(self.screen, path)
+		pygame.image.save(self.surface, path)
 
 	def _captureFrame(self):
 		"Save a single frame when recording is enabled"
@@ -293,7 +295,7 @@ class PApplet:
 
 	def drawBackground(self):
 		"Redraw the sketch background"
-		srf = self.screen
+		srf = self.surface
 		if self.bgColor: srf.fill(self.bgColor)
 		img = self.scaledBgImage
 		if img: srf.blit(img.surface, (0,0))
@@ -301,12 +303,12 @@ class PApplet:
 
 	def tint(self, rgba):
 		"Apply tint operation to the entire sketch"
-		Image(self.screen).tint(rgba)
+		Image(self.surface).tint(rgba)
 
 	def blit(self, img, posn=(0,0), anchor=NW, size=None, angle=None, flags=0):
 		"Draw an image on the sketch"
 		if type(img) is not Image: img = Image(img)
-		return img.blitTo(self.screen, posn, anchor, size, angle, flags)
+		return img.blitTo(self.surface, posn, anchor, size, angle, flags)
 
 	def _dispatch(self, ev):
 		"Dispatch a list of events to the event handling method"

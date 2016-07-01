@@ -16,9 +16,8 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from sc8pr.util import getAlpha, logError, randPixel, rectAnchor, position, \
-    NW, CENTER, WEST, EAST 
-from sc8pr.geometry import locus
+from sc8pr.util import getAlpha, logError, randPixel, rectAnchor, position, NW, CENTER, WEST, EAST 
+#from sc8pr.geom import locus
 import math, pygame
 from pygame.draw import line
 
@@ -158,7 +157,7 @@ class Image:
         return img
 
     @staticmethod
-    def renderMarker(n, size, fill=(255,0,0), stroke=(0,0,0), strokeWeight=1):
+    def renderMarker(n, size, fill, stroke, strokeWeight=1):
         "Render a marker image for the plot method"
         w, h = size
         if n < 4:
@@ -171,7 +170,7 @@ class Image:
             if n > 4: img = img.rotate(90 * (n - 4))
         return img
 
-    def plot(self, pts, marker=None, fill=(255,0,0), stroke=(0,0,0), strokeWeight=1, markerSize=(15,15), closed=False):
+    def plot(self, pts, marker=None, fill=None, stroke=(0,0,0), strokeWeight=1, markerSize=(15,15), closed=False):
         "Plot a sequence of points as markers or lines (but not both!)"
         if fill and marker is None:
             if type(pts) not in (list,tuple):
@@ -201,10 +200,11 @@ class Image:
             if alpha: img.blitTo(self)
         return self
 
-    def locus(self, pCurve, t0, t1, steps=None, color=(0,0,255), weight=2, marker=None, **params):
-        "Connect points along a parameterized curve"
-        if steps is None: steps = max(1, round(abs(t1-t0)))
-        return self.plot(locus(pCurve, t0, t1, steps, **params), marker, stroke=color, strokeWeight=weight, fill=None)
+#     def locus(self, pCurve, t0, t1, steps=None, stroke=(0,0,255), strokeWeight=2, fill=None, **params):
+#         "Connect points along a parameterized curve"
+#         if steps is None: steps = max(1, round(abs(t1-t0)))
+#         pts = locus(pCurve, t0, t1, steps, **params)
+#         return self.plot(pts, marker, stroke=color, strokeWeight=weight, fill=None)
 
     @staticmethod
     def copy(srf):
@@ -316,7 +316,7 @@ class Image:
         useWidth = self.getAspect() >= self.getAspect(size)
         sz = (size[0], None) if useWidth else (None, size[1])
         return self.keepAspect(sz)
-        
+
     def scale(self, size=None, width=None, height=None):
         "Scale an image"
         if size == None: size = width, height
@@ -412,27 +412,36 @@ class Image:
     def setAlpha(self, a):
         return self.tint((255,255,255,a), pygame.BLEND_RGBA_MIN)
 
-    def averageColor(self):
+    def averageColor(self, alphaAdjust=False):
         "Calculate the average RGBA values for an image"
-        w, h = self.size
-        r, g, b, a = 0, 0, 0, 0
-        for col in range(w):
-            for row in range(h):
-                pixel = self.surface.get_at((col,row))
-                if pixel.a:
-                    a += pixel.a
-                    r += pixel.r * pixel.a
-                    g += pixel.g * pixel.a
-                    b += pixel.b * pixel.a
-        n = w * h
-#        a = round(a / n)
-        if a:
-            a /= n
-            n *= a
-            r = min(255, round(r / n))
-            g = min(255, round(g / n))
-            b = min(255, round(b / n))
-        return pygame.color.Color(r, g, b, round(a))
+#         w, h = self.size
+#         r, g, b, a = 0, 0, 0, 0
+#         for col in range(w):
+#             for row in range(h):
+#                 pixel = self.surface.get_at((col,row))
+#                 if pixel.a:
+#                     a += pixel.a
+#                     r += pixel.r * pixel.a
+#                     g += pixel.g * pixel.a
+#                     b += pixel.b * pixel.a
+#         n = w * h
+# #        a = round(a / n)
+#         if a:
+#             a /= n
+#             n *= a
+#             r = min(255, round(r / n))
+#             g = min(255, round(g / n))
+#             b = min(255, round(b / n))
+#         c = pygame.color.Color(r, g, b, round(a))
+        r, g, b, a = pygame.transform.average_color(self.surface)
+        if alphaAdjust:
+            if a:
+                f = 255 / a
+                r = min(255, round(r * f))
+                g = min(255, round(g * f))
+                b = min(255, round(b * f))
+            else: r = g = b = 0
+        return pygame.color.Color(r,g,b,a)
 
 
 def flipAll(imgs, xflip=False, yflip=False):

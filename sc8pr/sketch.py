@@ -17,18 +17,18 @@
 
 
 from sc8pr.papplet import PApplet
-from sc8pr.util import randColor, step, logError, CENTER, rectAnchor
+from sc8pr.util import step, logError, CENTER, rectAnchor, addToMap
 from sc8pr.gui import GUI
 from sc8pr.io import prompt, fileDialog, USERINPUT
 from sc8pr.grid import OPEN, SAVE, FOLDER
 from sc8pr.search import search
 from sc8pr.image import Image
-from sc8pr.geometry import distance, polar, unitVector, scalarProduct, intersect_polygon, tuple_times,\
-    tuple_sub, tuple_add, segments, closest, eqnOfLine
-from math import hypot, cos, sin, radians, degrees
+from sc8pr.geom import DEG, unitVector, mag, neg, add, sub, times, sprod, cross2d,\
+    vec2d, deg2d, Polygon2D, Circle2D, impact, ellipsygon, resolve2d, avg
+from sc8pr.cache import Cache
+from math import hypot, cos, sin, sqrt
 import pygame
 from pygame.mixer import Sound
-
 
 # Status constants...
 DISABLED = 0
@@ -37,10 +37,15 @@ HIDDEN = 2
 ENABLED = 3
 
 # Edge actions...
-NO_EDGE = 0
-BOUNCE = -1
-WRAP = -2
-REMOVE = -3
+REMOVE_X = 1
+WRAP_X = 2
+BOUNCE_X = 4
+REMOVE_Y = 16
+WRAP_Y = 32
+BOUNCE_Y = 64
+REMOVE = REMOVE_X | REMOVE_Y
+WRAP = WRAP_X | WRAP_Y
+BOUNCE = BOUNCE_X | BOUNCE_Y
 
 
 class LockedException(Exception):
@@ -48,86 +53,35 @@ class LockedException(Exception):
         super().__init__("SpriteList modified while iterating")
 
 
-def collide_sprite(left, right):
-    "Default collision detection"
-    if not left.rect.colliderect(right.rect):
-        return False
-    if left.mask and right.mask:
-        return collide_mask(left, right)
-    if left.radius:
-        return collide_circ(left, right) if right.radius else collide_circ_rect(left, right)
-    if right.radius:
-        return collide_circ_rect(right, left)
-    return collide_rect_advanced(left, right)
+def collide_shape_only(left, right):
+    "Detect collisions based on sprites' shape attribute"
+    return left.shape.collide(right.shape)
 
-def collide_mask(left, right, point=False):
-    "Collision between sprites with masks"
-    x, y = tuple_sub(left.rect.topleft, right.rect.topleft)
-    offset = round(x), round(y)
-    collide = right.mask.overlap(left.mask, offset)
-    return collide is not None
-
-def collide_circ_rect(circ, rect):
-    "Collision between a circular sprite and a rectangular sprite"
-    cx, cy = circ.posn
-    rx, ry = rect.posn
-    dx, dy = cx - rx, cy - ry
-    sep, a = polar((dx,dy), True)
-    a = (a - rect.angle) % 180
-    if a > 90: a = 180 - a
-    a = radians(a)
-    dx, dy = sep * cos(a), sep * sin(a)
-    w, h = rect.getSize(False)
-    w /= 2
-    h /= 2
-    r = circ.radius
-    return dx < w + r and dy < h + r
-
-def collide_rect_advanced(left, right):
-    "Collision between rectangles based on containment or segment intersection"
-    return intersect_polygon(left.corners(), right.corners()) or left.contains(right.posn) or right.contains(left.posn)
+def collide_shape(left, right):
+    "Detect collisions based on sprites' shape attribute only if blit rectangles overlap"
+    brf = left.blitRectFilter and right.blitRectFilter
+    if not brf or left.rect.colliderect(right.rect):
+        return left.shape.collide(right.shape)
+    return False
 
 def collide_rect(left, right):
     "Collision based on simple rectangle overlap"
     return left.rect.colliderect(right.rect)
-
-def collide_circ(left, right):
-    "Collision based on circle"
-    sep = left.radius + right.radius
-    return distance(left.posn, right.posn) < sep
-
-def _changeSpin(sprite, dv, pt=None):
-    "Adjust spin on bounce from edges or on collision"
-    if not sprite.radius:
-        if pt is None:
-            sk = sprite.sketch
-            rMin = None
-            for cx, cy in sprite.corners():
-                r = min(abs(cx), abs(sk.width-1-cx), abs(cy), abs(sk.height-1-cy))
-                if pt is None or r <= rMin:
-                    if r == rMin:
-                        pt = (pt[0] + cx) / 2, (pt[1] + cy) / 2
-                    else: pt = cx, cy
-                    rMin = r
-        x, y = tuple_sub(pt, sprite.posn)
-        dL = x * dv[1] - y * dv[0]
-        r = max(sprite.getSize(False))
-        d = hypot(x, y)
-        sprite.spin += degrees(dL / (r * r / 12 + d * d))
-
+        
 
 class Sprite():
     "A class for creating sprites with multiple costumes, motion, rotation, and zooming"
+    _collideRegion = 0,
     _costumeTime = 0
     _nextChange = 0
-    _radius = False
-    mask = None
+    _shape = None
+    posn = 0, 0
+    velocity = 0, 0
+    mass = 0
     spriteList = None
     status = VISIBLE
     currentCostume = 0
     tint = None
-    posn = 0, 0
-    velocity = 0, 0
     accel = 0, 0
     jerk = 0, 0
     zoom = 1
@@ -135,11 +89,12 @@ class Sprite():
     angle = 0
     spin = 0
     orient = False
-    edgeAdjust = None
+    edgeAdjust = set()
+    collideUpdate = False
     elasticity = 1.0
     drag = 0.0
     spinDrag = 0.0
-    bounceThreshhold = 0
+    blitRectFilter = True
 
     def __init__(self, sprites, costumes, *group, **kwargs):
         self.costumes = costumes
@@ -147,13 +102,89 @@ class Sprite():
             sprites = sprites.sprites
         self.spriteList = sprites
         sprites.append(self, *group)
+        self.polygon()
         if kwargs.get("posn") is None:
             self.posn = self.sketch.center
         self.config(**kwargs)
-        edge = kwargs.get("edge")
-        if edge is None:
-            try: self.edge = self.sketch.edge()
-            except: self.edge = REMOVE
+        self._shapeCache = Cache()
+        if kwargs.get("edge") is None:
+            self.edge = BOUNCE if self.sketch.wall else REMOVE
+
+    def ellipsygon(self, n=1, size=(1,1), v=16):
+        "Set shape property to a polygon that approximates an ellipse"
+        w, h = self._image.size
+        w = (w * size[0]) / 2
+        h = (h * size[1]) / 2
+        self.shape = ellipsygon(w, h, n, v)
+        self.blitRectFilter = max(size) <= 1
+        return self
+
+    def polygon(self, *points):
+        "Set shape property to a polygon"
+        w, h = self._image.size
+        self._moment = (w * w + h * h) / 12
+        x = w/2
+        y = h/2
+        if len(points) == 0:
+            points = (0,0), (w,0), (w,h), (0,h)
+        self.shape = Polygon2D(points).transform2d(shift=neg((x,y)))
+        self.blitRectFilter = True
+        for px,py in self._shape.points:
+            if px < -x or px > x or py < -y or py > y:
+                self.blitRectFilter = False
+                break
+        return self
+    
+    def circle(self, radius=1):
+        "Set shape property to a circle"
+        r = min(self._image.size) / 2
+        self._moment = r * r / 2
+        self.shape = Circle2D(r * radius)
+        self.blitRectFilter = radius <= 1
+        return self
+
+    @property
+    def shape(self):
+        "Return a zoomed and rotated shape"
+        if self._shape is None: self.polygon()
+        a = 0 if type(self._shape) is Circle2D else self.angle * DEG
+        key = dict(scale=self.zoom, rotate=a, shift=self.posn)
+        s = self._shapeCache.get(key)
+        if s is None:
+            s = self._shape.transform2d(**key)
+            self._shapeCache.put(key, s)
+        return s
+
+    @shape.setter
+    def shape(self, s): self._shape = s
+
+    @property
+    def moment(self):
+        "Calculate the moment of inertia for collisions"
+        return self.mass * self._moment * self.zoom ** 2
+
+    def impulse(self, dp, a):
+        "Adjust velocity and spin to account for an impulse"
+        m = self.mass
+#        print(self, self.velocity, dp)
+        self.velocity = add(self.velocity, times(dp, 1/m))
+        self.spin += mag(dp) * a / DEG
+
+    def collideRegions(self, color=(0, 0, 255, 92), flags=3):
+        "Set sprite to draw blit rectangle and/or shape"
+        self._collideRegion = flags, color
+        return self
+
+    def _collideDraw(self):
+        "Draw collision shape (circle or polygon)"
+        img = Image(pygame.display.get_surface())
+        s = self.shape
+        if type(s) is Circle2D:
+            circ = Image.ellipse(s.radius, fill=self._collideRegion[1], stroke=None)
+            circ.blitTo(img, tuple(s.center), CENTER)
+        else:
+            img.plot(s.points, fill=self._collideRegion[1], stroke=None, closed=True)
+#            img.plot(arrow(*s.points[:2]).points, stroke=(0,0,0))
 
     @property
     def costumes(self): return self._costumes
@@ -170,104 +201,121 @@ class Sprite():
                 costumes[i] = costumes[i].scale(size)
         self._costumes = costumes
         self._seq = tuple(range(len(self.costumes)))
-    
+
     def config(self, **kwargs):
         "Set multiple attributes"
-        r = kwargs.get("radius")
-        for k in kwargs:
-            if k != "radius":
-                setattr(self, k, kwargs[k])
-        if r: self.radius = r
+        for k in kwargs: setattr(self, k, kwargs[k])
         self.calcRect()
         return self
 
     @property
     def unitVector(self):
-        a = radians(self.angle)
-        return cos(a), sin(a)
-
-    @property
-    def radius(self):
-        return None if self._radius is False else self._radius * self.zoom
-
-    @radius.setter
-    def radius(self, r):
-        if r is True: r = sum(self.getSize(False)) / 4
-        self._radius = r / self.zoom
-
-    def calcMask(self):
-        self.mask = pygame.mask.from_surface(self.image.surface)
+        return vec2d(1, self.angle * DEG)
 
     @property
     def speed(self): return hypot(*self.velocity)
 
     def velocityAt(self, posn):
-        v = tuple_sub(posn, self.posn)
-        return tuple_add(tuple_times(v, self.spin), self.velocity)
-        
+        "Calculate combined translational plus rotational velocity at a point"
+        x, y = sub(posn, self.posn)
+        w = self.spin / DEG
+        return add(self.velocity, (-w * y, w * x))
+
     @property
     def costumeTime(self): return self._costumeTime
 
     @costumeTime.setter
     def costumeTime(self, frames):
+        "Set the number of frames between costume changes"
         self._costumeTime = abs(frames)
         if self._nextChange > self._costumeTime:
             self._nextChange = self._costumeTime
 
-    @property
-    def edge(self): return self._edge
+#     @property
+#     def location(self):
+#         "Determine if sprite is within, on edge, or outside of sketch"
+#         sk = self.sketch
+#         skRect = pygame.Rect((0,0), sk.size)
+#         spRect = self.shape.rect
+#         if skRect.contains(spRect): n = 1
+#         elif skRect.colliderect(spRect): n = 0
+#         else: n = -1
+#         return n
 
-    @edge.setter
-    def edge(self, edge):
-        if edge == NO_EDGE: self._edge = None, None
-        else: self._edge = (edge, edge) if type(edge) is int else edge
-
-    def _oneEdge(self, wx, dim=0):
-        "Adjust sprite properties when it reaches the edge of the screen"
-        wx = wx[dim]
-        if wx is not None:
-            sk = self.sketch
-            x = self.posn[dim]
-            w = 2 * self.radius if self.radius else self.getSize(True)[dim]
-            x1 = w / 2 * (1 if wx == BOUNCE else -1)
-            x2 = sk.size[dim] - x1
-            if x < x1 or x > x2:
-                if wx not in {WRAP, BOUNCE}: self._setStatus(wx)
-                else:
-                    v = self.velocity[dim]
-                    if wx == BOUNCE:
-                        x = 2 * (x1 if x < x1 else x2) - x
-                        vx, vy = self.velocity
-                        if dim == 0:
-                            vx *= -(self.elasticity ** 0.5)
-                            if abs(vx) < self.bounceThreshhold: vx = 0
-                            dv = vx - v, 0
-                        else:
-                            vy *= -(self.elasticity ** 0.5)
-                            if abs(vy) < self.bounceThreshhold: vy = 0
-                            dv = 0, vy - v
-                        self.velocity = vx, vy
-                        _changeSpin(self, dv)
+    def bounce(self, pMap, *lines):
+        "Bounce the sprite upon collision with wall"
+        edge = []
+        for line in lines:
+            pt = pMap[line] if line in pMap else None
+            if pt:
+                vx, vy = resolve2d(self.velocity, line.unit)
+                if vy < 0:
+                    edge.append(line)
+                    if self.mass:
+                        self.spriteList.impulse(self, None, avg(*pt), line.normal)
                     else:
-                        if x > x2 and v >= 0: x = x1
-                        elif x < x1 and v <= 0: x = x2
-                        else: return False
-                    xy = self.posn
-                    self.posn = (x, xy[1]) if dim == 0 else (xy[0], x)
-                return True
-        return False
+                        e = self.elasticity
+                        if e != 1:
+                            e = sqrt(e)
+                            vy *= e
+                            if self.spin: self.spin *= e
+                        self.velocity = add(times(line.unit, vx), times(line.normal, -vy))
+        return edge
+
+    def wrap(self, e):
+        "Wrap or remove sprite after leaving sketch area"
+        x = e & (WRAP_X | REMOVE_X)
+        y = e & (WRAP_Y | REMOVE_Y)
+        if x or y:
+            w, h = self.sketch.size
+            r = self.rect
+            vx, vy = self.velocity
+            dx = dy = 0
+            if x:
+                if vx <= 0 and r.right < 0:
+                    dx = w + r.width
+                    self.edgeAdjust.add(3)
+                elif vx >= 0 and r.left >= w:
+                    dx = -(w + r.width)
+                    self.edgeAdjust.add(1)
+            if y:
+                if vy <= 0 and r.bottom < 0:
+                    dy = h + r.height
+                    self.edgeAdjust.add(0)
+                elif vy >= 0 and r.top >= h:
+                    dy = -(h + r.height)
+                    self.edgeAdjust.add(2)
+            if dx or dy:
+                if (dx and x & REMOVE_X) or (dy and y & REMOVE_Y):
+                    self._setStatus(REMOVE)
+                else: self.posn = add(self.posn, (dx, dy))
+
+    def edgeAction(self, e):
+        "Check sprite for bounce, wrap, or remove action at sketch edge"
+        self.edgeAdjust = set()
+        wall = self.sketch._wallPoly
+        pMap = {}
+        for seg in wall.segments:
+            pt = self.shape.intersect2d(seg.lineClone())
+            if pt: pMap[seg] = pt
+        if e & BOUNCE:
+            segs = wall.segments
+            if not e & BOUNCE_Y: segs = segs[1], segs[3]
+            elif not e & BOUNCE_X: segs = segs[0], segs[2]
+            self.edgeAdjust = set(wall.segments.index(line) for line in self.bounce(pMap, *segs))
+        if e & (REMOVE | WRAP): # not self.edgeAdjust and 
+            if not wall.containsPoint(self.posn):
+                self.wrap(e)
 
     def frameStep(self):
         "Update the sprite state based on its velocity, spin, and zoom rate"
         if self.drag:
-            self.velocity = tuple_times(self.velocity, 1 - self.drag)
-        self.posn, self.velocity, self.accel = step(1, self.posn, self.velocity, self.accel, self.jerk)
-        if self._edge is not None:
-            x = self._oneEdge(self._edge, 0)
-            y = self._oneEdge(self._edge, 1)
-            self.edgeAdjust = x or y
+            self.velocity = times(self.velocity, 1 - self.drag)
+        a = self.accel
+        self.posn, self.velocity, self.accel = step(1, self.posn, self.velocity, a, self.jerk)
+        self.edgeAction(self.edge)
         if self.orient:
-            self.angle = polar(self.velocity, True)[1]
+            self.angle = deg2d(self.velocity)
         elif self.spin:
             self.angle = (self.angle + self.spin) % 360
             if self.spinDrag:
@@ -281,14 +329,7 @@ class Sprite():
                 self._nextChange = self._costumeTime
         self.calcRect()
 
-    _update = frameStep
-
-    @property
-    def update(self): return self._update
-
-    @update.setter
-    def update(self, func):
-        self._update = func.__get__(self, self.__class__)
+    update = frameStep
 
     @property
     def sketch(self):
@@ -298,15 +339,16 @@ class Sprite():
     @property
     def _image(self):
         "Return the current unzoomed and unrotated costume image"
-        img = self.costumes[self._seq[self.currentCostume]]
-        return img
-
+        return self.costumes[self._seq[self.currentCostume]]
+    
     @property
     def image(self):
         "Return a zoomed, rotated image"
         img = self._image
         if self.zoom != 1 or self.angle:
-            img = img.transform(self.getSize(False), self.angle if self.angle else None)
+            a = round(self.angle, 2) if self.angle else None
+            if a and 360 - a < 0.01: a = 0
+            img = img.transform(self.getSize(False), a)
         if self.tint: img = img.clone().tint(self.tint)
         return img
 
@@ -314,7 +356,7 @@ class Sprite():
         "Calculate the sprite's rotated or unrotated size"
         w, h = self._image.size
         if rotated and self.angle:
-            a = radians(self.angle)
+            a = self.angle * DEG
             c, s = abs(cos(a)), abs(sin(a))
             w, h = w * c + h * s, w * s + h * c
         if self.zoom != 1:
@@ -330,6 +372,11 @@ class Sprite():
 
     @property
     def height(self): return self.size[1]
+
+    @property
+    def center(self):
+        w, h = self.size
+        return w//2, h//2
 
     def _setStatus(self, status):
         if status == REMOVE:
@@ -357,81 +404,15 @@ class Sprite():
     @property
     def rect(self): return self._rect
 
-#     def getRect(self, rotated=True):
-#         "Rectangle for the rotated or unrotated sprite"
-#         r = self.rect
-#         if not rotated and self.angle:
-#             size = self.getSize(False)
-#             r = rectAnchor(self.posn, size, CENTER)
-#         return r
-
-    def _corners(self):
-        "Generate corners of the rotated sprite"
-        x, y = self.posn
-        w, h = self.getSize(False)
-        w /= 2
-        h /= 2
-        a = radians(self.angle)
-        c, s = cos(a), sin(a)
-        for px, py in ((w,h), (-w,h), (-w,-h), (w,-h)):
-            yield x + c * px - s * py, y + c * py + s * px
-
-    def corners(self): return tuple(self._corners())
-
     def contains(self, *pts):
         "Determine if the sprite contains any of a sequence of points"
-#         if len(pts) == 2 and type(pts[0]) in (int, float):
-#             pts = pts,
-        if self.radius:
-            for p in pts:
-                if distance(p, self.posn) < self.radius:
-                    return True
-        else:
-            a = -radians(self.angle)
-            s, c = sin(a), cos(a)
-            xc, yc = self.rect.center
-            w, h = self.getSize(False)
-            w //= 2
-            h //= 2
-            for x, y in pts:
-                x -= xc
-                y -= yc
-                x, y = abs(c * x - s * y), abs(s * x + c * y)
-                if x < w and y < h: return True
+        for p in pts:
+            if (not self.blitRectFilter or self.rect.collidepoint(p)) and self.shape.containsPoint(p):
+                return True
         return False
 
-    def exclude(self, pt):
-        "Move sprite to exclude the specified point"
-        if self.radius:
-            r = tuple_sub(pt, self.posn)
-            mag = hypot(*r)
-            if mag < self.radius:
-                dr = tuple_times(r, (mag - self.radius) / mag) if mag else (self.radius, 0)
-                self.posn = tuple_add(self.posn, dr)
-        elif self.contains(pt):
-            rMin = None
-            for s in segments(self.corners()):
-                p = closest(eqnOfLine(*s), pt)
-                r = distance(p, pt)
-                if rMin is None or r < rMin:
-                    rMin = r
-                    closePt = p
-            dr = tuple_sub(pt, closePt)
-            self.posn = tuple_add(self.posn, dr)
-
     def toward(self, posn, mag=1):
-        ux, uy = unitVector(self.posn, posn)
-        return mag * ux, mag * uy
-
-#     def moveTo(self, path, speed=None):
-#         "Reposition the sprite on the path and make its velocity parallel to the path"
-#         self.posn, seg = path.closest(self.posn)[1:]
-#         u = unitVector(*seg)
-#         v = scalarProduct(u, self.velocity)
-#         if speed is not None:
-#             v = speed * (1 if v==0 else v / abs(v))
-#         self.velocity = v * u[0], v * u[1]
-#         return self
+        return times(unitVector(sub(posn, self.posn)), mag)
 
     def costumeSequence(self, costume=0, end=-1, oscillate=False):
         "Specify which costumes to use and their order"
@@ -450,7 +431,7 @@ class Sprite():
         elif status is not None: return self.status == status
         else: return True
 
-    def colliding(self, group=None, collided=collide_sprite):
+    def colliding(self, group=None, collided=collide_shape):
         "Test if sprite is currently colliding"
         if group is None: group = self.spriteList
         for s in group:
@@ -458,14 +439,14 @@ class Sprite():
                 return True
         return False
 
-    def collisionGen(self, group=None, collided=collide_sprite):
+    def collisionGen(self, group=None, collided=collide_shape):
         "Generate a sequence of colliding sprites"
         if group is None: group = self.spriteList
         for s in group:
             if s is not self and collided(self, s):
                 yield s
 
-    def collisions(self, group=None, collided=collide_sprite, seqType=set):
+    def collisions(self, group=None, collided=collide_shape, seqType=set):
         "Return a set of colliding sprites"
         return seqType(self.collisionGen(group, collided))
 
@@ -479,7 +460,6 @@ class Sprite():
         x, y = self.accel
         self.accel = factor * x, factor * y
         self.zoom *= factor
-        self.bounceThreshhold *= factor
 
     def remove(self):
         sp = self.spriteList
@@ -499,7 +479,10 @@ class Sprite():
         "Return sprite index in sprite list"
         sp = self.spriteList
         if sp and self in sp: return sp._all.index(self)
-        
+
+    def energy(self):
+        return (self.mass * mag(self.velocity, 2) + self.moment * (self.spin * DEG) ** 2) / 2
+
 
 class SpriteList():
     _debugCollide = False
@@ -572,14 +555,12 @@ class SpriteList():
         "Draw all sprites and call their update method"
         if not srf: srf = pygame.display.get_surface()
         for s in self:
-            if s.status == VISIBLE:
-                srf.blit(s.image.surface, s.rect)
-                if self._debugCollide:
-                    if s.radius:
-                        x, y = s.posn
-                        pygame.draw.circle(srf, randColor(), (round(x), round(y)), round(s.radius))
-                    else:
-                        pygame.draw.rect(srf, randColor(), s.rect)
+            if s.status != DISABLED:
+                debug = s._collideRegion[0]
+                if s.status == VISIBLE and not (debug & 128):
+                    srf.blit(s.image.surface, s.rect)
+                if debug & 1: pygame.draw.rect(srf, (0,0,0), s.rect, 1)
+                if debug & 2: s._collideDraw()
         if self.run:
             self._toRemove = set()
             self._lock = True
@@ -607,36 +588,82 @@ class SpriteList():
             if s.contains(posn): return s       
 
     @staticmethod
-    def _addToMap(m, key, items):
-        if key in m: m[key] |= items
-        else: m[key] = items
+    def impulse(sp1, sp2, pt, normal):
+        "Apply linear and angular impulses to impacting sprites"
+        v1 = sp1.velocity
+        s1 = sp1.spin * DEG
+        b1 = cross2d(sub(pt, sp1.posn), normal)
+        if sp2:
+            v2 = sp2.velocity
+            s2 = sp2.spin * DEG
+            b2 = cross2d(sub(pt, sp2.posn), normal)
+            b = sprod(normal, sub(v1, v2)) + s1 * b1 - s2 * b2
+        else:
+            b = sprod(normal, v1) + s1 * b1
+        if b < 0:
+            m1 = sp1.mass 
+            I1 = sp1.moment
+            a1 = b1 / I1
+            if sp2:
+                m2 = sp2.mass
+                I2 = sp2.moment
+                a2 = b2 / I2
+                E = (m1 * mag(v1, 2) + m2 * mag(v2, 2) + I1 * s1 * s1 + I2 * s2 * s2) / 2
+                a = (1 / m1 + 1 / m2 + b1 * a1 + b2 * a2) / 2
+                c = (1 - (sp1.elasticity + sp2.elasticity) / 2) * E
+            else:
+                E = (m1 * mag(v1, 2) + I1 * s1 * s1) / 2
+                a = (1 / m1 + b1 * a1) / 2
+                c = (1 - sp1.elasticity) * E
+            d = (-b + sqrt(max(0, b*b - 4*a*c))) / (2*a)
+            d = times(normal, d)
+            sp1.impulse(d, a1)
+            if sp2: sp2.impulse(neg(d), -a2)
+#         else:
+#             print(normal, v1, sp2 is None)
     
-    def collisionMap(self, group1=None, group2=None, collided=collide_sprite):
-        if group1 is None: group1 = self
-        if group2 is None: group2 = group1
+    def physics(self):
+        "Detect and apply conservation laws to colliding masses"
         cMap = {}
-        for s in group1:
-            if s in cMap: group = set(group2) - cMap[s]
-            else: group = group2
-            coll = s.collisions(group)
-            if len(coll):
-                self._addToMap(cMap, s, coll)
-                for c in coll:
-                    if c in group1:
-                        self._addToMap(cMap, c, {s})
+        for sp1 in self:
+            if sp1.mass:
+                sp1.collideUpdate = False
+                for sp2 in self[sp1.index+1:]:
+                    brf = sp1.blitRectFilter and sp2.blitRectFilter
+                    if sp2.mass and (not brf or collide_rect(sp1, sp2)):
+                        normal = impact(sp1.shape, sp2.shape)
+                        if normal:
+                            self.impulse(sp1, sp2, *normal)
+                            addToMap(cMap, sp1, {sp2})
+                            addToMap(cMap, sp2, {sp1})
+        for sp1 in cMap: sp1.collideUpdate = True
         return cMap
 
-    def collisions(self, group=None, collided=collide_sprite):
-        "Return a set of sprites from the group that are colliding with ANY sprite"
-        if group is None: group = self
-        coll = set()
-        for s in group:
-            if s not in coll:
-                if s.colliding(self, collided):
-                    coll.add(s)
-        return coll
+    def collisionMap(self, group1=None, group2=None, collided=collide_shape):
+        "Construct a map of colliding sprites"
+        if group1 is None: group1 = self
+        if group2 is None: group2 = group1
+        group2 = set(group2)
+        cMap = {}
+        done = set()
+        for s in group1:
+            if s in cMap: group = group2 - cMap[s]
+            else: group = group2
+            coll = s.collisions(group - done, collided)
+            done.add(s)
+            if len(coll):
+                addToMap(cMap, s, coll)
+                for c in coll:
+                    if c in group1:
+                        addToMap(cMap, c, {s})
+        return cMap
 
-    def collisionsBetween(self, group1, group2=None, collided=collide_sprite):
+    def collisions(self, group=None, collided=collide_shape):
+        "Return a set of sprites from the group that are colliding with ANY sprite"
+        cMap = self.collisionMap(group, None, collided)
+        return set([c for c in cMap])
+
+    def collisionsBetween(self, group1, group2=None, collided=collide_shape):
         "Return the collisions between two groups as a 2-tuple of sprite sets"
         cMap = self.collisionMap(group1, group2, collided)
         c1 = set()
@@ -656,11 +683,7 @@ class Sketch(PApplet):
     _start = 0
     _sounds = {}
     io = None
-    wall = False
-
-    def edge(self):
-        "Default edge behaviour for sprites"
-        return BOUNCE if self.wall else REMOVE
+    wall = None
 
     def __init__(self, setup=None):
         super().__init__(setup)
@@ -676,9 +699,21 @@ class Sketch(PApplet):
     def simpleDraw(self):
         "Redraw background and sprites"
         self.drawBackground()
+        if self.wall: self.drawWall(self.wall)
         self.sprites.draw()
 
     draw = simpleDraw
+
+    def physicsDraw(self):
+        self.simpleDraw()
+        self.sprites.physics()
+
+    def drawWall(self, color, weight=1):
+        w, h = self.size
+        w -= 1
+        h -= 1
+        pts = (0,0), (w,0), (w,h), (0,h)
+        pygame.draw.lines(self.surface, color, True, pts, weight)
 
     def animate(self, draw=None, eventMap=None):
         "Bind new draw and eventMap attributes and reset frameNumber property"
@@ -687,12 +722,6 @@ class Sketch(PApplet):
         self._bind(None, draw, eventMap)
         self._start = self.frameCount
 
-    def _fitImg(self, size):
-        "Add wall when scaling background image to sketch size"
-        self._bgImage.transform(size=size)
-        if self.wall:
-            self.scaledBgImage.borderInPlace(1, self.wall)
-    
     @property
     def frameNumber(self):
         "Frames since last call to animate method"
@@ -703,10 +732,13 @@ class Sketch(PApplet):
         super().resize(size, mode, ev)
         sp = self.sprites
         h = sp.sketchHeight if sp.sketchHeight else self.initHeight
-        h1 = self.height
+        w1, h1 = self.size
         if h1 != h:
             sp.sketchHeight = h1
             sp.transform(factor=h1/h)
+        w1 -= 1
+        h1 -= 1
+        self._wallPoly = Polygon2D([(0,0), (w1,0), (w1,h1), (0,h1)])
 
     def loadSounds(self, *args):
         "Pre-load sound files into the '_sounds' buffer"

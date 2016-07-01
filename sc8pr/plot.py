@@ -18,7 +18,7 @@
 
 from sc8pr.image import Image
 from sc8pr.util import rgba, CENTER, EAST, NORTH, WEST, SOUTH, NE, NW
-from sc8pr.geometry import locus, arrow, tuple_add
+from sc8pr.geom import locus, arrow, add
 import pygame
 
 
@@ -102,7 +102,7 @@ class Plot(Image):
             img = Image.text(formats[n].format(x), **kwargs)
             if rotate[n]: img = img.rotate(rotate[n])
             posn = (0, x) if n else (x, 0)
-            posn = tuple_add(self.coords(posn), offsets[2*n:2*n+2])
+            posn = add(self.coords(posn), offsets[2*n:2*n+2])
             img.blitTo(self, posn, anchors[n])
 
     def grid(self, delta=(1,1), axisStyle=(BLACK,3), gridStyle=(GREY,1), zero=(True,False), **kwargs):

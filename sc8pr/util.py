@@ -90,6 +90,10 @@ def isDown(k): return k.key == pygame.K_DOWN or k.key == pygame.K_KP2 and k.unic
 def isIncr(k): return k.key in (pygame.K_UP, pygame.K_RIGHT) or k.key in (pygame.K_KP8, pygame.K_KP6) and k.unicode == ""
 def isDecr(k): return k.key in (pygame.K_DOWN, pygame.K_LEFT) or k.key in (pygame.K_KP2, pygame.K_KP4) and k.unicode == ""
 
+def addToMap(m, key, items):
+    if key in m: m[key] |= items
+    else: m[key] = items
+    
 def copyAttr(src, dest):
     "Copy all attributes from an object or dict to another object"
     if type(src) != dict: src = src.__dict__
