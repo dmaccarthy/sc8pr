@@ -20,8 +20,9 @@ from traceback import format_exc
 from sys import stderr
 from zipfile import ZipFile as zf, ZIP_DEFLATED
 from random import randint
-from pygame.color import Color
-from pygame.rect import Rect
+from pygame import Color, Rect
+#from pygame.color import Color
+#from pygame.rect import Rect
 import pygame, sc8pr, os
 
 
@@ -51,6 +52,12 @@ def rgba(*args):
     "Return a color or list of colors from str or tuple data"
     c = [Color(*c) if type(c) is tuple else Color(c) for c in args]
     return c[0] if len(c) == 1 else c
+
+def hsvaColor(h, s, v, a=100):
+    "Create color from HSVA values"
+    c = Color(0)
+    c.hsva = h, s, v, a
+    return c
 
 def randColor(alpha=False):
     "Return a random color"
