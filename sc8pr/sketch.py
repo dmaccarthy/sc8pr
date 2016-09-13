@@ -166,7 +166,6 @@ class Sprite():
     def impulse(self, dp, a):
         "Adjust velocity and spin to account for an impulse"
         m = self.mass
-#        print(self, self.velocity, dp)
         self.velocity = add(self.velocity, times(dp, 1/m))
         self.spin += mag(dp) * a / DEG
 

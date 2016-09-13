@@ -81,6 +81,7 @@ class Robot(Sprite):
     elasticity = 0.9
     arenaTime = 12
     startTime = None
+#    centerPen = True
 
     def __init__(self, sprites, brain=None, colors=None, *group, **kwargs):
         self.penColor = None
@@ -106,8 +107,16 @@ class Robot(Sprite):
 
     @property
     def stall(self):
+        "Stall status as bool"
+        return self._stallTime is not None
+#        t = self._stallTime
+#        return None if t is None else (self.sketch.time - t)
+
+    @property
+    def stallTime(self):
+        "Return duration of current stall event"
         t = self._stallTime
-        return None if t is None else (self.sketch.time - t)
+        return 0.0 if t is None else (self.sketch.time - t)
 
     @property
     def compass(self): return self.angle
@@ -172,7 +181,7 @@ class Robot(Sprite):
     @penColor.setter
     def penColor(self, c):
         self._pen = c if isinstance(c, Color) or c is None else Color(c)
-        self.penPosn = None
+#        self._penPosn = None
 
     @property
     def motorsOff(self):
@@ -197,7 +206,7 @@ class Robot(Sprite):
                 xy = rectAnchor((x,y), img.size, CENTER).topleft
                 led.append((img, xy))
             a -= pi / 1.5
-        if c: self.penPosn = round(x), round(y)
+#        if c: self._penPosn = True if self.centerPen else (round(x), round(y))
         return led
 
     def update(self):
@@ -371,9 +380,11 @@ class Robot(Sprite):
         super().frameStep()
 
         # Draw penColor on background...
-        if self.penColor and self.penPosn:
+        if self.penColor:# and self._penPosn:
             srf = self.sketch.scaledBgImage.surface
-            circle(srf, self.penColor, self.penPosn, self.penRadius)
+            x, y = self.posn
+            xy = (round(x), round(y)) #if self.centerPen else self._penPosn
+            circle(srf, self.penColor, xy, self.penRadius)
 
         # Check sensors...
         stall = not self.motorsOff and (self.edgeAdjust or self.collideUpdate)
