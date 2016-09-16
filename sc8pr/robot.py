@@ -55,6 +55,8 @@ class RobotThread(Thread):
             args = "{}.{}".format(b.__module__, b.__name__), r.name, id(self)
             print('{} is controlling "{}" in thread {}.'.format(*args), file=stderr)
         try:
+            while r._starting: # Wait for sensors before starting brain
+                r.sleep()
             r.startTime = r.sketch.time
             b(r)
         except: logError()
@@ -71,6 +73,7 @@ class Robot(Sprite):
     _motors = 0.0, 0.0
     _obstacleCone = 8
     _proximity = None, None, None, None
+    _starting = True
     _thread = None
     _downRect = None
     _stallTime = None
@@ -394,6 +397,7 @@ class Robot(Sprite):
         else: self._stallTime = None
         self.downColor = self._downColor()
         self._closest_obstacle()
+        if self._starting: self._starting = False
 
         # Adjust wheel speed...
         self.costumeTime = 0 if self.motorsOff else round(36 / (1 + 5 * self.averagePower))
