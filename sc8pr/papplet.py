@@ -36,6 +36,7 @@ class PApplet:
 	cursor = ARROW
 	gui = None
 	recordGui = False
+	_captureToRAM = False
 
 	@staticmethod
 	def display(): return Image(pygame.display.get_surface())
@@ -54,6 +55,7 @@ class PApplet:
 		self._bgImage = None
 		self._frameInterval = None
 		self._recordSequence = -1, 0
+		self._ramDisk = {}
 		self._lumin = []
 		self._bind(setup, draw, eventMap)
 		self._clock = pygame.time.Clock()
@@ -261,6 +263,22 @@ class PApplet:
 		setCursor(cursor)
 		display.flip()
 
+	@property
+	def captureToRAM(self): return self._captureToRAM
+
+	@captureToRAM.setter
+	def captureToRAM(self, v):
+		if v: self._captureToRAM = True
+		else:
+			self._captureToRAM = False
+			rd = self._ramDisk
+#			print("Saving...")
+			if len(rd):
+				for path, srf in rd.items():
+#					print(path)
+					pygame.image.save(srf, path)
+				rd.clear()
+
 	def record(self, interval=1):
 		"Start or stop automatic recording of frames"
 		self.frameRecord = self.frameCount + 1
@@ -277,7 +295,10 @@ class PApplet:
 				s, f = self._recordSequence
 				path = self.recordName.format(s, f)
 				self._recordSequence = s, f + 1
-		pygame.image.save(self.surface, path)
+		if self._captureToRAM:
+			self._ramDisk[path] = self.surface.copy()
+		else:
+			pygame.image.save(self.surface, path)
 
 	def _captureFrame(self):
 		"Save a single frame when recording is enabled"
@@ -387,4 +408,6 @@ class PApplet:
 		# Something went wrong...
 			except: logError()
 
+		self.captureToRAM = False
 		pygame.quit()
+		return self
