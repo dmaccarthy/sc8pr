@@ -21,8 +21,6 @@ from sys import stderr
 from zipfile import ZipFile as zf, ZIP_DEFLATED
 from random import randint
 from pygame import Color, Rect
-#from pygame.color import Color
-#from pygame.rect import Rect
 import pygame, sc8pr, os
 
 
@@ -56,7 +54,7 @@ def rgba(*args):
 def hsvaColor(h, s, v, a=100):
     "Create color from HSVA values"
     c = Color(0)
-    c.hsva = h, s, v, a
+    c.hsva = h % 360 if h >= 360 else h, s, v, a
     return c
 
 def randColor(alpha=False):
@@ -64,6 +62,7 @@ def randColor(alpha=False):
     return Color(*[randint(0,255) for i in range(4 if alpha else 3)])
 
 def noise(c, amt=8, alpha=None):
+    "Add randomness to a color"
     c = Color(*[min(255, max(0, val + randint(-amt, amt))) for val in c])
     if alpha is not None: c.a = alpha
     return c

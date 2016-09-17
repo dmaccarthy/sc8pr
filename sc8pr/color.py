@@ -20,51 +20,30 @@ import pygame
 from sc8pr.widgets import Slider, Widget, Container
 from sc8pr.image import Image
 from sc8pr.gui import GuiEvent
-from sc8pr.util import CROSS
+from sc8pr.util import CROSS, hsvaColor
 from math import atan, pi
 
 
-def hsvToRgb(h, s, v):
-    if s:
-        if h < 0: h = 0
-        h /= 60
-        i = int(h)
-        f = h - i
-        p = v * (1 - s)
-        q = v * (1 - s * f)
-        t = v * (1 - s * ( 1 - f ))
-        if i == 0: c = (v, t, p)
-        elif i == 1: c = (q, v, p)
-        elif i == 2: c = (p, v, t)
-        elif i == 3: c = (p, q, v)
-        elif i == 4: c = (t, p, v)
-        else: c = (v, p, q)
-    else:
-        c = (v, v, v)
-    return round(255 * c[0]), round(255 * c[1]), round(255 * c[2])
+# RGB/HSV conversions.
+# This file uses a 0-1 scale for S and V instead of 0-100.
+# Sorry.
 
+def hsvToRgb(h, s, v): return hsvaColor(h, 100*s, 100*v)[:3]
 
 def rgbToHsv(r, g, b):
-    v = max(r, g, b)
-    dv = v - min(r, g, b)
-    if v == 0: return -1, 0, 0
-    s = dv / v
-    if s == 0: return -1, 0, v/255
-    if r == v: h = (g - b) / dv
-    elif g == v: h = 2 + (b - r) / dv
-    else: h = 4 + (r - g) / dv
-    h *= 60
-    if h < 0: h += 360
-    return h, s, v/255
+    h, s, v = pygame.Color(r, g, b).hsva[:3]
+    return h, s/100, v/100
 
 
 class Hue(Widget):
+    "Colour palette or wheel widget"
     enabled = True
     state = 1
     cursorId = CROSS
 
     @staticmethod
     def image(size=(256,16), val=1.0, sat=None):
+        "Render an H-S or H-V colour palette"
         s, v = sat, val
         w, h = size
         vert = h > w
@@ -83,6 +62,7 @@ class Hue(Widget):
 
     @staticmethod
     def wheel(radius=63, val=1.0):
+        "Render an H-S colour wheel"
         w = 2 * radius + 1
         img = Image((w, w))
         pxArr = pygame.PixelArray(img.surface)
@@ -138,6 +118,7 @@ class Hue(Widget):
 
 
 class ColorPicker(Container):
+    "Widget containing a colour wheel and RGB sliders"
     focusable = True
 
     def __init__(self, name, width=192, posn=(0,0), color=(192,128,255), space=-1, font=None):
