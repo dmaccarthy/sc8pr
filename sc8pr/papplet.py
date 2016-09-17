@@ -342,7 +342,6 @@ class PApplet:
 	# Initialize sketch...
 		self._fonts = self._fontDict()
 		self.quit = False
-#		self.frameCount = 0
 		self.key = None
 		self.mouse = None
 		self.mouseXY = 0, 0

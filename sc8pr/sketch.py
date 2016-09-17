@@ -67,7 +67,7 @@ def collide_shape(left, right):
 def collide_rect(left, right):
     "Collision based on simple rectangle overlap"
     return left.rect.colliderect(right.rect)
-        
+
 
 class Sprite():
     "A class for creating sprites with multiple costumes, motion, rotation, and zooming"
@@ -704,10 +704,12 @@ class Sketch(PApplet):
     draw = simpleDraw
 
     def physicsDraw(self):
+        "Apply 2D physics behaviour to sprites after drawing"
         self.simpleDraw()
         self.sprites.physics()
 
     def drawWall(self, color, weight=1):
+        "Draw a wall around the outside of the sketch"
         w, h = self.size
         w -= 1
         h -= 1
@@ -742,7 +744,9 @@ class Sketch(PApplet):
     def loadSounds(self, *args):
         "Pre-load sound files into the '_sounds' buffer"
         for s in args:
-            try: self._sounds[s] = Sound(s)
+            if type(s) is str: key = s
+            else: s, key = s
+            try: self._sounds[key] = Sound(s)
             except: logError()
 
     def sound(self, key, cache=True, **kwargs):

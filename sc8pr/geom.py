@@ -104,7 +104,7 @@ def angleBetween(v1, v2):
 
 def transform(v, matrix):
     "Apply a transformation matrix to a vector"
-    return tuple(sprod(v, matrix[row]) for row in range(len(matrix)))
+    return tuple(sprod(v, row) for row in matrix)
 
 def transform2dMatrix(rotate=0, scale=1):
     "Return a matrix for 2D rotations and scale transformations"
