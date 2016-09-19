@@ -19,7 +19,7 @@
 from sc8pr.sketch import Sketch, Sprite, SpriteList
 from sc8pr.image import Image
 from sc8pr.util import rectAnchor, CENTER, NW
-from sc8pr.effects import Effect
+from sc8pr.media.effects import Effect
 from os.path import isfile
 from random import randint
 
