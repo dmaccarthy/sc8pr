@@ -24,7 +24,7 @@ from sc8pr.util import logError
 class RAMFolder:
     "A class for storing data in memory for delayed writing to disk"
     
-    def __init__(self, parent=None, name=None):
+    def __init__(self, name, parent=None):
         "Create a folder in RAM"
         self.data = {}
         self.parent = parent
@@ -51,7 +51,7 @@ class RAMFolder:
                     if not isinstance(fldr[k], RAMFolder):
                         raise TypeError("Cannot add item to non-folder")
                 else:
-                    fldr.data[k] = RAMFolder(fldr, k)
+                    fldr.data[k] = RAMFolder(k, fldr)
                 fldr = fldr.data[k]
         fldr.data[name] = obj
 
@@ -87,9 +87,9 @@ class RAMFolder:
             s += f.name + "/"
         return s
 
-    def save(self, path="save", removeAfterSave=False, recursive=True):
+    def save(self, path=None, removeAfterSave=False, recursive=True):
         "Save the contents of a folder and its subfolders"
-        path = "./" + path
+        path = "./" + (self.name if path is None else path)
         remove = []
         for k, v in self.items():
             try:
@@ -99,7 +99,7 @@ class RAMFolder:
                         if not isdir(fpath): mkdir(fpath)
                         v.save(path, removeAfterSave, recursive)
                 else:
-                    fn = path + self.path + k # abspath?
+                    fn = path + self.path + k
                     t = type(v)
                     if t in (set, frozenset):
                         v = sorted(v)
