@@ -23,7 +23,6 @@ from random import randint
 from pygame import Color, Rect
 import pygame, sc8pr, os
 
-
 def nothing(*args): pass
 def logError(): print(format_exc(), file=stderr)
 

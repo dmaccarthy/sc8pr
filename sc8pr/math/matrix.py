@@ -257,20 +257,27 @@ class Matrix:
 
 from math import log, exp
 
-def linReg(x, y):
+def _regData(xy):
+    return [x[0] for x in xy], [x[1] for x in xy]
+
+def linReg(x, y=None):
     "Calculate [b, m] for y = mx+b model"
+    if y is None: x, y = _regData(x)
     return Matrix([[1, a] for a in x]).leastSquares(y)
 
-def powReg(x, y):
+def powReg(x, y=None):
     "Calculate [a, n] for y = ax^n model"
+    if y is None: x, y = _regData(x)
     a, n = linReg([log(a) for a in x], [log(a) for a in y])
     return exp(a), n
 
-def expReg(x, y):
+def expReg(x, y=None):
     "Calculate [a, b] for y = ab^x model"
+    if y is None: x, y = _regData(x)
     a, b = linReg(x, [log(a) for a in y])
     return exp(a), exp(b)
 
-def quadReg(x, y):
+def quadReg(x, y=None):
     "Calculate [c, b, a] for y = ax^2+bx+c model"
+    if y is None: x, y = _regData(x)
     return Matrix([[1, a, a**2] for a in x]).leastSquares(y)

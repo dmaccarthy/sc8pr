@@ -19,6 +19,20 @@ from os.path import isdir
 from os import mkdir
 from json import dump
 from sc8pr.util import logError
+from sys import stderr
+from threading import Thread
+
+
+class _SaveThread(Thread):
+    
+    def __init__(self, ramFolder):
+        super().__init__()
+        self.rf = ramFolder
+
+    def run(self):
+        print("Saving RAMFolder...", file=stderr)
+        self.rf.save()
+        print("Done!", file=stderr)
 
 
 class RAMFolder:
@@ -60,7 +74,9 @@ class RAMFolder:
         for k, v  in self.items():
             if isinstance(v, RAMFolder):
                 yield v.path, v
-                if recursive: v.ls()
+                if recursive:
+                    for j in v.traverse():
+                        yield j
             else:
                 yield self.path + k, v
 
@@ -77,29 +93,29 @@ class RAMFolder:
         while f.parent:
             p.append(f)
             f = f.parent
+        p.append(f)
         return p
 
     @property
     def path(self):
         "Return the folder's location relative to the root folder as a string"
-        s = "/"
+        s = ""
         for f in reversed(self.pathList):
             s += f.name + "/"
         return s
 
-    def save(self, path=None, removeAfterSave=False, recursive=True):
+    def save(self, removeAfterSave=True, recursive=True):
         "Save the contents of a folder and its subfolders"
-        path = "./" + (self.name if path is None else path)
         remove = []
+        count = 0
         for k, v in self.items():
             try:
                 if isinstance(v, RAMFolder): # Save sub-folder
                     if recursive:
-                        fpath = path + v.path
-                        if not isdir(fpath): mkdir(fpath)
-                        v.save(path, removeAfterSave, recursive)
+                        if not isdir(v.path): mkdir(v.path)
+                        v.save(removeAfterSave, recursive)
                 else:
-                    fn = path + self.path + k
+                    fn = self.path + k
                     t = type(v)
                     if t in (set, frozenset):
                         v = sorted(v)
@@ -116,5 +132,9 @@ class RAMFolder:
                     else: # Unknown data type
                         raise TypeError("Unable to save instance of {}".format(t))
                     if removeAfterSave: remove.append(k) 
+                    count += 1
+                    if count % 25 == 0: print("Saved {} items in {}".format(count, self.path), file=stderr)
             except: logError()
         for k in remove: del self.data[k]
+
+    def saveInNewThread(self): _SaveThread(self).start()

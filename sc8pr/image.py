@@ -17,8 +17,7 @@
 
 
 from sc8pr.util import getAlpha, logError, randPixel, rectAnchor, position, NW, CENTER, WEST, EAST 
-#from sc8pr.geom import locus
-import math, pygame
+import math, pygame, zlib
 from pygame.draw import line
 
 FIT = 1
@@ -414,25 +413,6 @@ class Image:
 
     def averageColor(self, alphaAdjust=False):
         "Calculate the average RGBA values for an image"
-#         w, h = self.size
-#         r, g, b, a = 0, 0, 0, 0
-#         for col in range(w):
-#             for row in range(h):
-#                 pixel = self.surface.get_at((col,row))
-#                 if pixel.a:
-#                     a += pixel.a
-#                     r += pixel.r * pixel.a
-#                     g += pixel.g * pixel.a
-#                     b += pixel.b * pixel.a
-#         n = w * h
-# #        a = round(a / n)
-#         if a:
-#             a /= n
-#             n *= a
-#             r = min(255, round(r / n))
-#             g = min(255, round(g / n))
-#             b = min(255, round(b / n))
-#         c = pygame.color.Color(r, g, b, round(a))
         r, g, b, a = pygame.transform.average_color(self.surface)
         if alphaAdjust:
             if a:
@@ -442,6 +422,27 @@ class Image:
                 b = min(255, round(b * f))
             else: r = g = b = 0
         return pygame.color.Color(r,g,b,a)
+
+
+class ZImage:
+    "A class for compressing and decompressing images using zlib"
+
+    def __init__(self, srf, mode=None):
+        if isinstance(srf, Image): srf = srf.surface
+        if mode: self.mode = mode
+        else:
+            bits = srf.get_bitsize()
+            self.mode = "RGBA" if bits == 32 else "RGB"
+        data = pygame.image.tostring(srf, self.mode)
+        self.gz = zlib.compress(data)
+        self.size = srf.get_size()
+
+    @property
+    def image(self):
+        data = zlib.decompress(self.gz)
+        return Image(pygame.image.fromstring(data, self.size, self.mode))
+
+    def saveAs(self, fn): self.image.saveAs(fn)
 
 
 def flipAll(imgs, xflip=False, yflip=False):

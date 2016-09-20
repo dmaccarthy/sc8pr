@@ -19,7 +19,7 @@
 import pygame, os, json
 from time import time
 from pygame import display
-from sc8pr.image import Image, NW
+from sc8pr.image import Image, ZImage, NW
 from sc8pr.util import logError, setCursor, handleEvent, fontHeight, sc8prPath, ARROW, randPixel
 from sc8pr.geom import distSq
 from sc8pr.ram import RAMFolder
@@ -33,7 +33,7 @@ class PApplet:
 	eventMap = {}
 	captureFolder = "capture"
 	saveName = "image{:05d}.png"
-	recordName = "seq{:03d}/image{:05d}.png"
+	recordName = "seq{:03d}_{:05d}.png"
 	light = None
 	cursor = ARROW
 	gui = None
@@ -281,7 +281,7 @@ class PApplet:
 				self._recordSequence = s, f + 1
 		fldr = self.captureFolder
 		if isinstance(fldr, RAMFolder):
-			fldr[path] = Image(self.surface)
+			fldr[path] = ZImage(self.surface.copy())
 		else:
 			pygame.image.save(self.surface, fldr + "/" + path)
 
@@ -393,7 +393,11 @@ class PApplet:
 		# Something went wrong...
 			except: logError()
 
-		if isinstance(self.captureFolder, RAMFolder):
-			self.captureFolder.save(removeAfterSave=True)
+		# Save captured images...
+		capFldr = self.captureFolder
+		if isinstance(capFldr, RAMFolder):
+			capFldr.saveInNewThread()
+			self.captureFolder = RAMFolder(capFldr.name)
+
 		pygame.quit()
 		return self
