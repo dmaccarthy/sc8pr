@@ -25,13 +25,14 @@ from threading import Thread
 
 class _SaveThread(Thread):
     
-    def __init__(self, ramFolder):
+    def __init__(self, ramFolder, **kwargs):
         super().__init__()
         self.rf = ramFolder
+        self.kwargs = kwargs
 
     def run(self):
         print("Saving RAMFolder...", file=stderr)
-        self.rf.save()
+        self.rf.save(**self.kwargs)
         print("Done!", file=stderr)
 
 
@@ -137,4 +138,9 @@ class RAMFolder:
             except: logError()
         for k in remove: del self.data[k]
 
-    def saveInNewThread(self): _SaveThread(self).start()
+    def saveInNewThread(self, createNew=False, **kwargs):
+        if createNew:
+            rf = RAMFolder(self.name if createNew is True else createNew)
+        else: rf = None
+        _SaveThread(self, **kwargs).start()
+        return rf

@@ -396,8 +396,7 @@ class PApplet:
 		# Save captured images...
 		capFldr = self.captureFolder
 		if isinstance(capFldr, RAMFolder):
-			capFldr.saveInNewThread()
-			self.captureFolder = RAMFolder(capFldr.name)
+			self.captureFolder = capFldr.saveInNewThread(True)
 
 		pygame.quit()
 		return self
