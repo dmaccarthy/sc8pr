@@ -18,9 +18,9 @@
 from os.path import isdir
 from os import mkdir
 from json import dump
-from sc8pr.util import logError
 from sys import stderr
 from threading import Thread
+from sc8pr.util import logError
 
 
 class _SaveThread(Thread):
@@ -30,10 +30,7 @@ class _SaveThread(Thread):
         self.rf = ramFolder
         self.kwargs = kwargs
 
-    def run(self):
-        print("Saving RAMFolder...", file=stderr)
-        self.rf.save(**self.kwargs)
-        print("Done!", file=stderr)
+    def run(self): self.rf.save(**self.kwargs)
 
 
 class RAMFolder:

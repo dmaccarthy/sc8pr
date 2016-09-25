@@ -26,14 +26,12 @@ from sc8pr.ram import RAMFolder
 
 
 class PApplet:
-	"Class for creating Processing-style sketches using Pygame 1.9.1 or 1.9.2a0"
+	"Class for creating Processing-style sketches using Pygame 1.9.1 or 1.9.2b"
 	_fontJson = sc8prPath("fonts.json")
 	_quit = False
 	_snapMode = 0
 	eventMap = {}
 	captureFolder = "capture"
-	saveName = "image{:05d}.png"
-	recordName = "seq{:03d}_{:05d}.png"
 	light = None
 	cursor = ARROW
 	gui = None
@@ -55,7 +53,6 @@ class PApplet:
 		self.bgColor = None
 		self._bgImage = None
 		self._frameInterval = None
-		self._recordSequence = -1, 0
 		self._lumin = []
 		self._bind(setup, draw, eventMap)
 		self._clock = pygame.time.Clock()
@@ -263,31 +260,36 @@ class PApplet:
 		setCursor(cursor)
 		display.flip()
 
-	def record(self, interval=1):
+	def _saveName(self):
+		"Default file name for captured frame"
+		if self._frameInterval:
+			name, n = self._recordName
+			return name.format((self.frameCount - n) // self._frameInterval)
+		else:
+			return "img{:05d}.png".format(self.frameNumber)
+
+	def record(self, interval=1, name=None):
 		"Start or stop automatic recording of frames"
-		self.frameRecord = self.frameCount + 1
+		n = self.frameCount + 1
+		self.frameRecord = n
 		self._frameInterval = interval
-		if interval is not None:
-			self._recordSequence = self._recordSequence[0] + 1, 1
+		if name is None:
+			name = "seq{}_{{:05d}}.png".format(n)
+		self._recordName = name, n - interval
 
 	def save(self, path=None):
 		"Save a surface; default file name is based on frameCount property"
 		if path is None:
-			if self._frameInterval is None:
-				path = self.saveName.format(self.frameCount)
-			else:
-				s, f = self._recordSequence
-				path = self.recordName.format(s, f)
-				self._recordSequence = s, f + 1
+			path = self._saveName()
 		fldr = self.captureFolder
 		if isinstance(fldr, RAMFolder):
-			fldr[path] = ZImage(self.surface.copy())
+			fldr[path] = ZImage(self.surface)
 		else:
 			pygame.image.save(self.surface, fldr + "/" + path)
 
 	def _captureFrame(self):
 		"Save a single frame when recording is enabled"
-		if self._frameInterval != None:
+		if self._frameInterval is not None:
 			if self.frameCount == self.frameRecord:
 				self.save()
 				self.frameRecord += self._frameInterval
@@ -305,7 +307,6 @@ class PApplet:
 		if self.bgColor: srf.fill(self.bgColor)
 		img = self.scaledBgImage
 		if img: srf.blit(img.surface, (0,0))
-#		return self
 
 	def tint(self, rgba):
 		"Apply tint operation to the entire sketch"
@@ -325,7 +326,7 @@ class PApplet:
 	draw = drawBackground
 	def setup(self): pass
 
-	def run(self, size=(512,288), caption="Sketch", icon=None, mode=pygame.RESIZABLE):
+	def play(self, size=(512,288), caption="Sketch", icon=None, mode=pygame.RESIZABLE):
 		"Initialize sketch and run the main drawing/event loop"
 
 	# Initialize pygame...
@@ -393,10 +394,7 @@ class PApplet:
 		# Something went wrong...
 			except: logError()
 
-		# Save captured images...
-		capFldr = self.captureFolder
-		if isinstance(capFldr, RAMFolder):
-			self.captureFolder = capFldr.saveInNewThread(True)
-
 		pygame.quit()
 		return self
+
+	run = play # Deprecated, removal February 2017

@@ -425,17 +425,26 @@ class Image:
 
 
 class ZImage:
-    "A class for compressing and decompressing images using zlib"
+    "A class for compressing and decompressing images using zlib" 
 
-    def __init__(self, srf, mode=None):
+    level = 3
+    _data = 0
+    _comp = 0
+
+    def __init__(self, srf, mode=None, level=None):
         if isinstance(srf, Image): srf = srf.surface
         if mode: self.mode = mode
         else:
             bits = srf.get_bitsize()
             self.mode = "RGBA" if bits == 32 else "RGB"
         data = pygame.image.tostring(srf, self.mode)
-        self.gz = zlib.compress(data)
+        self.gz = zlib.compress(data, level if level else self.level)
         self.size = srf.get_size()
+        ZImage._comp += len(self.gz)
+        ZImage._data += len(data)
+
+    @classmethod
+    def compression(cls): return cls._comp / cls._data
 
     @property
     def image(self):
