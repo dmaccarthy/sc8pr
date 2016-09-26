@@ -274,7 +274,8 @@ class Robot(Sprite):
         sk = self.sketch
         if steps is None: steps = max(1, cone)
         if group is None:
-            group = self.spriteList.search(status=VISIBLE)
+#            group = self.spriteList.search(status=VISIBLE)
+            group = [s for s in self.spriteList if s.status == VISIBLE]
         if sk.wall:
             group = set(group) | set(self.sketch._wallPoly.segments)
 
@@ -376,7 +377,8 @@ class Robot(Sprite):
             v = v1
 
         # Acceleration...
-        v = times(self.unitVector, v)
+#        v = times(self.unitVector, v)
+        v = vec2d(v, self.angle * DEG)
         self.accel = times(sub(v, self.velocity), 0.05)
 
         # Update...
@@ -434,7 +436,8 @@ def remote_control(sk, ev):
     "Use keyboard to control robot motors"
     global _rc_robot
     if _rc_robot is None:
-        match = lambda r: isinstance(r, Robot)
-        robots = sk.sprites.search(match=match)
+        robots = [s for s in sk.sprites if isinstance(s, Robot)]
+#        match = lambda r: isinstance(r, Robot)
+#        robots = sk.sprites.search(match=match)
         _rc_robot = robots[-1]
     control_robot(_rc_robot, sk.keyCode)

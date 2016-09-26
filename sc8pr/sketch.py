@@ -25,7 +25,7 @@ from sc8pr.grid import OPEN, SAVE, FOLDER
 from sc8pr.image import Image
 from sc8pr.geom import DEG, unitVector, mag, neg, add, sub, times, sprod, \
     cross2d, deg2d, Polygon2D, Circle2D, impact, ellipsygon, resolve2d, avg
-from sc8pr.cache import Cache
+#from sc8pr.cache import Cache
 from math import hypot, cos, sin, sqrt
 import pygame
 from pygame.mixer import Sound
@@ -75,6 +75,7 @@ class Sprite():
     _costumeTime = 0
     _nextChange = 0
     _shape = None
+    _shapeCache = None,
     posn = 0, 0
     velocity = 0, 0
     mass = 0
@@ -106,7 +107,7 @@ class Sprite():
         if kwargs.get("posn") is None:
             self.posn = self.sketch.center
         self.config(**kwargs)
-        self._shapeCache = Cache()
+#        self._shapeCache = Cache()
         if kwargs.get("edge") is None:
             self.edge = BOUNCE if self.sketch.wall else REMOVE
 
@@ -149,11 +150,14 @@ class Sprite():
         if self._shape is None: self.polygon()
         a = 0 if type(self._shape) is Circle2D else self.angle * DEG
         key = dict(scale=self.zoom, rotate=a, shift=self.posn)
-        s = self._shapeCache.get(key)
-        if s is None:
-            s = self._shape.transform2d(**key)
-            self._shapeCache.put(key, s)
-        return s
+        s = self._shapeCache
+        if s[0] != key:
+            self._shapeCache = s = key, self._shape.transform2d(**key)
+#         s = self._shapeCache.get(key)
+#         if s is None:
+#             s = self._shape.transform2d(**key)
+#             self._shapeCache.put(key, s)
+        return s[1]
 
     @shape.setter
     def shape(self, s): self._shape = s
@@ -207,8 +211,8 @@ class Sprite():
         self.calcRect()
         return self
 
-#     @property
-#     def unitVector(self): return vec2d(1, self.angle * DEG)
+#    @property
+#    def unitVector(self): return vec2d(1, self.angle * DEG)
 
     @property
     def speed(self): return hypot(*self.velocity)
