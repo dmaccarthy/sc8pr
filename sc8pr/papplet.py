@@ -102,10 +102,11 @@ class PApplet:
 		font = None
 		sz = max(4, round(0.7 * size)) if lineHeight else size
 		if name in self._fonts: name = self._fonts[name]
+		pyFont = pygame.ftfont if hasattr(pygame, "ftfont") else pygame.font
 		if name and os.path.isfile(name):
-			font = pygame.font.Font(name, sz)
+			font = pyFont.Font(name, sz)
 		if not font:
-			font = pygame.font.SysFont(name, sz, bold, italic)
+			font = pyFont.SysFont(name, sz, bold, italic)
 		if lineHeight:
 			h = fontHeight(font)
 			if h != size:

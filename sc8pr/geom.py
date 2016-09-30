@@ -239,12 +239,16 @@ class Segment(Line):
         return min(distSq(self.eval(0), point), distSq(self.eval(self.length), point))
 
     def intersect2d(self, other, parallel=0):
-        "Intersection of 2D line segment with another 2D line segment"
+        "Intersection of 2D line segment with another 2D line segment (or line)"
         s = self._intersect2d(other, parallel)
-        if s is True:
-            lims = self.param(other.eval(0)), self.param(other.eval(other.length))
-            low = max(min(lims), 0)
-            high = min(max(lims), self.length)
+        if s is True: # Parallel segments
+            if isinstance(other, Segment):
+                lims = self.param(other.eval(0)), self.param(other.eval(other.length))
+                low = max(min(lims), 0)
+                high = min(max(lims), self.length)
+            else:     # Segment parallel to line
+                low = 0
+                high = self.length
             if low <= high:
                 return [self.eval((low + high) / 2)]
         elif s:

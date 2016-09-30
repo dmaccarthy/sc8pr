@@ -15,11 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-"Apply transition effects to an image"
+"Apply transition effects to an Image or ScriptSprite"
 
-
-from sc8pr.image import Image, CENTER
+from sc8pr.image import Image, ZImage, CENTER
 from sc8pr.util import randColor
+from sc8pr.sketch import Sprite, REMOVE
 from pygame.pixelarray import PixelArray
 import pygame
 from random import uniform, randint, random
@@ -27,66 +27,26 @@ from math import sqrt
 
 
 class Effect:
-    "Base class for layer effects"
-    
-    length = None
-    frame = None
+    "Base class for all effects"
+    offset = 0
+    duration = 60
 
-    def time(self, length, frame=None):
-        self.length = length
-        self.frame = frame
+    def time(self, duration):
+        "Change effect duration"
+        self.duration = duration
         return self
 
-    def apply(self, img, frame):
-        n = self.length
-        if n is not None: n = (frame - self.frame) / n
-        if n is None or n >= 0 and n < 1:
-            img = self.transform(img, n)
-        return img
 
-    @staticmethod
-    def n(frame, t0, t1, length=60):
-        return min(frame-t0, t1-frame) / length
+class Tint(Effect):
+    "Apply a tint operation to the image"
 
+    def __init__(self, color=(255,255,255,0)):
+        self.color = color
 
-class Crop(Effect):
-    "Crop the image"
-
-    def __init__(self, size, posn=CENTER, bgColor=None):
-        self.size = size
-        self.posn = posn
-        self.bgColor = bgColor
-
-    def transform(self, img, n):
-        return img.crop(self.size, self.posn, self.bgColor) 
-
-
-class Scale(Effect):
-    "Adjust the size of the layer image"
-
-    def __init__(self, size):
-        self.size = size
-
-    def transform(self, img, n):
-        size = self.size
-        if type(size) not in (tuple, list):
-            size = img.fitAspect(size.size)
-        return img.transform(size)
-
-
-class Fade(Effect):
-    "Fade layer in or out"
-
-    def __init__(self, color=None): self.color = color
-
-    def transform(self, img, n):
+    def apply(self, img, n=0):
         if n >= 1: return img
-        img = img.clone().setAlpha(round(255 * max(0, n)))
-        if self.color:
-            newImg = Image(img.size, self.color)
-            img.blitTo(newImg)
-            img = newImg
-        return img
+        c = [round(c + n * (255 - c)) for c in self.color] if n > 0 else self.color
+        return img.clone().tint(c)
 
 
 class Wipe(Effect):
@@ -129,7 +89,7 @@ class Wipe(Effect):
         Image(img.surface.subsurface(r)).blitTo(newImg, r.topleft)
         return newImg
 
-    def transform(self, img, n):
+    def apply(self, img, n):
         "Apply wipe effect"
         if n >= 1: return img
         if n < 0: n = 0
@@ -142,7 +102,7 @@ class Wipe(Effect):
 
 
 class Tiles(Effect):
-    rects = None
+    "Create an exploding tiles effect"
 
     def createTile(self):
         vx, vy, s = uniform(-0.5, 0.5), uniform(1, 2), uniform(-720,720)
@@ -164,16 +124,17 @@ class Tiles(Effect):
                 y0 = h * y[r]
                 w0 = w * (x[c+1] - x[c])
                 h0 = h * (y[r+1] - y[r])
-                self.rects.append(pygame.Rect((x0, y0), (w0,h0)))
+                self.rects.append(pygame.Rect((x0, y0), (w0, h0)))
 
-    def __init__(self, cols=7, rows=4, power=1):
+    def __init__(self, cols=7, rows=4, power=1.5):
         self.corners = self.randCut(cols), self.randCut(rows)
         self.tiles = [self.createTile() for i in range(cols * rows)]
         self.power = power
 
-    def transform(self, img, n):
+    def apply(self, img, n):
         if n >= 1: return img
-        if self.rects is None: self.makeRects(*img.size)
+#        if self.rects is None:
+        self.makeRects(*img.size)
         i = 0
         n = (1 - n) ** self.power
         w, h = img.size
@@ -191,12 +152,12 @@ class Tiles(Effect):
 
 
 class MathEffect(Effect):
-    "Layer effect based on y < f(x) or y > f(x)"
+    "Effect based on y < f(x) or y > f(x)"
 
     def __init__(self, eqn=None):
         if eqn: self.eqn = eqn.__get__(self, self.__class__)
 
-    def transform(self, img, n):
+    def apply(self, img, n):
         "Modify image based on equation provided"
         img = img.clone()
         size = img.size
@@ -218,7 +179,7 @@ class MathEffect(Effect):
 
 
 class Diagonal(MathEffect):
-    "Diagonal wipe layer effect"
+    "Diagonal wipe effect"
     
     def __init__(self, quad=1): self.quad = quad
 
@@ -237,7 +198,7 @@ class Diagonal(MathEffect):
 class PaintDrops(MathEffect):
     "Paint drop effect"
     
-    def __init__(self, drops=64):
+    def __init__(self, drops=16):
         self.side = drops > 0
         self.drops = [self.makeDrop() for i in range(abs(drops))]
         n = sum([d[0] for d in self.drops])
@@ -277,7 +238,7 @@ class PaintDrops(MathEffect):
 
 class PixelEffect(Effect):
 
-    def transform(self, img, n):
+    def apply(self, img, n):
         "Apply pixel-by-pixel effect"
         if n >= 1: return img
         if n < 0 : n = 0
@@ -304,3 +265,78 @@ class Dissolve(PixelEffect):
         "Calculate pixel color"
         if (self.transparent or color & self.mask) and random() > n:
             return randColor() if self.color is True else self.color
+
+
+class ScriptSprite(Sprite):
+    _effects = None
+
+#     def __init__(self, sprites, costumes, *group, **kwargs):
+#         super().__init__(sprites, costumes, *group, **kwargs)
+#         self._effects = []
+
+    def update(self):
+        "Run script actions at scheduled frame number"
+        n = self.sketch.frameNumber
+        iSum = 0
+        for i, s in self.script:
+            iSum += i
+            if iSum == n:
+                t = type(s)
+                if t is dict: self.config(**s)
+                elif t is int:
+                    if s == REMOVE: self.remove()
+                    else: self.status = s
+                elif isinstance(s, Effect):
+                    s.offset = n
+                    e = self._effects
+                    if e is None: self._effects = [s]
+                    else: e.append(s)
+        super().frameStep()
+
+    def applyEffects(self, img):
+        "Apply effects to zoomed and rotated image"
+        n = self.sketch.frameNumber
+        rm = []
+        for e in self._effects:
+            f0 = e.offset
+            dt = e.duration
+            if dt < 0: f0 -= dt
+            x = (n - f0) / dt
+            if x >= 0 and x < 1:
+                img = e.apply(img, x)
+            elif n > max(f0, f0 + dt):
+                rm.append(e)
+        for e in rm: self._effects.remove(e)
+        return img
+
+
+class FileSprite(ScriptSprite):
+    "A sprite whose costumes are loaded as needed from a file sequence"
+
+    compress = None
+    useCache = True
+    alpha = True
+
+    def __init__(self, sk, pattern, seq, *group, **kwargs):
+        self.cache = {}
+        self.pattern = pattern
+        self._seq = seq if type(seq) in (tuple, list) else tuple(seq)
+        super().__init__(sk, None, *group, **kwargs)
+        if kwargs.get("costumeTime") is None:
+            self.costumeTime = 1
+
+    @property
+    def _image(self):
+        n = self._seq[self.currentCostume]
+        c = self.cache
+        if n not in c:
+            img = Image(self.pattern.format(n))
+            if self.alpha and img.surface.get_bytesize() < 4:
+                img = img.convert(True)
+            compress = self.compress
+            if compress is None: compress = self.useCache
+            c[n] = ZImage(img.surface) if compress else img
+            if not self.useCache: self.cache = {n: c[n]}
+            return img
+        else: img = c[n]
+        return img.image if isinstance(img, ZImage) else img

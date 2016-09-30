@@ -21,11 +21,9 @@ from sc8pr.util import step, logError, CENTER, rectAnchor, addToMap
 from sc8pr.gui import GUI
 from sc8pr.io import prompt, fileDialog, USERINPUT
 from sc8pr.grid import OPEN, SAVE, FOLDER
-#from sc8pr.search import search
 from sc8pr.image import Image
 from sc8pr.geom import DEG, unitVector, mag, neg, add, sub, times, sprod, \
     cross2d, deg2d, Polygon2D, Circle2D, impact, ellipsygon, resolve2d, avg
-#from sc8pr.cache import Cache
 from math import hypot, cos, sin, sqrt
 import pygame
 from pygame.mixer import Sound
@@ -82,7 +80,6 @@ class Sprite():
     spriteList = None
     status = VISIBLE
     currentCostume = 0
-    tint = None
     accel = 0, 0
     jerk = 0, 0
     zoom = 1
@@ -98,19 +95,20 @@ class Sprite():
     blitRectFilter = True
 
     def __init__(self, sprites, costumes, *group, **kwargs):
-        self.costumes = costumes
+        if costumes is not None: self.costumes = costumes
         if not isinstance(sprites, SpriteList):
             sprites = sprites.sprites
         self.spriteList = sprites
         sprites.append(self, *group)
-        self.polygon()
+#        self.polygon()
         if kwargs.get("posn") is None:
             self.posn = self.sketch.center
         self.config(**kwargs)
-#        self._shapeCache = Cache()
         if kwargs.get("edge") is None:
             self.edge = BOUNCE if self.sketch.wall else REMOVE
-
+        self.polygon()
+        self._calcRect()
+        
     def ellipsygon(self, n=1, size=(1,1), vertices=16):
         "Set shape property to a polygon that approximates an ellipse"
         w, h = self._image.size
@@ -153,10 +151,6 @@ class Sprite():
         s = self._shapeCache
         if s[0] != key:
             self._shapeCache = s = key, self._shape.transform2d(**key)
-#         s = self._shapeCache.get(key)
-#         if s is None:
-#             s = self._shape.transform2d(**key)
-#             self._shapeCache.put(key, s)
         return s[1]
 
     @shape.setter
@@ -208,11 +202,8 @@ class Sprite():
     def config(self, **kwargs):
         "Set multiple attributes"
         for k in kwargs: setattr(self, k, kwargs[k])
-        self.calcRect()
+#        self._calcRect()
         return self
-
-#    @property
-#    def unitVector(self): return vec2d(1, self.angle * DEG)
 
     @property
     def speed(self): return hypot(*self.velocity)
@@ -294,7 +285,7 @@ class Sprite():
             if not e & BOUNCE_Y: segs = segs[1], segs[3]
             elif not e & BOUNCE_X: segs = segs[0], segs[2]
             self.edgeAdjust = set(wall.segments.index(line) for line in self._bounce(pMap, *segs))
-        if e & (REMOVE | WRAP): # not self.edgeAdjust and 
+        if e & (REMOVE | WRAP):
             if not wall.containsPoint(self.posn):
                 self._wrap(e)
 
@@ -318,7 +309,7 @@ class Sprite():
                 n = self.currentCostume + 1
                 self.currentCostume = 0 if n >= len(self._seq) else n
                 self._nextChange = self._costumeTime
-        self.calcRect()
+#        self._calcRect()
 
     update = frameStep
 
@@ -331,7 +322,7 @@ class Sprite():
     def _image(self):
         "Return the current unzoomed and unrotated costume image"
         return self.costumes[self._seq[self.currentCostume]]
-    
+
     @property
     def image(self):
         "Return a zoomed, rotated image"
@@ -340,8 +331,9 @@ class Sprite():
             a = round(self.angle, 2) if self.angle else None
             if a and 360 - a < 0.01: a = 0
             img = img.transform(self.getSize(False), a)
-        if self.tint: img = img.clone().tint(self.tint)
-        return img
+        return self.applyEffects(img)
+
+    def applyEffects(self, img): return img
 
     def getSize(self, rotated):
         "Calculate the sprite's rotated or unrotated size"
@@ -386,7 +378,7 @@ class Sprite():
     @height.setter
     def height(self, h): return self._setZoom(height=h)
 
-    def calcRect(self):
+    def _calcRect(self):
         "Determine the sprite's blit rectangle"
         size = self.getSize(True)
         self._rect = rectAnchor(self.posn, size, CENTER)
@@ -471,8 +463,20 @@ class Sprite():
         sp = self.spriteList
         if sp and self in sp: return sp._all.index(self)
 
+    @property
     def energy(self):
+        "Calculate the combined kinetic plus rotational energy"
         return (self.mass * mag(self.velocity, 2) + self.moment * (self.spin * DEG) ** 2) / 2
+
+    def draw(self, srf):
+        "Draw the sprite on a surface"
+        if self.status != DISABLED:
+            self._calcRect()
+            debug = self._collideRegion[0]
+            if self.status == VISIBLE and not (debug & 128):
+                srf.blit(self.image.surface, self.rect)
+            if debug & 1: pygame.draw.rect(srf, (0,0,0), self.rect, 1)
+            if debug & 2: self._collideDraw()
 
 
 class SpriteList():
@@ -506,11 +510,6 @@ class SpriteList():
                 self._groups.append(g)
         return self
 
-#     def extend(self, sprites, *groups):
-#         "Append a sequence of sprites to the list"
-#         for s in sprites: self.append(s, *groups)
-#         return self
-
     def remove(self, sprites):
         "Remove a sequence of sprites from the list"
         if type(sprites) is not set:
@@ -537,21 +536,10 @@ class SpriteList():
         if sprites is None: sprites = self
         for s in sprites: func(s, **kwargs)
 
-#     def search(self, group=None, match=None, **kwargs):
-#         "Return a list of sprites that match specified criteria"
-#         if group is None: group = self
-#         return list(search(group, match, **kwargs)) # set?
-
     def draw(self, srf=None):
         "Draw all sprites and call their update method"
         if not srf: srf = pygame.display.get_surface()
-        for s in self:
-            if s.status != DISABLED:
-                debug = s._collideRegion[0]
-                if s.status == VISIBLE and not (debug & 128):
-                    srf.blit(s.image.surface, s.rect)
-                if debug & 1: pygame.draw.rect(srf, (0,0,0), s.rect, 1)
-                if debug & 2: s._collideDraw()
+        for s in self: s.draw(srf)
         if self.run:
             self._toRemove = set()
             self._lock = True
@@ -661,6 +649,16 @@ class SpriteList():
             c1.add(s)
             c2 |= cMap[s]
         return c1, c2
+
+#     def extend(self, sprites, *groups):
+#         "Append a sequence of sprites to the list"
+#         for s in sprites: self.append(s, *groups)
+#         return self
+
+#     def search(self, group=None, match=None, **kwargs):
+#         "Return a list of sprites that match specified criteria"
+#         if group is None: group = self
+#         return list(search(group, match, **kwargs)) # set?
 
 #     def sort(self, group):
 #         "Order by sprite list index"
