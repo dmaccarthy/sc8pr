@@ -19,8 +19,8 @@
 
 
 from sc8pr.sketch import Sketch, Sprite, WRAP, REMOVE, USERINPUT
-from sc8pr.image import Image, ZImage
-from sc8pr.ram import RAMFolder
+from sc8pr.image import Image
+from sc8pr.video import Video
 from sc8pr.util import NO_CURSOR, rgba, Data, CENTER, WEST, EAST, NORTH
 from pygame import KEYDOWN, K_LEFT, K_RIGHT, K_UP, K_DOWN, K_SPACE, K_DELETE, K_RETURN, K_a, K_d, K_s, K_w, K_ESCAPE
 from pygame.key import set_repeat
@@ -107,8 +107,7 @@ def setup(sk):
     sk.bgImage = starfield(sk.size)
     sk.animate(draw, {KEYDOWN:keyboard})
     if "--record" in argv:
-        sk.captureFolder = RAMFolder("capture")
-        sk.record(2)
+        sk.capture = Video(interval=2)
         print("Recording!")
     start(sk)
 
@@ -282,6 +281,4 @@ def drawHighScores(sk):
 
 # Play!
 
-ZImage.level = 1
-fldr = Sketch(intro_setup).play(HEIGHT, "Asteroid Shield", FOLDER + "icon.png").captureFolder
-if isinstance(fldr, RAMFolder): fldr.save()
+Sketch(intro_setup).play(HEIGHT, "Asteroid Shield", FOLDER + "icon.png").capture.save("aster")

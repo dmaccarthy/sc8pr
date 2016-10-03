@@ -17,8 +17,10 @@
 
 
 from sc8pr.util import getAlpha, logError, randPixel, rectAnchor, position, NW, CENTER, WEST, EAST 
-import math, pygame, zlib
+import math, pygame
 from pygame.draw import line
+from pygame import PixelArray
+
 
 FIT = 1
 LEFT = WEST
@@ -223,6 +225,9 @@ class Image:
     def randPixel(self): return randPixel(self)
 
     @property
+    def bits(self): return self.surface.get_bitsize()
+
+    @property
     def size(self): return self.surface.get_size()
 
     @property
@@ -403,6 +408,12 @@ class Image:
         self.noTransform()
         return self
 
+    def removeColor(self, color, dist=0):
+        "Change a color to transparent"
+        img = self.convert(True) if self.bits < 32 else self.clone()
+        PixelArray(img.surface).replace(color, (0,0,0,0), dist)
+        return img
+
     def tint(self, rgba, sf=pygame.BLEND_RGBA_MULT):
         self.surface.fill(rgba, special_flags=sf)
         self.noTransform()
@@ -422,27 +433,6 @@ class Image:
                 b = min(255, round(b * f))
             else: r = g = b = 0
         return pygame.color.Color(r,g,b,a)
-
-
-class ZImage:
-    "A class for compressing and decompressing images using zlib"
-
-    def __init__(self, srf, mode=None):
-        if isinstance(srf, Image): srf = srf.surface
-        if mode: self.mode = mode
-        else:
-            bits = srf.get_bitsize()
-            self.mode = "RGBA" if bits == 32 else "RGB"
-        data = pygame.image.tostring(srf, self.mode)
-        self.gz = zlib.compress(data)
-        self.size = srf.get_size()
-
-    @property
-    def image(self):
-        data = zlib.decompress(self.gz)
-        return Image(pygame.image.fromstring(data, self.size, self.mode))
-
-    def saveAs(self, fn): self.image.saveAs(fn)
 
 
 def flipAll(imgs, xflip=False, yflip=False):

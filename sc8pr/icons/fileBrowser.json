@@ -13,7 +13,7 @@
 "code":["json","xml","c","cpp","php","java","pde","js","css","bat"],
 "html":["html","htm","xhtml"],
 "image":["png","jpg","jpeg","gif","tga","bmp","tiff","svg","pcx","eps"],
-"video":["ogv","ogx","mp4","mkv","webm","3gp","avi","mov","qt","mpg","mpeg","asf","wmv","vob","flv","divx","rm"],
+"video":["ogv","ogx","mp4","mkv","webm","3gp","avi","mov","qt","mpg","mpeg","asf","wmv","vob","flv","divx","rm","s8v"],
 "audio":["ogg","mp3","m4a","m4p","mka","wav","wma","aac","au","aiff"]
 },{
 "<code>":"<code>;<python>",

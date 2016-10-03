@@ -19,10 +19,9 @@
 import pygame, os, json
 from time import time
 from pygame import display
-from sc8pr.image import Image, ZImage, NW
+from sc8pr.image import Image, NW
 from sc8pr.util import logError, setCursor, handleEvent, fontHeight, sc8prPath, ARROW, randPixel
 from sc8pr.geom import distSq
-from sc8pr.ram import RAMFolder
 
 
 class PApplet:
@@ -31,14 +30,12 @@ class PApplet:
 	_quit = False
 	_snapMode = 0
 	eventMap = {}
-	captureFolder = "capture"
 	light = None
 	cursor = ARROW
 	gui = None
-	recordGui = False
 
-	@staticmethod
-	def display(): return Image(pygame.display.get_surface())
+# 	@staticmethod
+# 	def display(): return Image(pygame.display.get_surface())
 
 	@staticmethod
 	def _onQuit(): PApplet._quit = True
@@ -52,7 +49,6 @@ class PApplet:
 		self.surface = None
 		self.bgColor = None
 		self._bgImage = None
-		self._frameInterval = None
 		self._lumin = []
 		self._bind(setup, draw, eventMap)
 		self._clock = pygame.time.Clock()
@@ -246,54 +242,16 @@ class PApplet:
 		self.bgColor = bgColor
 
 	def _update(self):
-		"Update the display surface; record frame if requested"
-		cursor = self.cursor
+		"Update the display surface"
 		if self.light: self.tint(self.light)
-		for img, posn in self._lumin:
-			self.blit(img, posn)
-		self._lumin = []
-		if not self.gui or not self.recordGui: self._captureFrame()
-		if self.gui:
-			if self.gui.widgets: self.gui.draw()
-			if self.recordGui: self._captureFrame()
-			if self.gui.hover.dialog in self.gui.widgets if self.gui.hover else False:
-				cursor =  self.gui.cursorId
-		setCursor(cursor)
+		setCursor(self.cursor)
 		display.flip()
 
-	def _saveName(self):
-		"Default file name for captured frame"
-		if self._frameInterval:
-			name, n = self._recordName
-			return name.format((self.frameCount - n) // self._frameInterval)
-		else:
-			return "img{:05d}.png".format(self.frameNumber)
-
-	def record(self, interval=1, name=None):
-		"Start or stop automatic recording of frames"
-		n = self.frameCount + 1
-		self.frameRecord = n
-		self._frameInterval = interval
-		if name is None:
-			name = "seq{}_{{:05d}}.png".format(n)
-		self._recordName = name, n - interval
-
 	def save(self, path=None):
-		"Save a surface; default file name is based on frameCount property"
+		"Save the display surface; default file name is based on frameCount property"
 		if path is None:
-			path = self._saveName()
-		fldr = self.captureFolder
-		if isinstance(fldr, RAMFolder):
-			fldr[path] = ZImage(self.surface)
-		else:
-			pygame.image.save(self.surface, fldr + "/" + path)
-
-	def _captureFrame(self):
-		"Save a single frame when recording is enabled"
-		if self._frameInterval is not None:
-			if self.frameCount == self.frameRecord:
-				self.save()
-				self.frameRecord += self._frameInterval
+			path = "save/img{:05d}.png".format(self.frameCount) #self._saveName()
+		pygame.image.save(self.surface, path)
 
 	@property
 	def scaledBgImage(self):

@@ -17,7 +17,7 @@
 
 "Apply transition effects to an Image or ScriptSprite"
 
-from sc8pr.image import Image, ZImage, CENTER
+from sc8pr.image import Image, CENTER
 from sc8pr.util import randColor
 from sc8pr.sketch import Sprite, REMOVE
 from pygame.pixelarray import PixelArray
@@ -31,7 +31,7 @@ class Effect:
     offset = 0
     duration = 60
 
-    def time(self, duration):
+    def dur(self, duration):
         "Change effect duration"
         self.duration = duration
         return self
@@ -47,6 +47,17 @@ class Tint(Effect):
         if n >= 1: return img
         c = [round(c + n * (255 - c)) for c in self.color] if n > 0 else self.color
         return img.clone().tint(c)
+
+
+class Border(Effect):
+    "Draw a border around the image"
+
+    def __init__(self, width=2, color=(255,0,0)):
+        self.width = width
+        self.color = color
+
+    def apply(self, img, n=0):
+        return img.clone().borderInPlace(self.width, self.color)
 
 
 class Wipe(Effect):
@@ -268,11 +279,11 @@ class Dissolve(PixelEffect):
 
 
 class ScriptSprite(Sprite):
-    _effects = None
+    script = ()
 
-#     def __init__(self, sprites, costumes, *group, **kwargs):
-#         super().__init__(sprites, costumes, *group, **kwargs)
-#         self._effects = []
+    def __init__(self, sprites, costumes, *group, **kwargs):
+        super().__init__(sprites, costumes, *group, **kwargs)
+        self._effects = []
 
     def update(self):
         "Run script actions at scheduled frame number"
@@ -291,7 +302,15 @@ class ScriptSprite(Sprite):
                     e = self._effects
                     if e is None: self._effects = [s]
                     else: e.append(s)
+                elif not self.action(s):
+                    self.noAction(s)
         super().frameStep()
+
+    def noAction(self, a):
+        "Unrecognized action"
+        raise TypeError("Unrecognized action for {}: {}".format(type(self).__name__, a))
+
+    def action(self, a): pass
 
     def applyEffects(self, img):
         "Apply effects to zoomed and rotated image"
@@ -308,35 +327,3 @@ class ScriptSprite(Sprite):
                 rm.append(e)
         for e in rm: self._effects.remove(e)
         return img
-
-
-class FileSprite(ScriptSprite):
-    "A sprite whose costumes are loaded as needed from a file sequence"
-
-    compress = None
-    useCache = True
-    alpha = True
-
-    def __init__(self, sk, pattern, seq, *group, **kwargs):
-        self.cache = {}
-        self.pattern = pattern
-        self._seq = seq if type(seq) in (tuple, list) else tuple(seq)
-        super().__init__(sk, None, *group, **kwargs)
-        if kwargs.get("costumeTime") is None:
-            self.costumeTime = 1
-
-    @property
-    def _image(self):
-        n = self._seq[self.currentCostume]
-        c = self.cache
-        if n not in c:
-            img = Image(self.pattern.format(n))
-            if self.alpha and img.surface.get_bytesize() < 4:
-                img = img.convert(True)
-            compress = self.compress
-            if compress is None: compress = self.useCache
-            c[n] = ZImage(img.surface) if compress else img
-            if not self.useCache: self.cache = {n: c[n]}
-            return img
-        else: img = c[n]
-        return img.image if isinstance(img, ZImage) else img

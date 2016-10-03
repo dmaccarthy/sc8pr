@@ -17,7 +17,7 @@
 
 
 from sc8pr.papplet import PApplet
-from sc8pr.util import step, logError, CENTER, rectAnchor, addToMap
+from sc8pr.util import step, logError, CENTER, rectAnchor, addToMap, setCursor
 from sc8pr.gui import GUI
 from sc8pr.io import prompt, fileDialog, USERINPUT
 from sc8pr.grid import OPEN, SAVE, FOLDER
@@ -25,8 +25,11 @@ from sc8pr.image import Image
 from sc8pr.geom import DEG, unitVector, mag, neg, add, sub, times, sprod, \
     cross2d, deg2d, Polygon2D, Circle2D, impact, ellipsygon, resolve2d, avg
 from math import hypot, cos, sin, sqrt
+from tempfile import mkdtemp
 import pygame
+from pygame import display
 from pygame.mixer import Sound
+
 
 # Status constants...
 DISABLED = 0
@@ -49,6 +52,33 @@ BOUNCE = BOUNCE_X | BOUNCE_Y
 class LockedException(Exception):
     def __init__(self):
         super().__init__("SpriteList modified while iterating")
+
+
+class Capture:
+    "Capturing screen images by saving the file immediately"
+    
+    def __init__(self, pattern="?/img{:05d}.png", interval=None, gui=False):
+        self.count = 0
+        self.interval = interval
+        self.gui = gui
+        self.pattern = self.tempDir(pattern)
+
+    def capture(self):
+        "Save the current screen"
+        path = self.pattern.format(self.count)
+        self.count += 1
+        pygame.image.save(pygame.display.get_surface(), path)
+
+    @staticmethod
+    def tempDir(path):
+        "Create a temporary directory for images"
+        if path[:2] == "?/":
+            path = mkdtemp(dir="./") + path[1:]
+        return path
+
+    def save(self, name):
+        "For compatibility with sc8pr.video.Video"
+        pass
 
 
 def collide_shape_only(left, right):
@@ -197,7 +227,7 @@ class Sprite():
             if costumes[i].size != size:
                 costumes[i] = costumes[i].scale(size)
         self._costumes = costumes
-        self._seq = tuple(range(len(self.costumes)))
+        self.seq = tuple(range(len(self.costumes)))
 
     def config(self, **kwargs):
         "Set multiple attributes"
@@ -307,7 +337,7 @@ class Sprite():
             self._nextChange -= 1
             if self._nextChange <= 0:
                 n = self.currentCostume + 1
-                self.currentCostume = 0 if n >= len(self._seq) else n
+                self.currentCostume = 0 if n >= len(self.seq) else n
                 self._nextChange = self._costumeTime
 #        self._calcRect()
 
@@ -321,7 +351,7 @@ class Sprite():
     @property
     def _image(self):
         "Return the current unzoomed and unrotated costume image"
-        return self.costumes[self._seq[self.currentCostume]]
+        return self.costumes[self.seq[self.currentCostume]]
 
     @property
     def image(self):
@@ -405,9 +435,12 @@ class Sprite():
         else: seq = costume
         if oscillate:
             seq = seq + tuple(reversed(seq[1:-1]))
-        self._seq = seq
+        self.seq = seq
         self.currentCostume = 0
         return self
+
+#     def getCostumeSequence(self):
+#         for n in self.seq: yield n
 
     def _statusFilter(self, status=None):
         if status == ENABLED: return self.status in {VISIBLE, HIDDEN}
@@ -650,25 +683,12 @@ class SpriteList():
             c2 |= cMap[s]
         return c1, c2
 
-#     def extend(self, sprites, *groups):
-#         "Append a sequence of sprites to the list"
-#         for s in sprites: self.append(s, *groups)
-#         return self
-
-#     def search(self, group=None, match=None, **kwargs):
-#         "Return a list of sprites that match specified criteria"
-#         if group is None: group = self
-#         return list(search(group, match, **kwargs)) # set?
-
-#     def sort(self, group):
-#         "Order by sprite list index"
-#         return [s for s in self if s in group]
-
 
 class Sketch(PApplet):
     "A class for creating sketches with sprite and GUI support"
     _start = 0
     _sounds = {}
+    capture = None
     io = None
     wall = None
 
@@ -682,6 +702,28 @@ class Sketch(PApplet):
         # Bind sc8pr.io input functions...
         self.prompt = prompt.__get__(self, self.__class__)
         self.fileDialog = fileDialog.__get__(self, self.__class__)
+
+    def _update(self):
+        "Update the display surface; record frame if requested"
+        cursor = self.cursor
+        if self.light: self.tint(self.light)
+        for img, posn in self._lumin:
+            self.blit(img, posn)
+        self._lumin = []
+        grab = 0
+        if self.capture is not None:
+            interval = self.capture.interval
+            if interval:
+                if self.frameCount % interval == 0:
+                    grab = 1 if self.capture.gui else -1
+        if grab == -1: self.capture.capture()
+        if self.gui:
+            if self.gui.widgets: self.gui.draw()
+            if self.gui.hover.dialog in self.gui.widgets if self.gui.hover else False:
+                cursor =  self.gui.cursorId
+        setCursor(cursor)
+        if grab == 1: self.capture.capture()
+        display.flip()
 
     def simpleDraw(self):
         "Redraw background and sprites"
