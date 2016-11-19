@@ -49,6 +49,17 @@ class Tint(Effect):
         return img.clone().tint(c)
 
 
+class Remove(Effect):
+
+    def __init__(self, color=(255,255,255), dist=0):
+        self.color = color
+        self.dist = dist
+
+    def apply(self, img, n=0):
+        if n >= 1: return img
+        return img.removeColor(self.color, self.dist)
+
+
 class Border(Effect):
     "Draw a border around the image"
 
@@ -208,8 +219,8 @@ class Diagonal(MathEffect):
 
 class PaintDrops(MathEffect):
     "Paint drop effect"
-    
-    def __init__(self, drops=16):
+
+    def __init__(self, drops=64):
         self.side = drops > 0
         self.drops = [self.makeDrop() for i in range(abs(drops))]
         n = sum([d[0] for d in self.drops])
@@ -280,6 +291,7 @@ class Dissolve(PixelEffect):
 
 class ScriptSprite(Sprite):
     script = ()
+    log = False
 
     def __init__(self, sprites, costumes, *group, **kwargs):
         super().__init__(sprites, costumes, *group, **kwargs)
@@ -292,6 +304,7 @@ class ScriptSprite(Sprite):
         for i, s in self.script:
             iSum += i
             if iSum == n:
+                if self.log: print(n, self, s)
                 t = type(s)
                 if t is dict: self.config(**s)
                 elif t is int:

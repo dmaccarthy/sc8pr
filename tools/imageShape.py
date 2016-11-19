@@ -43,6 +43,6 @@ def mouse(sk, ev): sk.poly.append(ev.pos)
 def draw(sk):
     sk.simpleDraw()
     if len(sk.poly) > 2:
-        sk.display().plot(sk.poly, strokeWeight=2, stroke=RED, closed=True)
+        Image(sk.surface).plot(sk.poly, strokeWeight=2, stroke=RED, closed=True)
 
 print(Sketch(setup).play((800,600), mode=0).poly)

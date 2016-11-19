@@ -17,7 +17,7 @@
 
 
 from sc8pr.papplet import PApplet
-from sc8pr.util import step, logError, CENTER, rectAnchor, addToMap, setCursor
+from sc8pr.util import step, logError, CENTER, rectAnchor, addToMap, setCursor, tempDir
 from sc8pr.gui import GUI
 from sc8pr.io import prompt, fileDialog, USERINPUT
 from sc8pr.grid import OPEN, SAVE, FOLDER
@@ -25,7 +25,6 @@ from sc8pr.image import Image
 from sc8pr.geom import DEG, unitVector, mag, neg, add, sub, times, sprod, \
     cross2d, deg2d, Polygon2D, Circle2D, impact, ellipsygon, resolve2d, avg
 from math import hypot, cos, sin, sqrt
-from tempfile import mkdtemp
 import pygame
 from pygame import display
 from pygame.mixer import Sound
@@ -37,7 +36,7 @@ VISIBLE = 1
 HIDDEN = 2
 ENABLED = 3
 
-# Edge actions...
+# Edge and costume actions...
 REMOVE_X = 1
 WRAP_X = 2
 BOUNCE_X = 4
@@ -47,6 +46,8 @@ BOUNCE_Y = 64
 REMOVE = REMOVE_X | REMOVE_Y
 WRAP = WRAP_X | WRAP_Y
 BOUNCE = BOUNCE_X | BOUNCE_Y
+PAUSE = 1
+REVERSE = 2
 
 
 class LockedException(Exception):
@@ -56,29 +57,22 @@ class LockedException(Exception):
 
 class Capture:
     "Capturing screen images by saving the file immediately"
-    
+
     def __init__(self, pattern="?/img{:05d}.png", interval=None, gui=False):
         self.count = 0
         self.interval = interval
         self.gui = gui
-        self.pattern = self.tempDir(pattern)
+        self.pattern = tempDir(pattern)
 
     def capture(self):
         "Save the current screen"
-        path = self.pattern.format(self.count)
         self.count += 1
+        path = self.pattern.format(self.count)
         pygame.image.save(pygame.display.get_surface(), path)
 
-    @staticmethod
-    def tempDir(path):
-        "Create a temporary directory for images"
-        if path[:2] == "?/":
-            path = mkdtemp(dir="./") + path[1:]
-        return path
-
-    def save(self, name):
-        "For compatibility with sc8pr.video.Video"
-        pass
+#     def save(self, name):
+#         "For compatibility with sc8pr.video.Video"
+#         pass
 
 
 def collide_shape_only(left, right):
@@ -110,6 +104,7 @@ class Sprite():
     spriteList = None
     status = VISIBLE
     currentCostume = 0
+    lastCostume = WRAP
     accel = 0, 0
     jerk = 0, 0
     zoom = 1
@@ -130,7 +125,6 @@ class Sprite():
             sprites = sprites.sprites
         self.spriteList = sprites
         sprites.append(self, *group)
-#        self.polygon()
         if kwargs.get("posn") is None:
             self.posn = self.sketch.center
         self.config(**kwargs)
@@ -138,7 +132,11 @@ class Sprite():
             self.edge = BOUNCE if self.sketch.wall else REMOVE
         self.polygon()
         self._calcRect()
-        
+
+    def __str__(self):
+        name = self.name if hasattr(self, "name") else id(self)
+        return "<{} '{}'>".format(type(self).__name__, name)
+
     def ellipsygon(self, n=1, size=(1,1), vertices=16):
         "Set shape property to a polygon that approximates an ellipse"
         w, h = self._image.size
@@ -227,12 +225,11 @@ class Sprite():
             if costumes[i].size != size:
                 costumes[i] = costumes[i].scale(size)
         self._costumes = costumes
-        self.seq = tuple(range(len(self.costumes)))
+        self._costumeSeq = tuple(range(len(self.costumes)))
 
     def config(self, **kwargs):
         "Set multiple attributes"
         for k in kwargs: setattr(self, k, kwargs[k])
-#        self._calcRect()
         return self
 
     @property
@@ -250,9 +247,10 @@ class Sprite():
     @costumeTime.setter
     def costumeTime(self, frames):
         "Set the number of frames between costume changes"
-        self._costumeTime = abs(frames)
-        if self._nextChange > self._costumeTime:
-            self._nextChange = self._costumeTime
+        self._costumeTime = frames
+        n = abs(frames)
+        if self._nextChange > n:
+            self._nextChange = n
 
     def _bounce(self, pMap, *lines):
         "Bounce the sprite upon collision with wall"
@@ -323,8 +321,7 @@ class Sprite():
         "Update the sprite state based on its velocity, spin, and zoom rate"
         if self.drag:
             self.velocity = times(self.velocity, 1 - self.drag)
-        a = self.accel
-        self.posn, self.velocity, self.accel = step(1, self.posn, self.velocity, a, self.jerk)
+        self.posn, self.velocity, self.accel = step(1, self.posn, self.velocity, self.accel, self.jerk)
         self._edgeAction(self.edge)
         if self.orient:
             self.angle = deg2d(self.velocity)
@@ -333,13 +330,25 @@ class Sprite():
             if self.spinDrag:
                 self.spin *= (1.0 - self.spinDrag)
         if self.zoomRate: self.zoom *= 1 + self.zoomRate
-        if self._costumeTime > 0:
-            self._nextChange -= 1
-            if self._nextChange <= 0:
-                n = self.currentCostume + 1
-                self.currentCostume = 0 if n >= len(self.seq) else n
-                self._nextChange = self._costumeTime
-#        self._calcRect()
+        if self._costumeTime: self._changeCostume()
+
+    def _changeCostume(self):
+        "Change the sprite's costume"
+        self._nextChange -= 1
+        if self._nextChange <= 0:
+            n = len(self._costumeSeq)
+            n0 = self.currentCostume + (1 if self._costumeTime > 0 else -1)
+            n1 = n0 % n
+            self._nextChange = abs(self._costumeTime)
+            if n1 != n0 and n > 1:
+                if self.lastCostume == REVERSE:
+                    n1 = n - 2 if self._costumeTime > 0 else 1
+                    self._costumeTime *= -1
+                elif self.lastCostume == REMOVE: self.remove()
+                elif self.lastCostume == PAUSE:
+                    n1 = self.currentCostume
+                    self._costumeTime = 0
+            self.currentCostume = n1
 
     update = frameStep
 
@@ -351,7 +360,7 @@ class Sprite():
     @property
     def _image(self):
         "Return the current unzoomed and unrotated costume image"
-        return self.costumes[self.seq[self.currentCostume]]
+        return self.costumes[self._costumeSeq[self.currentCostume]]
 
     @property
     def image(self):
@@ -427,15 +436,15 @@ class Sprite():
     def toward(self, posn, mag=1):
         return times(unitVector(sub(posn, self.posn)), mag)
 
-    def costumeSequence(self, costume=0, end=-1, oscillate=False):
+    def costumeSequence(self, costume=0, end=-1):#, oscillate=False):
         "Specify which costumes to use and their order"
         if type(costume) is int:
             if end < 0: end += len(self.costumes)
             seq = tuple(range(costume, end + 1))
         else: seq = costume
-        if oscillate:
-            seq = seq + tuple(reversed(seq[1:-1]))
-        self.seq = seq
+#         if oscillate:
+#             seq = seq + tuple(reversed(seq[1:-1]))
+        self._costumeSeq = seq
         self.currentCostume = 0
         return self
 

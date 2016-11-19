@@ -90,7 +90,7 @@ class Robot(Sprite):
         self.penColor = None
         costumes = self._makeCostumes(colors)
         super().__init__(sprites, costumes, *group, **kwargs)
-        self.data = Data()
+#        self.data = Data()
         self.circle()
         if brain is not None:
             self._thread = RobotThread(self, brain)

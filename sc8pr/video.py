@@ -17,22 +17,24 @@
 
 from zipfile import ZipFile
 from struct import pack, unpack
+from os.path import isfile
 from os import system
-from sys import stderr
+from sys import version_info as ver, stderr
 import pygame, zlib
 from sc8pr.image import Image
 from sc8pr.sketch import Capture
 from sc8pr.effects import ScriptSprite
+from sc8pr.util import jdump, jload, defaultExtension, tempDir
+import sc8pr
 
-
-def defaultExtension(name, ext):
-    return name if "." in name.replace("\\","/").split("/")[-1] else name + ext
 
 
 class ZImage:
     "A class for compressing and decompressing images using zlib"
 
     modes = "RGBA", "RGB"
+    compress = zlib
+    format = "zlib"
 
     def __init__(self, data, mode=None, level=2):
 
@@ -51,7 +53,7 @@ class ZImage:
             srf = data.surface if isinstance(data, Image) else data
             if mode is None: mode = self.guessMode(srf)
             data = pygame.image.tostring(srf, mode)
-            self.gz = zlib.compress(data, level) if level else data
+            self.gz = self.compress.compress(data, level) if level else data
             self.size = srf.get_size()
             self.mode = self.modes.index(mode)
 
@@ -62,7 +64,7 @@ class ZImage:
     @property
     def image(self):
         "Convert to uncompressed Image"
-        data = zlib.decompress(self.gz)
+        data = self.compress.decompress(self.gz)
         mode = self.modes[self.mode]
         return Image(pygame.image.fromstring(data, self.size, mode))
 
@@ -73,28 +75,74 @@ class ZImage:
 
 
 class Video:
-    "A class for fast storage and retrieval of compressed images using ZipFile"
+    "A class for storage and retrieval of compressed image archives"
 
-    ffmpeg = "ffmpeg"
-    pixfmt = "yuv444p"
+    output = None
+    infoFile = "meta/info.json"
     zlevel = 2
+    _pending = 0
 
-    def __init__(self, *archive, interval=0, gui=False):
+    info = dict(python=(ver.major, ver.minor, ver.micro),
+        sc8pr=sc8pr.version, format=ZImage.format)
+
+    def __init__(self, *archive, interval=None, gui=False, wait=True):
         self.data = []
         self.interval = interval
         self.gui = gui
         if archive:
             if len(archive) == 1:
-                self.load(archive[0])
+                self.load(archive[0], wait)
             else:
                 archive, nums = archive
+                if nums is True: nums = range(1, 1 + self.lastFileIndex(archive))
+                file = self.output
+                if file:
+                    print("Loading and compressing images...", file=file)
                 for i in nums:
                     fn = archive.format(i)
                     self.capture(Image(fn))
-                
+                    if file and i % 50 == 0: print(i, file=file)
+
     def __len__(self): return len(self.data)
-    def __getitem__(self, i): return self.data[i]
-    def name(self, i): return "img{}.szi".format(i)
+
+    @property
+    def size(self): return self[0].size
+
+    @property
+    def pending(self):
+        "Number of ZImages not yet loaded from ZipFile"
+        return self._pending
+
+    @pending.setter
+    def pending(self, v):
+        "Close ZipFile after last image is loaded"
+        self._pending = v
+        if v == 0:
+            self.zip.close()
+            del self.zip
+
+    def __getitem__(self, i):
+        "Return a ZImage instance by index"
+        img = self.data[i]
+        if img is None:
+            self.data[i] = img = ZImage(self.zip.read(str(i)))
+            self.pending -= 1
+        return img
+
+    @staticmethod
+    def lastFileIndex(path, start=1):
+        "Determine the last file in a numbered sequence"
+        d = 1024
+        end = start
+        while isfile(path.format(end)): end += d
+        start = end - d
+        if start < 0: return
+        while end > start + 1:
+            n = (start + end) // 2
+            exists = isfile(path.format(n))
+            if exists: start = n
+            else: end = n
+        return n if exists else start
 
     def capture(self, img=None, mode=0):
         "Add a frame (Surface or Image) to the Video"
@@ -104,49 +152,61 @@ class Video:
 
     def save(self, name):
         "Save the Video as a ZipFile of ZImages (S8V format)"
-        i = 0
+        if self.pending: self.buffer()
         with ZipFile(defaultExtension(name, ".s8v"), "w") as z:
-            for img in self.data:
-                z.writestr(self.name(i), bytes(img))
+            i = 0
+            for img in self:
+                z.writestr(str(i), bytes(img))
+                if i == 0: sz = img.size
+                elif sz and img.size != sz:
+                    print("Warning: Saving s8v with inconsistent image sizes!", file=stderr)
+                    sz = None
                 i += 1
+            info = {"frames": i}
+            info.update(self.info)
+            z.writestr(self.infoFile, jdump(info))
 
-    def load(self, name):
+    def load(self, name, wait):
         "Load a S8V video"
-        with ZipFile(defaultExtension(name, ".s8v"), "r") as z:
-            n = len(z.infolist())
-            for i in range(n):
-                self.data.append(ZImage(z.read(self.name(i))))
+        name = defaultExtension(name, ".s8v")
+        self.zip = ZipFile(name, "r")
+        info = jload(self.zip.read(self.infoFile))
+        self.pending = n = info["frames"]
+        self.data = [None for i in range(n)]
+        if wait: self.buffer()
+
+    def buffer(self, start=0, end=None):
+        "Load frames into the buffer"
+        z = self.zip
+        d = self.data
+        if end is None: end = len(self)
+        while start < end:
+            if d[start] is None:
+                d[start] = ZImage(z.read(str(start)))
+                self.pending -= 1
+            start += 1
 
     def clip(self, start=0, end=None):
         "Return a new Video instance containing a contiguous subset of frames; no images are copied"
         if end is None: end = len(self)
+        if self.pending: self.buffer(start, end)
         v = Video()
         v.data = self.data[start:end]
         return v
 
-    def export(self, path="?/img{}.png", pattern="05d", movie=False, clip=None, start=0):
-        "Export the images as individual files; encode movie with ffmpeg"
-        path = Capture.tempDir(path)
-        tmp = path.format("{{:{}}}".format(pattern))
-        if clip:
-            c0, c1 = clip
-            c1 += 1
-        else:
-            c0, c1 = 0, len(self)
-        n = c1 - c0
-        print("Saving {} images to {}...".format(n, tmp), file=stderr)
+    def export(self, path="?/img{}.png", pattern="05d", start=0, file=None): 
+        "Export the images as individual files"
+        if self.pending: self.buffer()
+        path = tempDir(path).format("{{:{}}}".format(pattern))
         i = 0
-        for img in self[c0:c1]:
-            img.image.saveAs(tmp.format(i + start))
+        file = self.output
+        if file:
+            print("Saving {} images to {}...".format(len(self), path), file=file)
+        for img in self:
+            img.image.saveAs(path.format(i + start))
             i += 1
-            if i % 50 == 0: print("{}".format(i), file=stderr)
-        print("...Done!", file=stderr)
-        pattern = path.format("%" + pattern)
-        args = "-f image2 -start_number {} -r 30 -i {} -r 30 -vcodec h264 -pix_fmt {} {}"
-        args = args.format(start, pattern, self.pixfmt, movie if movie else "movie.mp4")
-        cmd = "{} {}".format(self.ffmpeg, args)
-        print(cmd, file=stderr)
-        if movie: system(cmd)
+            if file and i % 50 == 0: print(i, file=file)
+        return path
 
 
 class VideoSprite(ScriptSprite):
@@ -155,8 +215,7 @@ class VideoSprite(ScriptSprite):
     def __init__(self, sk, video, *group, **kwargs):
         self._last = None,
         self.video = video
-#        self.costumeSequence(0, len(self.video) - 1)
-        self.seq = tuple(range(len(video)))
+        self._costumeSeq = tuple(range(len(video)))
         super().__init__(sk, None, *group, **kwargs)
         if kwargs.get("costumeTime") is None:
             self.costumeTime = 1
@@ -171,16 +230,16 @@ class VideoSprite(ScriptSprite):
     @property
     def _image(self):
         "Get the costume image"
-        return self.getImage(self.seq[self.currentCostume])
+        return self.getImage(self._costumeSeq[self.currentCostume])
 
-    def load(self, *archive):
+    def load(self, *archive, wait=True):
         "Load a new set of images"
-        self.video = v = Video(*archive)
+        self.video = v = Video(*archive, wait=wait)
         w1, h1 = v[1].size
         w0, h0 = self.size
         z = (w1/w0 + h1/h0) / 2
         if z != 1: self.zoom /= z
-        self.seq = tuple(range(len(v)))
+        self._costumeSeq = tuple(range(len(v)))
         self.currentCostume = 0
 
     def action(self, a):
@@ -189,3 +248,31 @@ class VideoSprite(ScriptSprite):
         if type(a) is tuple:
             self.load(*a)
             return True
+
+
+class FF:
+    "Encode and decode with ffmpeg"
+
+    cmd = "ffmpeg"
+
+    @staticmethod
+    def _patt(p):
+        return p.replace("{:", "%").replace("}", "")
+
+    @staticmethod
+    def encode(movie, src=None, start=1, rate=30, pixfmt="yuv444p"):
+        "Run ffmpeg to encode Video instance or file sequence"
+        if src is None: src = Video(movie)
+        if type(src) is Video: src = src.export()
+        movie = defaultExtension(movie, ".mp4")
+        args = '-f image2 -start_number {} -r 30 -i {} -r 30 -vcodec h264 -pix_fmt {} "{}"'
+        args = args.format(start, FF._patt(src), pixfmt, movie)
+        system("{} {}".format(FF.cmd, args))
+
+    @staticmethod
+    def decode(movie, path="?/img{:05d}.png"):
+        "Run ffmpeg to decode video"
+        path = Capture.tempDir(path)
+        args = "-i {} {}".format(defaultExtension(movie, ".mp4"), FF._patt(path))
+        system("{} {}".format(FF.cmd, args))
+        return path

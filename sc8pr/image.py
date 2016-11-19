@@ -19,7 +19,7 @@
 from sc8pr.util import getAlpha, logError, randPixel, rectAnchor, position, NW, CENTER, WEST, EAST 
 import math, pygame
 from pygame.draw import line
-from pygame import PixelArray
+from pygame import PixelArray, BLEND_ADD, BLEND_SUB
 
 
 FIT = 1
@@ -81,6 +81,17 @@ class Image:
             self.surface = pygame.Surface(data, pygame.SRCALPHA if alpha else 0, bits)
             if bgColor != None: self.surface.fill(bgColor)
         self.noTransform()
+
+#     def __add__(self, other, sub=False):
+#         "Pixel-wise addition"
+#         img = self.clone()
+#         sf = BLEND_SUB if sub else BLEND_ADD
+#         img.surface.blit(other.surface, (0,0), special_flags=sf)
+#         return img
+# 
+#     def __sub__(self, other):
+#         "Pixel-wise subtraction"
+#         return self.__add__(other, True)
 
     def innerRect(self, wt):
         "Subtract stroke weight from image dimensions"

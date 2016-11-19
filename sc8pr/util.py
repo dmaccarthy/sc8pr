@@ -18,13 +18,12 @@
 
 from traceback import format_exc
 from sys import stderr
-from zipfile import ZipFile as zf, ZIP_DEFLATED
+from json import dumps, loads
+from tempfile import mkdtemp
 from random import randint
 from pygame import Color, Rect
 import pygame, sc8pr, os
 
-def nothing(*args): pass
-def logError(): print(format_exc(), file=stderr)
 
 # Cursors...
 ARROW = pygame.cursors.arrow
@@ -35,6 +34,24 @@ CROSS = ((16,16),(8,8),(1,0,1,0,1,0,1,0,1,0,0,0,0,0,248,62,0,0,0,0,1,0,1,0,1,0,1
 HAND = ((16,24),(6,1),(6,0,9,0,9,0,9,0,9,192,9,56,9,38,105,37,153,37,136,37,64,1,32,1,16,1,8,1,8,1,4,1,4,2,3,252,0,0,0,0,0,0,0,0,0,0,0,0),(6,0,15,0,15,0,15,0,15,192,15,184,15,254,111,253,255,253,255,255,127,255,63,255,31,255,15,255,15,255,7,255,7,254,3,252,0,0,0,0,0,0,0,0,0,0,0,0))
 MENU = ((16,16),(3,2),(0,0,127,254,127,254,0,0,0,0,0,0,127,254,127,254,0,0,0,0,0,0,127,254,127,254,0,0,0,0,0,0),(255,255,255,255,255,255,255,255,0,0,255,255,255,255,255,255,255,255,0,0,255,255,255,255,255,255,255,255,0,0,0,0))
 NO_CURSOR = ((8,8),(5,4),(0,0,0,0,0,0,0,0),(0,0,0,0,0,0,0,0))
+
+
+# JSON binary operations...
+
+def jdump(obj): return bytes(dumps(obj), encoding="utf8")
+def jload(data): return loads(str(data, encoding="utf8"))
+
+def defaultExtension(name, ext):
+    return name if "." in name.replace("\\","/").split("/")[-1] else name + ext
+
+def tempDir(path):
+    "Create a temporary directory for images"
+    if path[:2] == "?/":
+        path = mkdtemp(dir="./") + path[1:]
+    return path
+
+def nothing(*args): pass
+def logError(): print(format_exc(), file=stderr)
 
 def setCursor(c):
     if not c: c = ARROW
@@ -125,12 +142,6 @@ def fontHeight(f):
     if not isinstance(f, pygame.font.Font): f = f.font
     return f.get_linesize() + 1
 
-def saveZip(zName, fName, data=None):
-    z = zf(zName, "a", ZIP_DEFLATED)
-    z.writestr(fName, data)
-    z.close()
-    return z
-
 def containsAny(obj, items='*?|<>"'):
     for i in items:
         if i in obj: return True
@@ -207,7 +218,6 @@ def step(dt, *args):
 class StaticClassException(Exception):
     def __init__(self, cls): super().__init__("{} is static; constructor should not be called".format(cls))
 
-
 class Data:
     "Object-oriented dict-like data structure"
     def get(self, key): return self.__dict__.get(key)
@@ -219,4 +229,14 @@ class Data:
     def __str__(self):
         t = type(self)
         return "<{}.{} {}>".format(t.__module__, t.__name__, self.__dict__)
-    
+
+
+# Removed...
+
+# from zipfile import ZipFile as zf, ZIP_DEFLATED
+
+# def saveZip(zName, fName, data=None):
+#     z = zf(zName, "a", ZIP_DEFLATED)
+#     z.writestr(fName, data)
+#     z.close()
+#     return z
