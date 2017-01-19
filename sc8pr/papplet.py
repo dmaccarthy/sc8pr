@@ -58,9 +58,9 @@ class PApplet:
 
 	def _bind(self, setup=None, draw=None, eventMap=None):
 		"Bind functions to sketch instance"
-		if setup != None: self.setup = setup.__get__(self, self.__class__)
-		if draw != None: self.draw = draw.__get__(self, self.__class__)
-		if eventMap: self.eventMap = eventMap if type(eventMap) is dict else {None:eventMap}
+		if setup is not None: self.setup = setup.__get__(self, self.__class__)
+		if draw is not None: self.draw = draw.__get__(self, self.__class__)
+		if eventMap is not None: self.eventMap = eventMap if type(eventMap) is dict else {None:eventMap}
 
 	@classmethod
 	def _fontDict(cls):

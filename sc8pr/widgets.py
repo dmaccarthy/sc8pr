@@ -617,10 +617,12 @@ class MsgBox(Container):
 		"Validator for numerical input within a specified range of values"
 		n0, n1, cls, dlg = getValues("low", "high", "integer", "dialog", **argDict)
 		cls = int if cls else float
-		if not cls: cls = float
+#		if not cls: cls = float
 		if dlg: dlg.valMsgDefault(cls)
 		n = cls(s)
-		if n < n0 or n > n1:
+		if (n0 is not None and n < n0) or (n1 is not None and n > n1):
+			if n0 is None: n0 = "-Infinity"
+			if n1 is None: n1 = "+Infinity"
 			msg = "Value must be in range\n[{}, {}]".format(n0, n1)
 			if dlg: dlg.valMsg = msg
 			raise ValueError(msg)

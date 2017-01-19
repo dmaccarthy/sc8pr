@@ -22,6 +22,7 @@ from json import dumps, loads
 from tempfile import mkdtemp
 from random import randint
 from pygame import Color, Rect
+from pygame.constants import QUIT, KEYDOWN, KEYUP, MOUSEMOTION, MOUSEBUTTONDOWN as MOUSEDOWN, MOUSEBUTTONUP as MOUSEUP, VIDEORESIZE as RESIZE
 import pygame, sc8pr, os
 
 
@@ -95,7 +96,7 @@ def controlKey(): return pygame.key.get_mods() & 192 != 0
 def shiftKey(): return pygame.key.get_mods() & 3 != 0
 
 def dragging(ev, button=None):
-    if ev.type == pygame.MOUSEMOTION:
+    if ev.type == MOUSEMOTION:
         return (max(ev.buttons) if button is None else ev.buttons[button-1]) > 0
     return False
 
@@ -229,14 +230,3 @@ class Data:
     def __str__(self):
         t = type(self)
         return "<{}.{} {}>".format(t.__module__, t.__name__, self.__dict__)
-
-
-# Removed...
-
-# from zipfile import ZipFile as zf, ZIP_DEFLATED
-
-# def saveZip(zName, fName, data=None):
-#     z = zf(zName, "a", ZIP_DEFLATED)
-#     z.writestr(fName, data)
-#     z.close()
-#     return z
