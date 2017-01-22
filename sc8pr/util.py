@@ -90,10 +90,16 @@ def getAlpha(c):
         return c[3] if len(c) == 4 else 255
     return None if c is None else c.a
 
-def keyMod(): return pygame.key.get_mods() & 963 != 0
-def altKey(): return pygame.key.get_mods() & 768 != 0
-def controlKey(): return pygame.key.get_mods() & 192 != 0
-def shiftKey(): return pygame.key.get_mods() & 3 != 0
+SHIFT = pygame.KMOD_LSHIFT | pygame.KMOD_RSHIFT
+CTRL = pygame.KMOD_LCTRL | pygame. KMOD_RCTRL
+ALT = pygame.KMOD_LALT | pygame. KMOD_RALT
+ANY = SHIFT | CTRL | ALT
+
+def capsLock(): return pygame.key.get_mods() & pygame.KMOD_CAPS != 0
+def altKey(): return pygame.key.get_mods() & ALT != 0
+def controlKey(): return pygame.key.get_mods() & CTRL != 0
+def shiftKey(): return pygame.key.get_mods() & SHIFT != 0
+def keyMod(): return pygame.key.get_mods() & ANY != 0
 
 def dragging(ev, button=None):
     if ev.type == MOUSEMOTION:

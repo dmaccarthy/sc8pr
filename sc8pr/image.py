@@ -51,7 +51,6 @@ class Image:
         height = len(txt) * lineSz
         width = 1
         lineWidth = []
-#        if type(align) is str: align = anchorStr[align.upper()]
         for l in txt:
             w = font.size(l)[0]
             if w > width: width = w
@@ -212,12 +211,6 @@ class Image:
             if alpha: img.blitTo(self)
         return self
 
-#     def locus(self, pCurve, t0, t1, steps=None, stroke=(0,0,255), strokeWeight=2, fill=None, **params):
-#         "Connect points along a parameterized curve"
-#         if steps is None: steps = max(1, round(abs(t1-t0)))
-#         pts = locus(pCurve, t0, t1, steps, **params)
-#         return self.plot(pts, marker, stroke=color, strokeWeight=weight, fill=None)
-
     @staticmethod
     def copy(srf):
         "Duplicate a Surface and wrap it as an Image"
@@ -232,7 +225,6 @@ class Image:
 
     def clone(self): return self.copy(self)
     def setAsIcon(self): pygame.display.set_icon(self.surface)
-
     def randPixel(self): return randPixel(self)
 
     @property
@@ -403,7 +395,6 @@ class Image:
             pygame.draw.rect(srf, bgColor, (border, border, w + pad, h + pad))
         border += pad0
         srf.blit(self.surface, (border, border))
-#        self.noTransform()
         return img
 
     def _borderRects(self, width):
@@ -419,10 +410,10 @@ class Image:
         self.noTransform()
         return self
 
-    def removeColor(self, color, dist=0):
-        "Change a color to transparent"
+    def replaceColor(self, color, dist=0, replace=(0,0,0,0)):
+        "Change a color to transparent or an alternative color"
         img = self.convert(True) if self.bits < 32 else self.clone()
-        PixelArray(img.surface).replace(color, (0,0,0,0), dist)
+        PixelArray(img.surface).replace(color, replace, dist)
         return img
 
     def tint(self, rgba, sf=pygame.BLEND_RGBA_MULT):

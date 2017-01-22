@@ -57,7 +57,7 @@ class Remove(Effect):
 
     def apply(self, img, n=0):
         if n >= 1: return img
-        return img.removeColor(self.color, self.dist)
+        return img.replaceColor(self.color, self.dist)
 
 
 class Border(Effect):
