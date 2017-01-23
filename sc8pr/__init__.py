@@ -1,1 +1,1 @@
-version = 0, 7, "dev"
+version = 1, 0, "rc1"

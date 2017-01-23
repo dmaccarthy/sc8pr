@@ -84,13 +84,13 @@ class Robot(Sprite):
     elasticity = 0.9
     arenaTime = 12
     startTime = None
-#    centerPen = True
+    centerPen = False
 
     def __init__(self, sprites, brain=None, colors=None, *group, **kwargs):
         self.penColor = None
         costumes = self._makeCostumes(colors)
         super().__init__(sprites, costumes, *group, **kwargs)
-#        self.data = Data()
+        if "gyro" not in kwargs: self.gyro = 0
         self.circle()
         if brain is not None:
             self._thread = RobotThread(self, brain)
@@ -112,8 +112,6 @@ class Robot(Sprite):
     def stall(self):
         "Stall status as bool"
         return self._stallTime is not None
-#        t = self._stallTime
-#        return None if t is None else (self.sketch.time - t)
 
     @property
     def stallTime(self):
@@ -122,13 +120,22 @@ class Robot(Sprite):
         return 0.0 if t is None else (self.sketch.time - t)
 
     @property
-    def compass(self): return self.angle
+    def gyro(self):
+        "Gyroscope sensor"
+        return self.angle + self._gyro
+
+    @gyro.setter
+    def gyro(self, v): self._gyro = v - self.angle
+
+    def gyroCompass(self):
+        "Calibrate gyroscope to axis directions"
+        self._gyro = 0
 
     @property
     def state(self):
         "Return the state of the robot as a dictionary"
         return dict(environ=self.environ, motors=self.motors, stall=self.stall, proximity=self.proximity,
-            downColor=self.downColor, frontColor=self.frontColor, uptime=self.uptime, compass=self.compass)
+            downColor=self.downColor, frontColor=self.frontColor, uptime=self.uptime, gyro=self.gyro)
 
     @classmethod
     def _makeCostumes(cls, colors=None):
@@ -184,7 +191,6 @@ class Robot(Sprite):
     @penColor.setter
     def penColor(self, c):
         self._pen = c if isinstance(c, Color) or c is None else Color(c)
-#        self._penPosn = None
 
     @property
     def motorsOff(self):
@@ -209,14 +215,13 @@ class Robot(Sprite):
                 xy = rectAnchor((x,y), img.size, CENTER).topleft
                 led.append((img, xy))
             a -= pi / 1.5
-#        if c: self._penPosn = True if self.centerPen else (round(x), round(y))
+        if c: self._penPosn = True if self.centerPen else (round(x), round(y))
         return led
 
     def update(self):
         "Draw LEDs before update"
         self.sketch._lumin.extend(self.leds())
         self.frameStep()
-#        super().update()
 
     @property
     def uptime(self):
@@ -377,7 +382,6 @@ class Robot(Sprite):
             v = v1
 
         # Acceleration...
-#        v = times(self.unitVector, v)
         v = vec2d(v, self.angle * DEG)
         self.accel = times(sub(v, self.velocity), 0.05)
 
@@ -388,7 +392,7 @@ class Robot(Sprite):
         if self.penColor:# and self._penPosn:
             srf = self.sketch.scaledBgImage.surface
             x, y = self.posn
-            xy = (round(x), round(y)) #if self.centerPen else self._penPosn
+            xy = (round(x), round(y)) if self.centerPen else self._penPosn
             circle(srf, self.penColor, xy, self.penRadius)
 
         # Check sensors...

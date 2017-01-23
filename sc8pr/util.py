@@ -145,6 +145,11 @@ def handleEvent(obj, ev):
     key = eventKey(ev, eMap)
     return eMap[key](obj, ev) if key in eMap else None
 
+def bind(obj, func, attr=None):
+    "Bind a function as an object method"
+    if attr is None: attr = func.__name__
+    setattr(obj, attr, func.__get__(obj, obj.__class__))
+
 def fontHeight(f):
     if not isinstance(f, pygame.font.Font): f = f.font
     return f.get_linesize() + 1

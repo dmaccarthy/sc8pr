@@ -2,7 +2,7 @@ from distutils.core import setup
 
 with open("README.txt") as f: readme = f.read()
 
-setup(name="sc8pr", version="0.7a0", license = "GPLv3", requires = ["pygame(>=1.9.1)"],
+setup(name="sc8pr", version="1.0rc1", license = "GPLv3", requires = ["pygame(>=1.9.1)"],
     packages = ["sc8pr"],
     package_data = {"": ["icons/*.*", "robot/*.*", "*.json"]},
 
