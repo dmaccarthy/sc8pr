@@ -70,10 +70,6 @@ class Capture:
         path = self.pattern.format(self.count)
         pygame.image.save(pygame.display.get_surface(), path)
 
-#     def save(self, name):
-#         "For compatibility with sc8pr.video.Video"
-#         pass
-
 
 def collide_shape_only(left, right):
     "Detect collisions based on sprites' shape attribute"

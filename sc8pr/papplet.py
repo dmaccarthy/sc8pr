@@ -93,7 +93,7 @@ class PApplet:
 			if f: self._fonts[pseudo] = f
 		return self._fonts[pseudo] if pseudo in self._fonts else None
 
-	def loadFont(self, name=None, size=16, bold=False, italic=False, lineHeight=False):
+	def loadFont(self, name=None, size=16, style=0, lineHeight=False):
 		"Load a font file or system font (pseudonyms allowed)"
 		font = None
 		sz = max(4, round(0.7 * size)) if lineHeight else size
@@ -102,12 +102,12 @@ class PApplet:
 		if name and os.path.isfile(name):
 			font = pyFont.Font(name, sz)
 		if not font:
-			font = pyFont.SysFont(name, sz, bold, italic)
+			font = pyFont.SysFont(name, sz, style & 1, style & 2)
 		if lineHeight:
 			h = fontHeight(font)
 			if h != size:
 				sz = round(size * sz / h)
-				font = self.loadFont(name, sz, bold, italic)
+				font = self.loadFont(name, sz, style)
 		return font
 
 	@property
@@ -355,5 +355,3 @@ class PApplet:
 
 		pygame.quit()
 		return self
-
-	run = play # Deprecated, removal February 2017

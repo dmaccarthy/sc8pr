@@ -23,8 +23,29 @@ from tempfile import mkdtemp
 from random import randint
 from pygame import Color, Rect
 from pygame.constants import QUIT, KEYDOWN, KEYUP, MOUSEMOTION, MOUSEBUTTONDOWN as MOUSEDOWN, MOUSEBUTTONUP as MOUSEUP, VIDEORESIZE as RESIZE
+from subprocess import call
+from tempfile import mkstemp
 import pygame, sc8pr, os
 
+
+def run(*cmd, **kwargs):
+    "Run a command using subprocess.call"
+    out, outName = mkstemp(dir=".")
+    err, errName = mkstemp(dir=".")
+    code = call(cmd, stdout=out, stderr=err, **kwargs)
+    return dict(code=code, out=_tidy(out, outName), err=_tidy(err, errName))
+
+def _tidy(h, name):
+    "Read data and dispose of temporary file"
+    os.close(h)
+    with open(name) as f: data = f.read()
+    os.remove(name)
+    return data
+
+
+# Type styles...
+BOLD = 1
+ITALIC = 2
 
 # Cursors...
 ARROW = pygame.cursors.arrow
@@ -42,16 +63,18 @@ NO_CURSOR = ((8,8),(5,4),(0,0,0,0,0,0,0,0),(0,0,0,0,0,0,0,0))
 def jdump(obj): return bytes(dumps(obj), encoding="utf8")
 def jload(data): return loads(str(data, encoding="utf8"))
 
+
 def defaultExtension(name, ext):
     return name if "." in name.replace("\\","/").split("/")[-1] else name + ext
 
 def tempDir(path):
     "Create a temporary directory for images"
-    if path[:2] == "?/":
-        path = mkdtemp(dir="./") + path[1:]
+    if "?" in path:
+        fldr, path = path.split("?")
+        path = mkdtemp(dir=fldr) + path
     return path
 
-def nothing(*args): pass
+#def nothing(*args): pass
 def logError(): print(format_exc(), file=stderr)
 
 def setCursor(c):

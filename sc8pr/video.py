@@ -15,18 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
+
+from sc8pr.image import Image
+from sc8pr.effects import ScriptSprite
+from sc8pr.util import jdump, jload, defaultExtension, tempDir, run
+import sc8pr
+
+from sys import version_info as ver, stderr
 from zipfile import ZipFile
 from struct import pack, unpack
 from os.path import isfile
-from os import system
-from sys import version_info as ver, stderr
-import pygame, zlib
-from sc8pr.image import Image
-from sc8pr.sketch import Capture
-from sc8pr.effects import ScriptSprite
-from sc8pr.util import jdump, jload, defaultExtension, tempDir
-import sc8pr
-
+import pygame, zlib, os
 
 
 class ZImage:
@@ -194,19 +193,56 @@ class Video:
         v.data = self.data[start:end]
         return v
 
-    def export(self, path="?/img{}.png", pattern="05d", start=0, file=None): 
+    def export(self, path="?/img{}.png", pattern="05d", start=0, file=None, ffmpeg=None, **kwargs):
         "Export the images as individual files"
         if self.pending: self.buffer()
-        path = tempDir(path).format("{{:{}}}".format(pattern))
+        path = tempDir(path)
+        ffpath = path.format("%{}".format(pattern))
+        path = path.format("{{:{}}}".format(pattern))
         i = 0
-        file = self.output
+        if file is None: file = self.output
         if file:
             print("Saving {} images to {}...".format(len(self), path), file=file)
         for img in self:
             img.image.saveAs(path.format(i + start))
             i += 1
             if file and i % 50 == 0: print(i, file=file)
+        if ffmpeg:
+            if file: print("Calling FFMPEG...", file=file)
+            if start:
+                option = {"start":start}
+                option.update(kwargs)
+            else: option = kwargs
+            data = FF.encode(ffpath, ffmpeg=ffmpeg, **option)
+            if file: print(data["err"] if data["code"] else "Saved video!", file=file)
         return path
+
+
+class FF:
+    "Static class for encoding using FFMPEG"
+
+    cmd = "ffmpeg"
+
+    @staticmethod
+    def encode(src, out="video.mp4", ffmpeg=True, fps=30, **kwargs):
+        "Convert a sequence of images into a video using FFMPEG"
+        if isfile(out):
+            if kwargs.get("overwrite") is True: os.remove(out)
+            else: return dict(code=1, err="File already exists: {}".format(out))
+        fps = str(fps)
+        n = kwargs.get("start")
+        args = ["-start_number", str(n)] if n else []
+        args = ["-f", "image2", "-r", fps] + args + ["-i", src, "-r", fps] 
+        for key in ("vcodec", "pix_fmt"): args.extend(FF.opt(kwargs, key))
+        args.append(out)
+        if ffmpeg is True: ffmpeg = FF.cmd
+        return run(ffmpeg, *args)
+
+    @staticmethod
+    def opt(options, key):
+        "Get an FFMPEG option from the dictionary"
+        val = options.get(key)
+        return ["-" + key, val] if val else []
 
 
 class VideoSprite(ScriptSprite):
@@ -248,31 +284,3 @@ class VideoSprite(ScriptSprite):
         if type(a) is tuple:
             self.load(*a)
             return True
-
-
-class FF:
-    "Encode and decode with ffmpeg"
-
-    cmd = "ffmpeg"
-
-    @staticmethod
-    def _patt(p):
-        return p.replace("{:", "%").replace("}", "")
-
-    @staticmethod
-    def encode(movie, src=None, start=1, rate=30, pixfmt="yuv444p"):
-        "Run ffmpeg to encode Video instance or file sequence"
-        if src is None: src = Video(movie)
-        if type(src) is Video: src = src.export()
-        movie = defaultExtension(movie, ".mp4")
-        args = '-f image2 -start_number {} -r 30 -i {} -r 30 -vcodec h264 -pix_fmt {} "{}"'
-        args = args.format(start, FF._patt(src), pixfmt, movie)
-        system("{} {}".format(FF.cmd, args))
-
-    @staticmethod
-    def decode(movie, path="?/img{:05d}.png"):
-        "Run ffmpeg to decode video"
-        path = Capture.tempDir(path)
-        args = "-i {} {}".format(defaultExtension(movie, ".mp4"), FF._patt(path))
-        system("{} {}".format(FF.cmd, args))
-        return path
