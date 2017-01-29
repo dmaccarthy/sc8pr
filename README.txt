@@ -1,13 +1,18 @@
-sc8pr
-(Rhymes with "caper")
+sc8pr is a Python 3 package for educational programming. It aims to bring the
+best features of Processing, Scratch, and robotics programming to Python, and
+to make it easy for both new and experienced programmers to easily create
+interactive animations and other graphics-based programs.
 
-A Python 3 package for educational programming. This repository aims to bring the best features of Processing, Scratch, and robotics programming to Python. Features include:
+Features include:
 * a simple framework for creating interactive animations
 * image manipulation
-* GUI
-* graph plotting
+* video effects / transitions
 * sprite management
 * physics-based collisions
+* GUI
 * robotics simulator
+* graph plotting
 
-Please visit the documentation page <http://dmaccarthy.github.io/sc8pr/>. Bug reports can be submitted on the GitHub issues page <https://github.com/dmaccarthy/sc8pr/issues>.  
+Please visit the project on GitHub for more information:
+* Source Code & License <https://github.com/dmaccarthy/sc8pr>
+* Documentation <http://dmaccarthy.github.io/sc8pr>
