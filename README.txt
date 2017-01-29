@@ -13,6 +13,3 @@ Features include:
 * robotics simulator
 * graph plotting
 
-Please visit the project on GitHub for more information:
-* Source Code & License <https://github.com/dmaccarthy/sc8pr>
-* Documentation <http://dmaccarthy.github.io/sc8pr>
