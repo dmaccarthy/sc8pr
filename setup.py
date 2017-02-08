@@ -12,6 +12,7 @@ setup(name="sc8pr", version="1.0.0", license = "GPLv3", requires = ["pygame(>=1.
 
     # Details
     url = "http://dmaccarthy.github.io/sc8pr",
+    download_url = "https://github.com/dmaccarthy/sc8pr/archive/v1.0.0.zip",
     description = "Create interactive animations with features inspired by Scratch, Processing, and robotics",
     long_description = readme
 )
