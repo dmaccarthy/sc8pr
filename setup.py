@@ -28,7 +28,7 @@ setup(
     long_description = readme,
 
 	# Additional data
-    keywords = "",
+    keywords = "graphics animation sprite gui robotics pygame educational",
     classifiers = [
         "Development Status :: 4 - Beta",
 		"Intended Audience :: Developers",
