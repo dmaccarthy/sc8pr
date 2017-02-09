@@ -1,18 +1,39 @@
-from distutils.core import setup
+from setuptools import setup
+from sc8pr import __version__ as ver
 
 with open("README.txt") as f: readme = f.read()
 
-setup(name="sc8pr", version="1.0.0", license = "GPLv3", requires = ["pygame(>=1.9.1)"],
-    packages = ["sc8pr"],
-    package_data = {"": ["icons/*.*", "robot/*.*", "*.json"]},
+setup(
+	# Package info
+    name = "sc8pr",
+    version = ver,
+    license = "GPLv3",
+    packages=["sc8pr"],
 
     # Author
     author = "David MacCarthy",
     author_email = "devwigs@gmail.com",
 
-    # Details
+	# Dependencies
+	install_requires=['pygame(>=1.9.1)'],
+	
+	# URLs
     url = "http://dmaccarthy.github.io/sc8pr",
-    download_url = "https://github.com/dmaccarthy/sc8pr/archive/v1.0.0.zip",
+    download_url = "https://github.com/dmaccarthy/sc8pr/archive/v{}.zip".format(ver),
+
+    # Details
     description = "Create interactive animations with features inspired by Scratch, Processing, and robotics",
-    long_description = readme
+    long_description = readme,
+
+	# Additional data
+    keywords = "",
+    classifiers = [
+        "Development Status :: 4 - Beta",
+		"Intended Audience :: Developers",
+		"Intended Audience :: Education",
+		"License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+		"Programming Language :: Python :: 3",
+		"Topic :: Multimedia :: Graphics",
+		"Topic :: Education"
+    ]
 )
