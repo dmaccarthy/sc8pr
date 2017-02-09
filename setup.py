@@ -9,6 +9,7 @@ setup(
     version = ver,
     license = "GPLv3",
     packages=["sc8pr"],
+	package_data={"sc8pr": ["*.json", "icons/*.*", "robot/*.*"]},
 
     # Author
     author = "David MacCarthy",
