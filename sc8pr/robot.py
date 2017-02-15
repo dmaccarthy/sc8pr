@@ -134,8 +134,8 @@ class Robot(Sprite):
     @property
     def state(self):
         "Return the state of the robot as a dictionary"
-        return dict(environ=self.environ, motors=self.motors, stall=self.stall, proximity=self.proximity,
-            downColor=self.downColor, frontColor=self.frontColor, uptime=self.uptime, gyro=self.gyro)
+        return dict(environ=self.environ, motors=self.motors, stall=self.stall, stallTime=self.stallTime, proximity=self.proximity,
+            downColor=self.downColor, frontColor=self.frontColor, uptime=self.uptime, gyro=self.gyro, penColor=self.penColor)
 
     @classmethod
     def _makeCostumes(cls, colors=None):

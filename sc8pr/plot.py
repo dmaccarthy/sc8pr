@@ -1,4 +1,4 @@
-# Copyright 2015-2016 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2017 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -147,7 +147,7 @@ class Plot(Image):
 
     def arrow(self, tail, tip, tailWidth=None, headLength=None, flatness=1, fill=None, stroke=None, strokeWeight=1):
         "Plot an arrow"
-        pts = arrow(self.coords(tail), self.coords(tip), tailWidth, headLength, flatness)
+        pts = arrow(self.coords(tail), self.coords(tip), tailWidth, headLength, flatness).points
         Image.polygon(pts, True, fill, stroke, strokeWeight, self.size).blitTo(self)
 
     def blit(self, img, posn, anchor=NW):
