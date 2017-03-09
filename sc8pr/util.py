@@ -22,25 +22,11 @@ from json import dumps, loads
 from tempfile import mkdtemp
 from random import randint
 from pygame import Color, Rect
+from pygame.mixer import Sound
 from pygame.constants import QUIT, KEYDOWN, KEYUP, MOUSEMOTION, MOUSEBUTTONDOWN as MOUSEDOWN, MOUSEBUTTONUP as MOUSEUP, VIDEORESIZE as RESIZE
 from subprocess import call
 from tempfile import mkstemp
 import pygame, sc8pr, os
-
-
-def run(*cmd, **kwargs):
-    "Run a command using subprocess.call"
-    out, outName = mkstemp(dir=".")
-    err, errName = mkstemp(dir=".")
-    code = call(cmd, stdout=out, stderr=err, **kwargs)
-    return dict(code=code, out=_tidy(out, outName), err=_tidy(err, errName))
-
-def _tidy(h, name):
-    "Read data and dispose of temporary file"
-    os.close(h)
-    with open(name) as f: data = f.read()
-    os.remove(name)
-    return data
 
 
 # Type styles...
@@ -246,6 +232,24 @@ def _step(dt, *derivs):
 
 def step(dt, *args):
     return [_step(dt, *args[i:]) for i in range(len(args)-1)]
+
+
+# Prevent crash when using sound files that cannot be loaded
+
+class NoSound:
+    "A class to represent Sound objects that fail to load"
+    def play(self, **kwargs): pass
+
+    __init__ = play
+    set_volume = play
+
+def loadSound(fn):
+    "Attempt to load a sound file using pygame.mixer.Sound"
+    try: s = Sound(fn)
+    except:
+        s = NoSound()
+        print("Unable to load {}".format(fn), file=stderr)
+    return s
 
 
 # Classes...

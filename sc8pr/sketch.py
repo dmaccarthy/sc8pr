@@ -17,7 +17,7 @@
 
 
 from sc8pr.papplet import PApplet
-from sc8pr.util import step, logError, CENTER, rectAnchor, addToMap, setCursor, tempDir
+from sc8pr.util import step, logError, CENTER, rectAnchor, addToMap, setCursor, tempDir, loadSound
 from sc8pr.gui import GUI
 from sc8pr.io import prompt, fileDialog, USERINPUT
 from sc8pr.grid import OPEN, SAVE, FOLDER
@@ -27,7 +27,7 @@ from sc8pr.geom import DEG, unitVector, mag, neg, add, sub, times, sprod, \
 from math import hypot, cos, sin, sqrt
 import pygame
 from pygame import display
-from pygame.mixer import Sound
+from sys import stderr
 
 
 # Status constants...
@@ -781,16 +781,13 @@ class Sketch(PApplet):
         for s in args:
             if type(s) is str: key = s
             else: s, key = s
-            try: self._sounds[key] = Sound(s)
-            except: logError()
+            self._sounds[key] = _sound(s)
 
     def sound(self, key, cache=True, **kwargs):
         "Play a sound"
         snd = self._sounds.get(key)
         if not cache or snd is None:
-            try:
-                snd = Sound(key)
-                if cache: self._sounds[key] = snd
-            except: logError()
+            snd = loadSound(key)
+            if cache: self._sounds[key] = snd
         if snd: snd.play(**kwargs)
         return snd

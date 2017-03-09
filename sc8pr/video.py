@@ -1,4 +1,4 @@
-# Copyright 2015-2016 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2017 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -18,14 +18,14 @@
 
 from sc8pr.image import Image
 from sc8pr.effects import ScriptSprite
-from sc8pr.util import jdump, jload, defaultExtension, tempDir, run
+from sc8pr.util import jdump, jload, defaultExtension, tempDir
 import sc8pr
 
 from sys import version_info as ver, stderr
 from zipfile import ZipFile
 from struct import pack, unpack
 from os.path import isfile
-import pygame, zlib, os
+import pygame, zlib
 
 
 class ZImage:
@@ -82,7 +82,7 @@ class Video:
     _pending = 0
 
     info = dict(python=(ver.major, ver.minor, ver.micro),
-        sc8pr=sc8pr.version, format=ZImage.format)
+        sc8pr=sc8pr.__version__, format=ZImage.format)
 
     def __init__(self, *archive, interval=None, gui=False, wait=True):
         self.data = []
@@ -193,11 +193,10 @@ class Video:
         v.data = self.data[start:end]
         return v
 
-    def export(self, path="?/img{}.png", pattern="05d", start=0, file=None, ffmpeg=None, **kwargs):
+    def export(self, path="?/img{}.png", pattern="05d", start=0, file=None, **kwargs):
         "Export the images as individual files"
         if self.pending: self.buffer()
         path = tempDir(path)
-        ffpath = path.format("%{}".format(pattern))
         path = path.format("{{:{}}}".format(pattern))
         i = 0
         if file is None: file = self.output
@@ -207,42 +206,7 @@ class Video:
             img.image.saveAs(path.format(i + start))
             i += 1
             if file and i % 50 == 0: print(i, file=file)
-        if ffmpeg:
-            if file: print("Calling FFMPEG...", file=file)
-            if start:
-                option = {"start":start}
-                option.update(kwargs)
-            else: option = kwargs
-            data = FF.encode(ffpath, ffmpeg=ffmpeg, **option)
-            if file: print(data["err"] if data["code"] else "Saved video!", file=file)
         return path
-
-
-class FF:
-    "Static class for encoding using FFMPEG"
-
-    cmd = "ffmpeg"
-
-    @staticmethod
-    def encode(src, out="video.mp4", ffmpeg=True, fps=30, **kwargs):
-        "Convert a sequence of images into a video using FFMPEG"
-        if isfile(out):
-            if kwargs.get("overwrite") is True: os.remove(out)
-            else: return dict(code=1, err="File already exists: {}".format(out))
-        fps = str(fps)
-        n = kwargs.get("start")
-        args = ["-start_number", str(n)] if n else []
-        args = ["-f", "image2", "-r", fps] + args + ["-i", src, "-r", fps] 
-        for key in ("vcodec", "pix_fmt"): args.extend(FF.opt(kwargs, key))
-        args.append(out)
-        if ffmpeg is True: ffmpeg = FF.cmd
-        return run(ffmpeg, *args)
-
-    @staticmethod
-    def opt(options, key):
-        "Get an FFMPEG option from the dictionary"
-        val = options.get(key)
-        return ["-" + key, val] if val else []
 
 
 class VideoSprite(ScriptSprite):
