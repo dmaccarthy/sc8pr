@@ -1,20 +1,21 @@
 # sc8pr
 
-A [Python 3](http://www.python.org) package for educational programming. This repository aims to bring the best features of [Processing](http://www.processing.org), [Scratch](http://scratch.mit.edu), and robotics programming to Python. Features include:
-* a simple framework for creating interactive animations
+An educational programming package for [Python 3.4+](https://www.python.org). Inspired by [Scratch](https://scratch.mit.edu and [Processing](https://www.processing.org), sc8pr’s aim is to make it easy for new and experienced Python programmers to create animations, games, and other graphics-based programs.
+
+sc8pr 2.0 features include:
+* a simple, event-driven approach to creating interactive animations
 * image manipulation
-* video effects / transitions
 * sprite management
 * physics-based collisions
-* GUI
-
-Version 2.0.0 is currently under development. The latest production version is [sc8pr 1.1](https://github.com/dmaccarthy/sc8pr).
+* video effects / transitions
+* a selection of GUI controls
+* robotics simulator [experimental]
 
 # Installation
 
 ```
 pip install setuptools wheel
-pip install https://github.com/dmaccarthy/sc8pr2/archive/master.zip
+pip install https://github.com/dmaccarthy/sc8pr/archive/master.zip
 ```
 
 If setuptools is unable to locate a Pygame wheel for your platform and Python version, you will need to install [Pygame](http://www.pygame.org/news) separately.

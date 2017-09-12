@@ -1,14 +1,10 @@
-sc8pr is a Python 3 package for educational programming. It aims to bring the
-best features of Processing, Scratch, and robotics programming to Python, and
-to make it easy for both new and experienced programmers to easily create
-interactive animations and other graphics-based programs.
+An educational programming package for Python 3.4+. Inspired by Scratch and Processing, sc8pr’s aim is to make it easy for new and experienced Python programmers to create animations, games, and other graphics-based programs.
 
 Features include:
-* a simple framework for creating interactive animations
+* a simple, event-driven approach to creating interactive animations
 * image manipulation
-* video effects / transitions
 * sprite management
 * physics-based collisions
-* GUI
-
-This is the development fork for sc8pr 2.0.
+* video effects / transitions
+* a selection of GUI controls
+* robotics simulator [experimental]
