@@ -7,8 +7,14 @@ A [Python 3](http://www.python.org) package for educational programming. This re
 * sprite management
 * physics-based collisions
 * GUI
-* robotics simulator
-* graph plotting
 
-# Documentation
-Please visit the [installation guide](http://dmaccarthy.github.io/sc8pr/?show=Install) and [tutorial](http://dmaccarthy.github.io/sc8pr/?tutorial=Home). Bug reports can be submitted on the [GitHub issues page](https://github.com/dmaccarthy/sc8pr/issues). 
+Version 2.0.0 is currently under development. The latest production version is [sc8pr 1.1](https://github.com/dmaccarthy/sc8pr).
+
+# Installation
+
+```
+pip install setuptools wheel
+pip install https://github.com/dmaccarthy/sc8pr2/archive/master.zip
+```
+
+If setuptools is unable to locate a Pygame wheel for your platform and Python version, you will need to install [Pygame](http://www.pygame.org/news) separately.

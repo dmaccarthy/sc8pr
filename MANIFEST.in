@@ -1,3 +1,2 @@
 include LICENSE
-recursive-include sc8pr/icons *
-recursive-include sc8pr/robot *
+include sc8pr/sc8pr.data

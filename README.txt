@@ -10,6 +10,5 @@ Features include:
 * sprite management
 * physics-based collisions
 * GUI
-* robotics simulator
-* graph plotting
 
+This is the development fork for sc8pr 2.0.

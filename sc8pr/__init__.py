@@ -1,2 +1,784 @@
-__version__ = "1.1.0"
-__dev__ = False
+# Copyright 2015-2017 D.G. MacCarthy <http://dmaccarthy.github.io>
+#
+# This file is part of "sc8pr".
+#
+# "sc8pr" is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# "sc8pr" is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
+
+version = 2, 0, 0, "dev"
+
+import sys, os
+import pygame
+import pygame.display as _pd
+from pygame.transform import flip as _pyflip
+from sc8pr._event import EventManager
+from sc8pr.geom import transform2d, transform2dGen
+from sc8pr.util import CachedSurface, style, logError, sc8prData,\
+    tile, rgba, drawBorder
+
+
+# Anchor point constants
+NW = 0
+NORTH = 1
+NE = 2
+WEST = 4
+CENTER = 5
+EAST = 6
+SW = 8
+SOUTH = 9
+SE = 10
+
+# Other constants
+HORIZONTAL = 1
+VERTICAL = 2
+BOTH = 3
+REMOVE_X = 4
+REMOVE_Y = 8
+REMOVE = 12
+
+RIGHT = 1
+LEFT = 2
+TOP = 8
+BOTTOM = 4
+ALL = 15
+
+
+class Graphic:
+    """Base class for graphics objects. Subclasses may provide a 'draw' method
+    that draws the graphic onto the canvas as described by the clipping region
+    of the surface passed as an argument. Alternatively, the subclass may
+    provide a 'surface' property which can be drawn by Graphic.draw."""
+    autoPositionOnResize = True
+    canvas = None
+    pos = 0, 0
+    anchor = CENTER
+    focusable = False
+    ondraw = None
+    effects = None
+    _shapeModel = (-0.5,-0.5), (0.5,-0.5), (0.5,0.5), (-0.5,0.5)
+    _shapeCache = None,
+
+    def __repr__(self):
+        name = self.name if hasattr(self, "name") else id(self)
+        return "<{} '{}'>".format(type(self).__name__, name)
+
+    def config(self, **kwargs):
+        "Set multiple instance properties"
+        for k, v in kwargs.items(): setattr(self, k, v)
+        return self
+
+    def bind(self, *args, **kwargs):
+        "Bind a function to an instance as one of its methods"
+        for f in args:
+            setattr(self, f.__name__, f.__get__(self, self.__class__))
+        for n, f in kwargs.items():
+            if f is None: delattr(self, n)
+            else:
+                setattr(self, n, f.__get__(self, self.__class__))
+        return self
+
+    @property
+    def polygon(self):
+        s = self._shapeModel
+        return None if type(s) in (int, float) else s
+
+    @polygon.setter
+    def polygon(self, pts):
+        self._shapeModel = pts
+        self._shapeCache = None,
+
+    def circle(self, r=1):
+        self._shapeModel = r
+        self._shapeCache = None,
+        return self
+
+# Metrics
+
+    @property
+    def size(self): return self._size
+
+    def resize(self, size): self._size = size
+
+    @property
+    def width(self): return self.size[0]
+
+    @property
+    def height(self): return self.size[1]
+
+    @property
+    def radius(self):
+        r = sum(self.size) / 4
+        s = self._shapeModel
+        return r * s if type(s) in (int, float) else r
+
+    @property
+    def aspectRatio(self):
+        return self.size[0] / self.size[1]
+
+    @size.setter
+    def size(self, size): self.resize(size)
+
+    @width.setter
+    def width(self, width):
+        self.resize((width, width / self.aspectRatio))
+
+    @height.setter
+    def height(self, height):
+        self.resize((height * self.aspectRatio, height))
+
+    @property
+    def center(self):
+        size = self.size
+        return size[0] / 2, size[1] / 2
+
+    def blitPosition(self, offset, blitSize):
+        "Return the position (top left) to which the graphic is drawn"
+        x, y = self.pos
+        x += offset[0]
+        y += offset[1]
+        a = self.anchor
+        if a:
+            x -= blitSize[0] * (a & 3) // 2
+            y -= blitSize[1] * (a & 12) // 8
+        return x, y
+
+    def calcBlitRect(self, blitSize):
+        cv = self.canvas
+        offset = cv.rect.topleft if cv else (0,0)
+        return pygame.Rect(self.blitPosition(offset, blitSize) + blitSize) 
+
+    def relXY(self, pos):
+        "Calculate coordinates relative to the graphic object"
+        if hasattr(self, "angle") and self.angle:
+            xc, yc = self.rect.center
+            x, y = transform2d(pos, preShift=(-xc,-yc), rotate=-self.angle)
+            xc, yc = self.center
+            return round(x + xc), round(y + yc)
+        else:
+            r = self.rect.topleft
+            return pos[0] - r[0], pos[1] - r[1]
+
+    def contains(self, pos):
+        "Check if the graphic contains the coordinates"
+        if hasattr(self, "angle") and self.angle:
+            r = pygame.Rect((0,0), self.size)
+            pos = self.relXY(pos)
+        else: r = self.rect
+        return bool(r.collidepoint(pos))
+
+    def scaleVectors(self, fx, fy, attr):
+        for a in attr:
+            x, y = getattr(self, a)
+            setattr(self, a, (x * fx, y * fy))
+
+# Canvas interaction
+
+    def setCanvas(self, cv):#, before=None):
+        "Add the object to a canvas"
+        self.remove()
+        self.canvas = cv
+        cv._items.append(self)
+
+    def remove(self):
+        "Remove the instance from its canvas"
+        cv = self.canvas
+        if cv and self in cv._items: cv._items.remove(self)
+        return self
+
+    @property
+    def layer(self): return self.canvas._items.index(self)
+
+    @layer.setter
+    def layer(self, n):
+        "Arrange graphic within canvas"
+        g = self.canvas._items
+        if n < 0: n += len(g)
+        i = g.index(self)
+        g = g[:i] + g[i+1:]
+        self.canvas._items = g[:n] + [self] + g[n:]
+
+    @property
+    def sketch(self):
+        sk = self
+        while sk.canvas: sk = sk.canvas
+        return sk
+
+    @property
+    def focussed(self):
+        return self is self.sketch.evMgr.focus
+
+    def blur(self):
+        sk = self.sketch
+        sk.evMgr.focus = sk
+
+    @property
+    def path(self):
+        "List of parent canvases, beginning with the instance itself"
+        g = self
+        p = []
+        while g is not None:
+            p.append(g)
+            g = g.canvas
+        return p
+
+    def bubble(self, eventName, ev):
+        "Pass an event to a different handler"
+        self.sketch.evMgr.handle(self, eventName, ev)
+
+    @property
+    def timeFactor(self):
+        "Get the sketch timeFactor"
+        sk = self.sketch
+        return sk.timeFactor if (sk and sk.realTime) else 1
+
+# Drawing
+
+    def draw(self, srf):
+        "Draw the graphic to a surface"
+        img = self.surfaceEffect
+        r = self.calcBlitRect(img.get_size())
+        srf.blit(img, r.topleft)
+        return r
+
+    @property
+    def surfaceEffect(self):
+        "Apply effects to the surface"
+        srf = self.image
+        if self.effects:
+            n = self.sketch.frameCount
+            srf = srf.copy()
+            for e in self.effects: srf = e.transition(srf, n)
+        return srf
+
+    def snapshot(self, **kwargs):
+        "Take a snapshot of the graphic and return it as a new Image instance"
+        srf = self.surfaceEffect
+        if kwargs: srf = style(srf, **kwargs)
+        return Image(srf)
+
+    def save(self, fn, **kwargs): self.snapshot(**kwargs).save(fn)
+
+    def match(self, *args, **kwargs):
+        "Check if instance attributes match the specified criteria"
+        for a in args:
+            if not hasattr(self, a): return False
+        for a, v in kwargs.items():
+            if not hasattr(self, a) or getattr(self, a) != v:
+                return False
+        return True
+
+
+class Renderable(Graphic):
+    "Graphics produced by calling a render method"
+    angle = 0
+    stale = True
+
+    @property
+    def image(self):
+        if self.stale:
+            self._srf = self.render()
+            self._rotated = None
+            self.stale = False
+        srf = self._srf
+        a = self.angle
+        if a:
+            r = self._rotated
+            if r and r[0] == a: srf = r[1]
+            else:
+                srf = pygame.transform.rotate(srf, -a)
+                self._rotated = a, srf
+        return srf
+
+    @property
+    def size(self):
+        if self.stale: self._srf = self.render()
+        return self._srf.get_size()
+
+
+class BaseSprite(Graphic):
+    "Base class for sprite animations"
+    # Edge behaviours
+    wrap = REMOVE
+    bounce = 0
+    onbounce = None
+
+    # Kinematics
+    angle = 0
+    spin = 0
+    vel = 0, 0
+    acc = 0, 0
+    drag = 0
+
+    _pen = None
+
+    @property
+    def pen(self):
+        p = self._pen
+        return p[:2] if p else None
+
+    @pen.setter
+    def pen(self, p):
+        if p and len(p) == 2:
+            p = p + (self._pen[2] if self._pen else None,)
+        if p: p = (rgba(p[0]),) + p[1:]
+        self._pen = p
+
+    def penReset(self):
+        p = self._pen
+        if p: self._pen = p[:2] + (None,)
+
+    def onwrap(self, cv, update): self.penReset()
+
+    def circleBounce(self, cv):
+        "Bounce the sprite from the edges"
+        x, y = self.pos
+        r = self.radius
+        vx, vy = self.vel
+        w, h = cv.size
+        b = self.bounce
+        update = 0
+        if b & HORIZONTAL and (x < r and vx < 0 or x > w-r and vx > 0):
+            self.vel = -vx, vy
+            update += HORIZONTAL
+        if b & VERTICAL and (y < r and vy < 0 or y > h-r and vy > 0):
+            self.vel = vx, -vy
+            update += VERTICAL
+        if update and self.onbounce: self.onbounce(cv, update)
+
+    def simpleWrap(self, cv):
+        "Wrap sprite when it leaves the sketch"
+        x, y = self.pos
+        r = self.rect
+        if not cv.rect.colliderect(r):
+            if cv.canvas:
+                dx, dy = cv.rect.topleft
+                r.move_ip((-dx, -dy))
+            w = self.wrap
+            if w is True: w = BOTH
+            if w & 5: # HORIZONTAL | REMOVE_X
+                d = r.width + cv.width
+                wrapX = True
+                if r.right < 0: x += d
+                elif r.left >= cv.width: x -= d
+                else: wrapX = False
+                if wrapX and (w & 4): return True
+            else: wrapX = False
+            if w & 10: # VERTICAL | REMOVE_Y
+                wrapY = True
+                d = r.height + cv.height
+                if r.bottom < 0: y += d
+                elif r.top >= cv.height: y -= d
+                else: wrapY = False
+                if wrapY and (w & 8): return True
+            else: wrapY = False
+            if wrapX or wrapY:
+                update = HORIZONTAL if wrapX else 0
+                if wrapY: update += VERTICAL
+                self.onwrap(cv, update)
+            self.pos = x, y
+
+    def kinematics(self):
+        "Update motion based on spin, vel, acc, drag properties"
+        x, y = self.pos
+        vx, vy = self.vel
+        ax, ay = self.acc
+        t = self.timeFactor
+        self.vel = v = vx + ax * t, vy + ay * t
+        self.pos = x + t * (vx + v[0]) / 2, y + t * (vy + v[1]) / 2
+        self.angle += self.spin * t
+        d = self.drag 
+        if d:
+            if type(d) in (int, float): s = d
+            else: d, s = d
+            d = 1 - d
+            self.vel = d * v[0], d * v[1]
+            self.spin *= 1 - s 
+
+    def ondraw(self, cv):
+        "Update sprite properties after drawing each frame"
+        if self.bounce: self.circleBounce(cv)
+        if self.wrap and self.simpleWrap(cv): return True
+        self.kinematics()
+        if self._pen:
+            c, w, pos = self._pen
+            if pos: cv.paint(pos, self.pos, c, w)
+            self._pen = c, w, self.pos
+
+    def resize(self, size):
+        self._size = size
+        self.penReset()
+
+
+class Image(Graphic):
+    "A class representing scaled and rotated images"
+    angle = 0
+
+    def __init__(self, srf=(1,1), bg=None):
+        self._srf = CachedSurface(srf, bg)
+        self._size = self._srf.get_size()
+
+    def dumpCache(self): self._srf.dumpCache()
+
+    @staticmethod
+    def fromBytes(data): return Image(data[:-12], data[-12:])
+
+    def tiles(self, cols=1, rows=1, flip=0, padding=0):
+        "Create a list of images from a spritesheet"
+        srf = self.image
+        tiles = [Image(tile(srf, n, cols, rows, padding)) for n in range(cols*rows)]
+        if flip & HORIZONTAL:
+            tiles += [Image(_pyflip(s.image, True, False)) for s in tiles]
+        if flip & VERTICAL:
+            tiles += [Image(_pyflip(s.image, False, True)) for s in tiles]
+        return tiles
+
+    @property
+    def image(self):
+        "Return a scaled and rotated surface"
+        return self._srf.get_surface(self._size, self.angle)
+
+    def contains(self, pos):
+        "Determine if the position is contained in the rect and not transparent"
+        br = self.rect
+        if br.collidepoint(pos):
+            x, y = br.topleft
+            x, y = transform2d(pos, shift=(-x,-y))
+            try: return bool(self.image.get_at((round(x), round(y))).a)
+            except: pass
+        return False
+
+    def save(self, fn): pygame.image.save(self._srf.original, fn)
+    def copy(self): return Image(self.image.copy())
+
+
+class Canvas(Graphic):
+    _border = rgba("black")
+    weight = 0
+
+    def __init__(self, image=None, bg=None):
+        if type(image) is str: bg = Image(image, bg)
+        self._size = bg.size if isinstance(bg, Image) else image
+        self.bg = bg
+        self._items = []
+
+    @property
+    def border(self): return self._border
+
+    @border.setter
+    def border(self, color): self._border = rgba(color)
+
+    @property
+    def clipRect(self):
+        "Calculate the clipping rect so as no to draw outside of the canvas"
+        cv = self.canvas
+        r = self.rect
+        return r.clip(cv.rect) if cv else r
+
+    @property
+    def angle(self): return 0
+
+    @property
+    def bg(self): return self._bg
+
+    @bg.setter
+    def bg(self, bg): self._setBg(bg)
+    
+    def _setBg(self, bg):
+        t = type(bg)
+        if t is str: bg = pygame.Color(bg)
+        elif t in (tuple, list): bg = pygame.Color(*bg)
+        elif bg and t is not pygame.Color: bg = Image(bg)
+        self._bg = bg
+
+    def paint(self, p1, p2, c=(255,0,0), w=4):
+        cs = self.bg._srf
+        key, scaled = cs.scaled
+        if scaled is cs.original:
+            scaled = scaled.copy()
+            cs.scaled = key, scaled
+        pygame.draw.line(scaled, c, p1, p2, w)
+
+    def __len__(self): return len(self._items)
+
+    def __contains__(self, i):
+        for gr in self._items:
+            if gr is i or (hasattr(gr, "name") and gr.name == i):
+                return True
+        return False
+
+    def __getitem__(self, i):
+        if type(i) is int: return self._items[i]
+        for gr in self._items:
+            if hasattr(gr, "name") and gr.name == i: return gr
+        raise KeyError("{} contains no items with name '{}'".format(self,   i))
+
+    def __iadd__(self, gr):
+        "Add a Graphics instance(s) to the Canvas"
+        if isinstance(gr, Graphic): gr.setCanvas(self)
+        else:
+            for g in gr: g.setCanvas(self)
+        return self
+
+    def __isub__(self, gr):
+        "Remove items from the canvas"
+        if isinstance(gr, Graphic):
+            if gr in self: gr.remove()
+            else: raise ValueError("Cannot remove {} from {}".format(gr, self))
+        else:
+            for g in gr: self -= g
+        return self
+
+    append = __iadd__
+
+    def purge(self):
+        "Remove all content recursively"
+        while len(self._items):
+            gr = self[-1]
+            if isinstance(gr, Canvas): gr.purge()
+            gr.remove()
+
+    def resize(self, size):
+        "Resize the canvas contents"
+        size = max(1, round(size[0])), max(1, round(size[1]))
+        fx, fy = size[0] / self._size[0], size[1] / self._size[1]
+        self._size = size
+
+        # Resize objects
+        for g in self:
+            if g.autoPositionOnResize:
+                attr = ("pos", "vel", "acc") if isinstance(g, BaseSprite) else ("pos",)
+                g.scaleVectors(fx, fy, attr)
+            w, h = g.size
+            g.resize((w * fx, h * fy))
+
+    def draw(self, srf=None, mode=3):
+        "Draw the canvas to a surface"
+
+        # Calculate blit rectangle
+        if srf is None: srf = self.image
+        self.rect = r = self.calcBlitRect(self.size)
+
+        # Draw background
+        if mode & 1:
+            srf.set_clip(self.clipRect)
+            if isinstance(self._bg, Image):
+                self._bg.config(size=self._size)
+                srf.blit(self._bg.image, r.topleft)
+            elif self._bg: srf.fill(self._bg)
+
+        # Draw objects
+        if mode & 2:
+            toRemove = []
+            for g in self:
+                srf.set_clip(self.clipRect)
+                grect = g.draw(srf)
+                g.rect = grect
+                if g.ondraw and g.ondraw(self): toRemove.append(g)
+            for g in toRemove: g.remove()
+
+        # Draw border
+        if self.weight: drawBorder(srf, self.border, self.weight, r)
+
+        srf.set_clip(None)
+        return r
+
+#     def drawContent(self, srf=None):
+#         return Canvas.draw(self, srf, 2)
+# 
+#     def drawBackground(self, srf=None):
+#         return Canvas.draw(self, srf, 1)
+
+    def snapshot(self):
+        "Capture the canvas as an Image instance"
+        srf = pygame.Surface(self.size, pygame.SRCALPHA)
+
+        # Draw background
+        if isinstance(self._bg, Image):
+            self._bg.config(size=self._size)
+            srf.blit(self._bg.image, (0,0))
+        elif self._bg: srf.fill(self._bg)
+
+        # Draw objects
+        for g in self:
+            if g.snapshot is not None:
+                xy = g.blitPosition((0,0), g.size)
+                srf.blit(g.snapshot().image, xy)
+            else: g.draw(srf, snapshot=True)
+
+        # Draw border
+        if self.weight: drawBorder(srf, self.border, self.weight)
+        return Image(srf)
+
+    def objectAt(self, pos):
+        obj = self
+        for g in self:
+            if g.contains(pos):
+                obj = g.objectAt(pos) if isinstance(g, Canvas) else g
+        return obj
+
+    def filter(self, *args, **kwargs):
+        "Generate a sequence of items that match the search criteria"
+        for g in self:
+            if g.match(*args, **kwargs): yield g
+
+    def sprites(self, *args, **kwargs):
+        for g in self.filter(*args, **kwargs):
+            if isinstance(g, BaseSprite): yield g
+
+
+class Sketch(Canvas):
+    realTime = False
+    frameRate = 60
+    anchor = 0
+    focusable = True
+    _fixedAspect = True
+
+    def __init__(self, size=(512,288)):
+        super().__init__(size, "white")
+        self.quit = False
+        self.frameCount = 0
+        self.evMgr = EventManager(self)
+#         if type(self) is Sketch:
+#             main = sys.modules["__main__"]
+#             if hasattr(main, "draw"): self.bind(main.draw)
+
+    @property
+    def timeFactor(self):
+        if self.frameCount == 1: return 1
+        t = self.frameRate * self._clock.get_time() / 1000
+        return min(t, 5.0)
+
+    def onquit(self, ev): self.quit = True
+
+# Resizing methods
+
+    @property
+    def size(self): return self.image.get_size()
+
+    @size.setter
+    def size(self, size):
+        if self.fixedAspect:
+            self._fixedAspect = size[0] / size[1]
+        self.resize(size)
+
+    @property
+    def fixedAspect(self): return self._fixedAspect
+
+    @fixedAspect.setter
+    def fixedAspect(self, a):
+        self._fixedAspect = a
+        if a: self.resize(self.size)
+
+    def _aspectSize(self, size, initSize):
+        "Modify sketch size to preserve aspect ratio"
+        w, h = size
+        w0, h0 = initSize
+        a = self.fixedAspect
+        if w0 == w: w = h * a
+        elif h0 == h: h = w / a
+        else:
+            w = min(w, h * a)
+            h = w / a
+        return round(w), round(h)
+
+    def _pygameMode(self, n): return pygame.RESIZABLE if n is True else int(n)
+
+    def resize(self, size, mode=None):
+        "Resize the sketch, maintaining aspect ratio if required"
+        if mode is None: mode = self._mode
+        else:
+            mode = self._pygameMode(mode)
+            self._mode = mode
+        initSize = self.size
+        size = round(size[0]), round(size[1])
+        self.image = _pd.set_mode(size, mode)
+        _pd.flip()
+        if self.fixedAspect: size = self._aspectSize(size, initSize)
+        if self.fixedAspect and sum(abs(x-y) for (x,y) in (zip(size, self.size))) > 1:
+            return self.resize(size)
+        super().resize(self.size)
+        self._size = self.size
+
+# Initialization and drawing / event loop
+
+    def play(self, caption="sc8pr", icon=None, mode=True):
+        "Initialize pygame and run the main drawing / event handling loop"
+
+        # Initialize
+        pygame.init()
+        pygame.key.set_repeat(400, 80)
+        _pd.set_caption(caption)
+        try:
+            try: icon = pygame.image.load(icon)
+            except: icon = Image.fromBytes(sc8prData("alien")).image 
+            _pd.set_icon(icon)
+        except: logError()
+        w, h = self._size
+        self._fixedAspect = w / h
+        mode = self._pygameMode(mode)
+        self._mode = mode
+        self.image = _pd.set_mode(self._size, mode)
+        self.key = None
+        self.mouse = pygame.event.Event(pygame.USEREVENT, code=None, pos=(0,0), description="Sketch startup")
+
+        # Run setup
+        try:
+            if hasattr(self, "setup"): self.setup()
+            else:
+                main = sys.modules["__main__"]
+                if hasattr(main, "setup"): main.setup(self)
+        except: logError()
+
+        # Drawing/event loop
+        self._clock = pygame.time.Clock()
+        while not self.quit:
+            try:
+                self.frameCount += 1
+                self.draw()
+                if self.ondraw: self.ondraw() 
+                _pd.flip()
+                for ev in pygame.event.get():
+                    if ev.type == pygame.VIDEORESIZE and ev.size != self.size:
+                        self.resize(ev.size)
+                        self.bubble("onresize", ev)
+                    try: self.evMgr.dispatch(ev)
+                    except: logError()
+                self._clock.tick(self.frameRate)
+            except: logError()
+
+        pygame.quit()
+        return self
+
+# Other methods
+
+    def save(self, fn=None):
+        if fn is None: fn = "save/img{:05d}.png".format(self.frameCount)
+        pygame.image.save(self.image, fn)
+
+    @property
+    def bg(self): return self._bg
+
+    @bg.setter
+    def bg(self, bg):
+        self._setBg(bg)
+        if self.fixedAspect and hasattr(bg, "aspectRatio"):
+            self.fixedAspect = bg.aspectRatio
+
+    @property
+    def cursor(self): return pygame.mouse.get_cursor()
+
+    @cursor.setter
+    def cursor(self, c):
+        if c is True: c = pygame.cursors.arrow
+        elif c is False: c = (8,8), (5,4), (0,0,0,0,0,0,0,0), (0,0,0,0,0,0,0,0)
+        pygame.mouse.set_cursor(*c)
