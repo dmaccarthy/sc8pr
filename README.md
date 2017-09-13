@@ -14,8 +14,8 @@ sc8pr 2.0 features include:
 # Installation
 
 ```
-pip install setuptools wheel
-pip install https://github.com/dmaccarthy/sc8pr/archive/master.zip
+pip3 install setuptools wheel
+pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
 ```
 
 If setuptools is unable to locate a Pygame wheel for your platform and Python version, you will need to install [Pygame](http://www.pygame.org/news) separately.
