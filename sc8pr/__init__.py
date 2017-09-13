@@ -28,15 +28,15 @@ from sc8pr.util import CachedSurface, style, logError, sc8prData,\
 
 
 # Anchor point constants
-NW = 0
-NORTH = 1
-NE = 2
-WEST = 4
+TOPLEFT = 0
+TOP = 1
+TOPRIGHT = 2
+LEFT = 4
 CENTER = 5
-EAST = 6
-SW = 8
-SOUTH = 9
-SE = 10
+RIGHT = 6
+BOTTOMLEFT = 8
+BOTTOM = 9
+BOTTOMRIGHT = 10
 
 # Other constants
 HORIZONTAL = 1

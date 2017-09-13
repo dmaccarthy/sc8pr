@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from sc8pr import Canvas, Image, NW, SW
+from sc8pr import Canvas, Image, TOPLEFT, BOTTOMLEFT
 from sc8pr.util import tall
 
 
@@ -25,7 +25,7 @@ class ProgressBar(Canvas):
 
     def __init__(self, size=(128,16), color="grey", lower=0, upper=1):
         super().__init__(size)
-        cfg = dict(anchor=SW, pos=(0, size[1]-1)) if tall(*size) else dict(anchor=NW)
+        cfg = dict(anchor=BOTTOMLEFT, pos=(0, size[1]-1)) if tall(*size) else dict(anchor=TOPLEFT)
         self += Image(bg=color).config(**cfg)
         self.lower = lower
         self.upper = upper
