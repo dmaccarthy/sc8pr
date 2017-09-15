@@ -19,3 +19,7 @@ pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
 ```
 
 If setuptools is unable to locate a Pygame wheel for your platform and Python version, you will need to install [pygame](http://www.pygame.org) separately.
+
+# Try It First
+
+sc8pr is pure Python 3 code, so you can try it without running the setup. Just unzip the sc8pr package into your PYTHONPATH. You will still need pygame installed.
