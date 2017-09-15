@@ -371,7 +371,9 @@ class BaseSprite(Graphic):
                 if r.right < 0: x += d
                 elif r.left >= cv.width: x -= d
                 else: wrapX = False
-                if wrapX and (w & 4): return True
+                if wrapX and (w & 4):
+                    self.remove()
+                    return #True
             else: wrapX = False
             if w & 10: # VERTICAL | REMOVE_Y
                 wrapY = True
@@ -379,7 +381,9 @@ class BaseSprite(Graphic):
                 if r.bottom < 0: y += d
                 elif r.top >= cv.height: y -= d
                 else: wrapY = False
-                if wrapY and (w & 8): return True
+                if wrapY and (w & 8):
+                    self.remove()
+                    return #True
             else: wrapY = False
             if wrapX or wrapY:
                 update = HORIZONTAL if wrapX else 0
@@ -578,13 +582,13 @@ class Canvas(Graphic):
 
         # Draw objects
         if mode & 2:
-            toRemove = []
-            for g in self:
+#            toRemove = []
+            for g in tuple(self):  # Use tuple to modify while iterating
                 srf.set_clip(self.clipRect)
                 grect = g.draw(srf)
                 g.rect = grect
-                if g.ondraw and g.ondraw(self): toRemove.append(g)
-            for g in toRemove: g.remove()
+                if g.ondraw and g.ondraw(self): g.remove() #toRemove.append(g)
+#            for g in toRemove: g.remove()
 
         # Draw border
         if self.weight: drawBorder(srf, self.border, self.weight, r)

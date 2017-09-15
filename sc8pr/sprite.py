@@ -53,6 +53,7 @@ class Sprite(BaseSprite):
     def costumeSequence(self, seq):
         "Select and order the costumes to animate"
         self._costumes = tuple(self.costumeList[i] for i in seq)
+        return self
 
     @property
     def image(self):
@@ -70,7 +71,8 @@ class Sprite(BaseSprite):
         n = self.costumeTime
         if n and cv.sketch.frameCount % n == 0:
             self.costumeNumber = self._costumeNumber + 1
-        return super().ondraw(cv)
+        #return
+        super().ondraw(cv)
 
 
 def collide_rect_mask(left, right):
