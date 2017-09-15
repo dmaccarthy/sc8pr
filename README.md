@@ -10,6 +10,8 @@ sc8pr 2.0 features include:
 * a selection of GUI controls
 * robotics simulator [experimental]
 
+For more information, please see the [documentation](http://dmaccarthy.github.io/sc8pr/).
+
 # Installation
 
 ```
