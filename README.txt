@@ -2,7 +2,6 @@ An educational programming package for Python 3.4+. Inspired by Scratch and Proc
 
 Features include:
 * a simple, event-driven approach to creating interactive animations
-* image manipulation
 * sprite management
 * physics-based collisions
 * video effects / transitions

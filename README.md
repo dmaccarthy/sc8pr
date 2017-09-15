@@ -4,7 +4,6 @@ An educational programming package for [Python 3.4+](https://www.python.org). In
 
 sc8pr 2.0 features include:
 * a simple, event-driven approach to creating interactive animations
-* image manipulation
 * sprite management
 * physics-based collisions
 * video effects / transitions
