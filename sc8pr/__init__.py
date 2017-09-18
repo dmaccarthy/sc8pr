@@ -155,6 +155,7 @@ class Graphic:
     def calcBlitRect(self, blitSize):
         cv = self.canvas
         offset = cv.rect.topleft if cv else (0,0)
+#        self._blitRect = r =
         return pygame.Rect(self.blitPosition(offset, blitSize) + blitSize) 
 
     def relXY(self, pos):
@@ -177,6 +178,7 @@ class Graphic:
         return bool(r.collidepoint(pos))
 
     def scaleVectors(self, fx, fy, attr):
+        "Scale one or more 2-vectors"
         for a in attr:
             x, y = getattr(self, a)
             setattr(self, a, (x * fx, y * fy))
@@ -189,10 +191,13 @@ class Graphic:
         self.canvas = cv
         cv._items.append(self)
 
-    def remove(self):
+    def remove(self, deleteRect=True):
         "Remove the instance from its canvas"
         cv = self.canvas
-        if cv and self in cv._items: cv._items.remove(self)
+        if cv and self in cv._items:
+            cv._items.remove(self)
+            if deleteRect and hasattr(self, "rect"):
+                del self.rect
         return self
 
     @property
@@ -316,7 +321,6 @@ class BaseSprite(Graphic):
     angle = 0
     spin = 0
     vel = 0, 0
-    acc = 0, 0
     drag = 0
 
     _pen = None
@@ -373,7 +377,7 @@ class BaseSprite(Graphic):
                 else: wrapX = False
                 if wrapX and (w & 4):
                     self.remove()
-                    return #True
+                    return
             else: wrapX = False
             if w & 10: # VERTICAL | REMOVE_Y
                 wrapY = True
@@ -383,7 +387,7 @@ class BaseSprite(Graphic):
                 else: wrapY = False
                 if wrapY and (w & 8):
                     self.remove()
-                    return #True
+                    return
             else: wrapY = False
             if wrapX or wrapY:
                 update = HORIZONTAL if wrapX else 0
@@ -392,20 +396,18 @@ class BaseSprite(Graphic):
             self.pos = x, y
 
     def kinematics(self):
-        "Update motion based on spin, vel, acc, drag properties"
+        "Update motion based on spin, vel, and drag properties"
         x, y = self.pos
         vx, vy = self.vel
-        ax, ay = self.acc
         t = self.timeFactor
-        self.vel = v = vx + ax * t, vy + ay * t
-        self.pos = x + t * (vx + v[0]) / 2, y + t * (vy + v[1]) / 2
+        self.pos = x + vx * t, y + vy * t
         self.angle += self.spin * t
         d = self.drag 
         if d:
             if type(d) in (int, float): s = d
             else: d, s = d
             d = 1 - d
-            self.vel = d * v[0], d * v[1]
+            self.vel = d * vx, d * vy
             self.spin *= 1 - s 
 
     def ondraw(self, cv):
@@ -560,7 +562,7 @@ class Canvas(Graphic):
         # Resize objects
         for g in self:
             if g.autoPositionOnResize:
-                attr = ("pos", "vel", "acc") if isinstance(g, BaseSprite) else ("pos",)
+                attr = ("pos", "vel") if isinstance(g, BaseSprite) else ("pos",)
                 g.scaleVectors(fx, fy, attr)
             w, h = g.size
             g.resize((w * fx, h * fy))
@@ -573,34 +575,32 @@ class Canvas(Graphic):
         self.rect = r = self.calcBlitRect(self.size)
 
         # Draw background
+        isSketch = isinstance(self, Sketch)
         if mode & 1:
             srf.set_clip(self.clipRect)
             if isinstance(self._bg, Image):
                 self._bg.config(size=self._size)
-                srf.blit(self._bg.image, r.topleft)
+                if isSketch and self.blitRegions is not None:
+                    self.drawBlitRegions(srf)
+                else: srf.blit(self._bg.image, r.topleft)
             elif self._bg: srf.fill(self._bg)
 
         # Draw objects
         if mode & 2:
-#            toRemove = []
-            for g in tuple(self):  # Use tuple to modify while iterating
+            br = isSketch and self.blitRegions is not None
+            if br: self.blitRegions = []
+            for g in list(self):  # Use list to modify while iterating
                 srf.set_clip(self.clipRect)
                 grect = g.draw(srf)
                 g.rect = grect
-                if g.ondraw and g.ondraw(self): g.remove() #toRemove.append(g)
-#            for g in toRemove: g.remove()
+                if br: self.blitRegions.append(grect)
+                if g.ondraw and g.ondraw(self): g.remove()
 
         # Draw border
         if self.weight: drawBorder(srf, self.border, self.weight, r)
 
         srf.set_clip(None)
         return r
-
-#     def drawContent(self, srf=None):
-#         return Canvas.draw(self, srf, 2)
-# 
-#     def drawBackground(self, srf=None):
-#         return Canvas.draw(self, srf, 1)
 
     def snapshot(self):
         "Capture the canvas as an Image instance"
@@ -626,8 +626,10 @@ class Canvas(Graphic):
     def objectAt(self, pos):
         obj = self
         for g in self:
-            if g.contains(pos):
-                obj = g.objectAt(pos) if isinstance(g, Canvas) else g
+            try: # Objects added but not yet blitted have no rect
+                if g.contains(pos):
+                    obj = g.objectAt(pos) if isinstance(g, Canvas) else g
+            except: pass
         return obj
 
     def filter(self, *args, **kwargs):
@@ -646,15 +648,13 @@ class Sketch(Canvas):
     anchor = 0
     focusable = True
     _fixedAspect = True
+    blitRegions = []
 
     def __init__(self, size=(512,288)):
         super().__init__(size, "white")
         self.quit = False
         self.frameCount = 0
         self.evMgr = EventManager(self)
-#         if type(self) is Sketch:
-#             main = sys.modules["__main__"]
-#             if hasattr(main, "draw"): self.bind(main.draw)
 
     @property
     def timeFactor(self):
@@ -712,8 +712,20 @@ class Sketch(Canvas):
             return self.resize(size)
         super().resize(self.size)
         self._size = self.size
+        if self.blitRegions is not None:
+            self.blitRegions = [pygame.Rect((0,0), self._size)]
 
-# Initialization and drawing / event loop
+    def drawBlitRegions(self, srf):
+        "Redraw the background image into the blitRegions only"
+        sRect = self.rect
+        br = self.blitRegions
+        drawAll = len(br) == 0 or br[0] == sRect
+        if drawAll: self.blitRegions = [sRect]
+        for r in self.blitRegions:
+            blitRect = r.clip(sRect)
+            try: # Subsurface may be outside drawing surface
+                srf.blit(self._bg.image.subsurface(blitRect), blitRect.topleft)
+            except: pass 
 
     def play(self, caption="sc8pr", icon=None, mode=True):
         "Initialize pygame and run the main drawing / event handling loop"
@@ -749,8 +761,8 @@ class Sketch(Canvas):
             try:
                 self.frameCount += 1
                 self.draw()
-                if self.ondraw: self.ondraw() 
                 _pd.flip()
+                if self.ondraw: self.ondraw() 
                 for ev in pygame.event.get():
                     if ev.type == pygame.VIDEORESIZE and ev.size != self.size:
                         self.resize(ev.size)
@@ -777,6 +789,8 @@ class Sketch(Canvas):
         self._setBg(bg)
         if self.fixedAspect and hasattr(bg, "aspectRatio"):
             self.fixedAspect = bg.aspectRatio
+        if self.blitRegions is not None:
+            self.blitRegions = [pygame.Rect((0,0), self._size)]
 
     @property
     def cursor(self): return pygame.mouse.get_cursor()

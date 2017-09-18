@@ -52,7 +52,7 @@ class Sprite(BaseSprite):
 
     def costumeSequence(self, seq):
         "Select and order the costumes to animate"
-        self._costumes = tuple(self.costumeList[i] for i in seq)
+        self._costumes = list(self.costumeList[i] for i in seq)
         return self
 
     @property
@@ -90,7 +90,7 @@ class Collisions:
 
     def _group(self, g, convert=False):
         if g is None: g = self.sk.sprites()
-        if convert and type(g) not in (tuple, list, set): g = tuple(g)
+        if convert and type(g) not in (tuple, list, set): g = list(g)
         return g
 
     def collisions(self, sprite, group=None, asBool=False):
@@ -114,10 +114,10 @@ class Collisions:
         return collMap
 
     def between(self, group1, group2=None, remove=False):
-        "Detect collisions between two groups and return a 2-tuple of tuples"
+        "Detect collisions between two groups and return a 2-tuple of lists"
         collMap = self.betweenMap(group1, group2)
-        s1 = tuple(s[0] for s in collMap)
-        s2 = tuple(s[1] for s in collMap)
+        s1 = list(s[0] for s in collMap)
+        s2 = list(s[1] for s in collMap)
         if remove:
             for s in s1 + s2: s.remove()
         return s1, s2
@@ -175,7 +175,7 @@ def elasticCircles(mass1, mass2):
 
 def physics(sk, model=elasticCircles):
     "Update colliding masses on a pair-wise basis"
-    masses = tuple(sk.sprites("mass"))
+    masses = list(sk.sprites("mass"))
     coll = []
     n = len(masses)
     for m1 in range(n-1):
@@ -183,4 +183,4 @@ def physics(sk, model=elasticCircles):
         for m2 in range(m1 + 1, n):
             args = m, masses[m2]
             if model(*args): coll.extend(args)
-    return tuple(m for m in masses if m in coll)
+    return list(m for m in masses if m in coll)

@@ -70,7 +70,7 @@ def zipData(archive, *args):
 
 def sc8prData(*args, archive=sc8prPath("sc8pr.data")):
     "Read data from a zipfile"
-    t = tuple(zipData(archive, *args))
+    t = list(zipData(archive, *args))
     return t if len(args) > 1 else t[0]
 
 def hasAlpha(srf):
