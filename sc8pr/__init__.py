@@ -37,6 +37,7 @@ RIGHT = 6
 BOTTOMLEFT = 8
 BOTTOM = 9
 BOTTOMRIGHT = 10
+ALL = 15
 
 # Other constants
 HORIZONTAL = 1
@@ -46,11 +47,17 @@ REMOVE_X = 4
 REMOVE_Y = 8
 REMOVE = 12
 
-RIGHT = 1
-LEFT = 2
-TOP = 8
-BOTTOM = 4
-ALL = 15
+# Old Text Alignment
+# RIGHT = 1
+# LEFT = 2
+# TOP = 8
+# BOTTOM = 4
+
+def ondrag(gr, ev):
+    "Move a Graphic instance while dragging"
+    pos = gr.pos
+    dp = ev.rel
+    gr.pos = pos[0] + dp[0], pos[1] + dp[1]
 
 
 class Graphic:
