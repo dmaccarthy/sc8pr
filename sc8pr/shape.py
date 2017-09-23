@@ -42,15 +42,15 @@ class Shape(Graphic):
     def fill(self, s): self._fill = rgba(s) if s else None
 
     def contains(self, pos):
-        "Determine if the point is within the circle, accounting for canvas offset"
+        "Determine if the point is within the shape, accounting for canvas offset"
         cv = self.canvas
         cvPos = delta(pos, cv.rect.topleft) if cv else pos
         return self.containsPoint(cvPos)
 
 
 class Circle(Shape):
-    radius = None
-    shape = None
+    radius = None # Override Graphic.radius
+#    shape = None
     
     def __init__(self, r):
         self.radius = r
@@ -184,101 +184,84 @@ class Line(Shape):
 
 
 class Polygon(Shape):
+    autoPositionOnResize = False
     _angle = 0
 
-    def __init__(self, pts, center=None):
-        if center is None:
-            w, h = self._calcRect(pts)[1]
-            center = w/2, h/2
-        self.pos = center
-        self._points = [delta(pt, center) for pt in pts]
+    def __init__(self, pts, pos=None):
+        (x0, x1), (y0, y1) = tuple((min(x[i] for x in pts),
+            max(x[i] for x in pts)) for i in (0,1))
+        if pos is None: pos = (x0 + x1) / 2, (y0 + y1) / 2
+        elif type(pos) is int: pos = pts[pos]
+        self._pos = pos
+        size = abs(x1 - x0), abs(y1 - y0)
+        self._rect = pygame.Rect((x0, y0), size)
+        self.vertices = list(pts)
         self.dumpCache()
-
-    @property
-    def anchor(self): return None
-
-    @property
-    def angle(self): return self._angle
- 
-    @angle.setter
-    def angle(self, a):
-        da = a - self._angle
-        self._angle = a
-        self.transform(rotate=da)
-
-    def dumpCache(self):
-        self._srf = None
-        self._size = None
-        self._segCache = None
 
     def config(self, **kwargs):
         keys = "fill", "stroke", "weight"
         if hasAny(kwargs, keys): self._srf = None
         return super().config(**kwargs)
 
-    def pointsGen(self):
-        x, y = self.pos
-        for p in self._points: yield p[0] + x, p[1] + y
+    @property
+    def pos(self): return self._pos
 
     @property
-    def points(self): return list(self.pointsGen())
+    def anchor(self): return self._pos
 
-    @staticmethod
-    def _calcRect(pts):
-        left = right = top = bottom = None
-        for (x,y) in pts:
-            if left is None or x < left: left = x
-            if right is None or x > right: right = x
-            if top is None or y < top: top = y
-            if bottom is None or y > bottom: bottom = y
-        return (left, top), (right - left, bottom - top)
+    @pos.setter
+    def pos(self, pos):
+        xy = self._pos
+        dx = pos[0] - xy[0]
+        dy = pos[1] - xy[1]
+        pts = list((x+dx,y+dy) for (x,y) in self.vertices)
+        self.__init__(pts, pos)
 
     @property
-    def size(self):
-        if self._size is None:
-            self._corner, self._size = self._calcRect(self._points)
-        return self._size
+    def angle(self): return self._angle
+
+    @angle.setter
+    def angle(self, a): self.rotate(a - self._angle)
+
+    def dumpCache(self):
+        self._srf = None
+        self._segCache = None
+    
+    @property
+    def center(self): return self._rect.center
+
+    @property
+    def size(self): return self._rect.size
 
     def blitPosition(self, offset, blitSize):
         "Return the position (top left) to which the graphic is drawn"
-        x, y = self.pos
-        dx, dy = self._corner
-        p = self.weight
-        return x + offset[0] + dx - p/2, y + offset[1] + dy - p/2
-
-    def transform(self, scale=1, rotate=0):
-        self._points = list(transform2dGen(self._points, scale=scale, rotate=rotate))
-        self.dumpCache()
-
-    def resize(self, size):
-        "Resize the polygon (e.g. when scaling the canvas)"
-        w, h = self.size
-        f = size[0] / w, size[1] / h
-        self.transform(scale=f)
-        return f
+        x, y = self._rect.topleft
+        w = self.weight
+        return x + offset[0] - w, y + offset[1] - w
 
     @property
     def image(self):
-        if self._srf is None:
-            p = self.weight
-            w, h = self.size
-            w = max(1, ceil(w) + p)
-            h = max(1, ceil(h) + p)
-            srf = pygame.Surface((w,h), pygame.SRCALPHA)
-#            srf.fill((255,0,0,96))
-            d = self._corner[0] - p/2, self._corner[1] - p/2
-            pts = [delta(pt, d) for pt in self._points]
-            w, f, s = round(self.weight), self._fill, self._stroke
-            if f: pygame.draw.polygon(srf, f, pts)
-            if w and s: pygame.draw.polygon(srf, s, pts, w)
-#             x, y = delta((p/2,p/2), self._corner)
-#             pygame.draw.circle(srf, (0,0,0), (round(x), round(y)), 2)
-            self._srf = srf
+        "Return the most recent endered Surface"
+        if self._srf is None: self._srf = self.render()
         return self._srf
+
+    def render(self):
+        "Render the polygon onto a new Surface"
+        w, f, s = round(self.weight), self._fill, self._stroke
+        dx, dy = self._rect.topleft
+        dx = w - dx
+        dy = w - dy
+        size = self.size
+        size = 2 * w + size[0], 2 * w + size[1] 
+        srf = pygame.Surface(size, pygame.SRCALPHA)
+        pts = list((x+dx,y+dy) for (x,y) in self.vertices)
+        if f: pygame.draw.polygon(srf, f, pts)
+        if w and s: pygame.draw.polygon(srf, s, pts, w)
+        return srf
 
     def _segments(self):
         "Generate the line segments of the polygon"
-        pts = self.points
+        pts = self.vertices
         p1 = pts[-1]
         for i in range(len(pts)):
             p2 = pts[i]
@@ -287,45 +270,61 @@ class Polygon(Shape):
 
     @ property
     def segments(self):
-        if not self._segCache:
-            self._segCache = tuple(self._segments())
+        if not self._segCache: self._segCache = tuple(self._segments())
         return self._segCache
 
     def containsPoint(self, pos):
-        "Determine if the point is within the circle; do not account for canvas offset"
-        w, h = self.size
-        x, y = self.pos
-        l = Line(pos, (x + w + random(), y + h))
+        "Determine if the point is within the polygon; do not account for canvas offset"
+        x, y = self._rect.bottomright
+        l = Line(pos, (x + 2 * self.weight, y + random()))
         n = 0
         for s in self._segments():
             if s.intersect(l): n += 1
         return n % 2 == 1
 
-
-class Arrow(Polygon):
-
-    def __init__(self, tail, length, angle=0, width=None, head=None, flatness=1):
-        if type(length) not in (int, float):
-            dx = length[0] - tail[0]
-            dy = length[1] - tail[1]
-            length = hypot(dx, dy)
-            angle = atan2(dy, dx) / DEG
-        if width is None: width = length / 10
-        if head is None: head = width
-        y = flatness * head
-        x = length - head
-        w = width / 2
-        pts = (0, -w), (x, -w), (x, -y), (length, 0), (x, y), (x, w), (0, w)
-        pts = tuple(transform2dGen(pts, rotate=angle, shift=tail))
-        super().__init__(pts)
-
-
-class PolygonSprite(Polygon, BaseSprite):
-
     def resize(self, size):
-        f = Polygon.resize(self, size)
-        self.scaleVectors(*f, attr=("vel", "acc"))
+        "Resize the polygon (e.g. when scaling the canvas)"
+        w, h = self.size
+        f = size[0] / w, size[1] / h
+        self.scaleVectors(*f, ("vel", "acc"))
+        pts = self.vertices
+        for i in range(len(pts)):
+            x, y = pts[i]
+            pts[i] = f[0] * x, f[1] * y
+        x, y = self._pos
+        self.__init__(pts, (f[0] * x, f[1] * y))
+        return f
+
+    def rotate(self, angle=0):
+        "Rotate the Polygon around its anchor point"
+        shift2 = self._pos
+        shift1 = -shift2[0],-shift2[1]
+        pts = transform2dGen(self.vertices, preShift=shift1, rotate=angle, shift=shift2)
+        self.__init__(list(pts), self._pos)
+        self._angle += angle
+
+    @staticmethod
+    def arrow(pos, tail, width, head, flatness):
+        "Calculate data for creating an arrow-shaped Polygon"
+        if type(tail) in (int, float): angle = 0
+        else:
+            d = delta(pos, tail)
+            tail = hypot(*d)
+            angle = atan2(d[1], d[0])
+        width *= tail / 2
+        head *= tail
+        y = head * flatness / 2
+        return [(0,0), (-head, y), (-head, width), (-tail, width),
+            (-tail, -width), (-head, -width), (-head, -y)], angle
 
 
-class ArrowSprite(Arrow, BaseSprite):
-    resize = PolygonSprite.resize
+class CircleSprite(Circle, BaseSprite): pass
+class PolygonSprite(Polygon, BaseSprite): pass
+
+def arrow(pos, tail, width=0.1, head=0.1, flatness=2, sprite=False):
+    "Create an arrow-shaped Polygon or PolygonSprite"
+    pts, angle = Polygon.arrow(pos, tail, width, head, flatness)
+    a = PolygonSprite(pts, 0) if sprite else Polygon(pts, 0)
+    a.pos = pos
+    if angle: a.angle = angle / DEG
+    return a

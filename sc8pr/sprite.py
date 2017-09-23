@@ -71,7 +71,6 @@ class Sprite(BaseSprite):
         n = self.costumeTime
         if n and cv.sketch.frameCount % n == 0:
             self.costumeNumber = self._costumeNumber + 1
-        #return
         super().ondraw(cv)
 
 

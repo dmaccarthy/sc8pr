@@ -26,7 +26,6 @@ from sc8pr.geom import transform2d, transform2dGen
 from sc8pr.util import CachedSurface, style, logError, sc8prData,\
     tile, rgba, drawBorder
 
-
 # Anchor point constants
 TOPLEFT = 0
 TOP = 1
@@ -47,12 +46,6 @@ REMOVE_X = 4
 REMOVE_Y = 8
 REMOVE = 12
 
-# Old Text Alignment
-# RIGHT = 1
-# LEFT = 2
-# TOP = 8
-# BOTTOM = 4
-
 def ondrag(gr, ev):
     "Move a Graphic instance while dragging"
     pos = gr.pos
@@ -72,8 +65,8 @@ class Graphic:
     focusable = False
     ondraw = None
     effects = None
-    _shapeModel = (-0.5,-0.5), (0.5,-0.5), (0.5,0.5), (-0.5,0.5)
-    _shapeCache = None,
+#     _shapeModel = (-0.5,-0.5), (0.5,-0.5), (0.5,0.5), (-0.5,0.5)
+#     _shapeCache = None,
 
     def __repr__(self):
         name = self.name if hasattr(self, "name") else id(self)
@@ -94,20 +87,20 @@ class Graphic:
                 setattr(self, n, f.__get__(self, self.__class__))
         return self
 
-    @property
-    def polygon(self):
-        s = self._shapeModel
-        return None if type(s) in (int, float) else s
-
-    @polygon.setter
-    def polygon(self, pts):
-        self._shapeModel = pts
-        self._shapeCache = None,
-
-    def circle(self, r=1):
-        self._shapeModel = r
-        self._shapeCache = None,
-        return self
+#     @property
+#     def polygon(self):
+#         s = self._shapeModel
+#         return None if type(s) in (int, float) else s
+# 
+#     @polygon.setter
+#     def polygon(self, pts):
+#         self._shapeModel = pts
+#         self._shapeCache = None,
+# 
+#     def circle(self, r=1):
+#         self._shapeModel = r
+#         self._shapeCache = None,
+#         return self
 
 # Metrics
 
@@ -123,10 +116,9 @@ class Graphic:
     def height(self): return self.size[1]
 
     @property
-    def radius(self):
-        r = sum(self.size) / 4
-        s = self._shapeModel
-        return r * s if type(s) in (int, float) else r
+    def radius(self): return sum(self.size) / 4
+#         s = self._shapeModel
+#         return r * s if type(s) in (int, float) else r
 
     @property
     def aspectRatio(self):
@@ -162,7 +154,6 @@ class Graphic:
     def calcBlitRect(self, blitSize):
         cv = self.canvas
         offset = cv.rect.topleft if cv else (0,0)
-#        self._blitRect = r =
         return pygame.Rect(self.blitPosition(offset, blitSize) + blitSize) 
 
     def relXY(self, pos):
@@ -184,11 +175,13 @@ class Graphic:
         else: r = self.rect
         return bool(r.collidepoint(pos))
 
-    def scaleVectors(self, fx, fy, attr):
+    def scaleVectors(self, fx, fy, attr=("pos", "vel", "acc")):
         "Scale one or more 2-vectors"
         for a in attr:
-            x, y = getattr(self, a)
-            setattr(self, a, (x * fx, y * fy))
+            try: # Skip undefined attributes
+                x, y = getattr(self, a)
+                setattr(self, a, (x * fx, y * fy))
+            except: pass
 
 # Canvas interaction
 
@@ -223,7 +216,7 @@ class Graphic:
     def sketch(self):
         sk = self
         while sk.canvas: sk = sk.canvas
-        return sk
+        return sk if isinstance(sk, Sketch) else None
 
     @property
     def focussed(self):
@@ -328,6 +321,7 @@ class BaseSprite(Graphic):
     angle = 0
     spin = 0
     vel = 0, 0
+    acc = None
     drag = 0
 
     _pen = None
@@ -403,11 +397,15 @@ class BaseSprite(Graphic):
             self.pos = x, y
 
     def kinematics(self):
-        "Update motion based on spin, vel, and drag properties"
+        "Update motion based on spin, vel, acc, and drag properties"
+        t = self.timeFactor
         x, y = self.pos
         vx, vy = self.vel
-        t = self.timeFactor
-        self.pos = x + vx * t, y + vy * t
+        if self.acc is not None:
+            dvx, dvy = tuple(t * a for a in self.acc)
+            self.pos = x + (vx + dvx / 2) * t, y + (vy + dvy / 2) * t
+            self.vel = vx + dvx, vy + dvy
+        else: self.pos = x + vx * t, y + vy * t
         self.angle += self.spin * t
         d = self.drag 
         if d:
@@ -569,8 +567,8 @@ class Canvas(Graphic):
         # Resize objects
         for g in self:
             if g.autoPositionOnResize:
-                attr = ("pos", "vel") if isinstance(g, BaseSprite) else ("pos",)
-                g.scaleVectors(fx, fy, attr)
+#                attr = ("pos", "vel") if isinstance(g, BaseSprite) else ("pos",)
+                g.scaleVectors(fx, fy)#, attr)
             w, h = g.size
             g.resize((w * fx, h * fy))
 

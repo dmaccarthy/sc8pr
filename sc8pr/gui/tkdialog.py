@@ -59,3 +59,7 @@ class TkDialog:
         val = self.dialog(*self.args, **self.options)
         if quitAllowed: set_allowed(QUIT)
         return val
+
+    def runAlone(self):
+        "Run dialog without pygame"
+        return self.dialog(*self.args, **self.options)
