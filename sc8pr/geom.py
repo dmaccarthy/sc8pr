@@ -54,8 +54,9 @@ def _matrix(rotate=0, scale=1, rev=False):
 
 def transform2dGen(pts, mx=None, shift=(0,0), preShift=None, **kwargs):
     "Generator to perform a linear transformation and shift on a sequence of points"
-    if preShift: xb, yb = preShift
     xa, ya = shift
+    if preShift is True: xb, yb = -xa, -ya
+    elif preShift: xb, yb = preShift
     m0, m1, m2, m3 = mx if mx else _matrix(**kwargs)
     for (x,y) in pts:
         if preShift:

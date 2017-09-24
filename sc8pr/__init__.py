@@ -346,7 +346,7 @@ class BaseSprite(Graphic):
 
     def circleBounce(self, cv):
         "Bounce the sprite from the edges"
-        x, y = self.pos
+        x, y = self.rect.center #self.pos
         r = self.radius
         vx, vy = self.vel
         w, h = cv.size
@@ -362,8 +362,8 @@ class BaseSprite(Graphic):
 
     def simpleWrap(self, cv):
         "Wrap sprite when it leaves the sketch"
-        x, y = self.pos
         r = self.rect
+        x, y = self.pos
         if not cv.rect.colliderect(r):
             if cv.canvas:
                 dx, dy = cv.rect.topleft

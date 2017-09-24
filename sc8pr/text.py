@@ -125,4 +125,4 @@ class Text(Renderable):
         self.stale = True
 
 
-class TextSprite(BaseSprite, Text): pass
+class TextSprite(Text, BaseSprite): pass

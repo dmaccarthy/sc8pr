@@ -38,6 +38,8 @@ class Sprite(BaseSprite):
         self._costumes = self.costumeList = tiles
         self._size = tiles[0].size
 
+    def __len__(self): return len(self._costumes)
+
     @property
     def costumeNumber(self): return self._costumeNumber
  
@@ -78,6 +80,7 @@ def collide_rect_mask(left, right):
     return collide_rect(left, right) and collide_mask(left, right)
 
 def collide_rect_circ(left, right):
+    print(left.rect, right.rect)
     return collide_rect(left, right) and collide_circle(left, right)
 
 
@@ -145,8 +148,8 @@ def elasticCircles(mass1, mass2):
     "Set final velocities for an elastic collision between two circles"
 
     # Calculate the normal vector at contact point
-    x1, y1 = mass1.pos
-    x2, y2 = mass2.pos
+    x1, y1 = mass1.rect.center #pos
+    x2, y2 = mass2.rect.center #pos
     nx = x2 - x1
     ny = y2 - y1
     r = hypot(nx, ny)

@@ -297,9 +297,9 @@ class Polygon(Shape):
 
     def rotate(self, angle=0):
         "Rotate the Polygon around its anchor point"
-        shift2 = self._pos
-        shift1 = -shift2[0],-shift2[1]
-        pts = transform2dGen(self.vertices, preShift=shift1, rotate=angle, shift=shift2)
+        shift = self._pos
+#        shift1 = -shift2[0],-shift2[1]
+        pts = transform2dGen(self.vertices, rotate=angle, shift=shift, preShift=True)
         self.__init__(list(pts), self._pos)
         self._angle += angle
 
