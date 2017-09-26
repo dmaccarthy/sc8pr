@@ -59,6 +59,7 @@ class Graphic:
     of the surface passed as an argument. Alternatively, the subclass may
     provide a 'surface' property which can be drawn by Graphic.draw."""
     autoPositionOnResize = True
+    avgColor = None
     canvas = None
     pos = 0, 0
     anchor = CENTER
@@ -288,6 +289,9 @@ class Renderable(Graphic):
     angle = 0
     stale = True
 
+    def refresh(self):
+        if self.stale: self.image
+
     @property
     def image(self):
         if self.stale:
@@ -295,6 +299,7 @@ class Renderable(Graphic):
             self._rotated = None
             self.stale = False
         srf = self._srf
+        self._avgColor = pygame.transform.average_color(srf)
         a = self.angle
         if a:
             r = self._rotated
@@ -306,9 +311,14 @@ class Renderable(Graphic):
 
     @property
     def size(self):
-        if self.stale: self._srf = self.render()
+        self.refresh()
+#        if self.stale: self._srf = self.render()
         return self._srf.get_size()
 
+    @property
+    def avgColor(self):
+        self.refresh()
+        return self._avgColor
 
 class BaseSprite(Graphic):
     "Base class for sprite animations"
@@ -437,6 +447,7 @@ class Image(Graphic):
     def __init__(self, srf=(1,1), bg=None):
         self._srf = CachedSurface(srf, bg)
         self._size = self._srf.get_size()
+        self.avgColor = pygame.transform.average_color(self._srf.original)
 
     def dumpCache(self): self._srf.dumpCache()
 
@@ -511,6 +522,11 @@ class Canvas(Graphic):
         elif bg and t is not pygame.Color: bg = Image(bg)
         self._bg = bg
 
+    @property
+    def avgColor(self):
+        bg = self.bg
+        return bg.avgColor if isinstance(bg, Image) else bg
+
     def paint(self, p1, p2, c=(255,0,0), w=4):
         cs = self.bg._srf
         key, scaled = cs.scaled
@@ -566,9 +582,7 @@ class Canvas(Graphic):
 
         # Resize objects
         for g in self:
-            if g.autoPositionOnResize:
-#                attr = ("pos", "vel") if isinstance(g, BaseSprite) else ("pos",)
-                g.scaleVectors(fx, fy)#, attr)
+            if g.autoPositionOnResize: g.scaleVectors(fx, fy)
             w, h = g.size
             g.resize((w * fx, h * fy))
 

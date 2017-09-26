@@ -41,6 +41,11 @@ class Shape(Graphic):
     @fill.setter
     def fill(self, s): self._fill = rgba(s) if s else None
 
+    @property
+    def avgColor(self):
+        f = self._fill
+        return f if f else self._stroke
+
     def contains(self, pos):
         "Determine if the point is within the shape, accounting for canvas offset"
         cv = self.canvas
@@ -298,7 +303,6 @@ class Polygon(Shape):
     def rotate(self, angle=0):
         "Rotate the Polygon around its anchor point"
         shift = self._pos
-#        shift1 = -shift2[0],-shift2[1]
         pts = transform2dGen(self.vertices, rotate=angle, shift=shift, preShift=True)
         self.__init__(list(pts), self._pos)
         self._angle += angle

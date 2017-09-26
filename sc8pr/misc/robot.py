@@ -1,11 +1,31 @@
+# Copyright 2015-2017 D.G. MacCarthy <http://dmaccarthy.github.io>
+#
+# This file is part of "sc8pr".
+#
+# "sc8pr" is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# "sc8pr" is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
+
+
 from time import sleep
 from threading import Thread
 from sys import stderr
+from math import hypot, asin, cos
 import pygame
 from sc8pr.sprite import Sprite
 from sc8pr.util import sc8prData, logError, rgba, noise
-from sc8pr.geom import vec2d, delta, DEG
-from sc8pr import Image
+from sc8pr.geom import vec2d, delta, DEG, dist, sprod
+from sc8pr import Image, Sketch
+from sc8pr.shape import Line
 
 
 class RobotThread(Thread):
@@ -25,7 +45,8 @@ class RobotThread(Thread):
             args = "{}.{}".format(b.__module__, b.__name__), str(r), id(self)
             print('{} is controlling "{}" in thread {}.'.format(*args), file=stderr)
         try:
-            b(r)
+            while not r.sketch.frameCount: r.sleep()
+            b(r.updateSensors())
             if r.shutdown: r.shutdown()
         except: logError()
         if self.log:
@@ -39,11 +60,14 @@ class InactiveError(Exception):
 class Robot(Sprite):
     _motors = 0, 0
     _updateSensors = False
-    _sensorNoise = 4
-    maxSpeed = 1
+    sensorNoise = 16
+    collision = False
+    maxSpeed = 1 / 512
     shutdown = None
     sensorDown = None
     sensorFront = None
+    sensorWidth = 10
+    proximity = None
 
     def __init__(self, brain=None, colors=None):
         self.brain = brain
@@ -55,12 +79,14 @@ class Robot(Sprite):
                 px.replace(c, rgba(colors[i]))
         img = img.tiles(2)
         super().__init__(img)
-    
-    def setCanvas(self, cv):
-        super().setCanvas(cv)
+
+    def setCanvas(self, sk):
+        if not isinstance(sk, Sketch):
+            raise Exception("Robot cannot be added to {}".format(type(sk).__name__))
+        super().setCanvas(sk)
         b = self.brain
         if b:
-            self._startFrame = cv.sketch.frameCount
+            self._startFrame = sk.frameCount
             RobotThread(self, b).start()
 
     @property
@@ -68,9 +94,9 @@ class Robot(Sprite):
         try: return not self.sketch.quit
         except: return False
 
-    def updateSensors(self, wait=True):
+    def updateSensors(self, wait=None):
         self._updateSensors = True
-        if wait: self.sleep()
+        self.sleep(wait)
         return self
 
     def sleep(self, t=None):
@@ -78,13 +104,7 @@ class Robot(Sprite):
         if t: sleep(t)
         else:
             if not self.active: raise InactiveError()
-            sk = self.sketch
-            n = sk.frameCount
-            t = 0.4 / sk.frameRate
-            i = 3
-            while sk.frameCount == n and i:
-                sleep(t)
-                i -= 1
+            sleep(1 / self.sketch.frameRate)
 
     @property
     def motors(self): return self._motors
@@ -97,11 +117,31 @@ class Robot(Sprite):
     @property
     def power(self): return sum(abs(m) for m in self._motors) / 2
 
-    def ondraw(self, cv):
+    def onbounce(self, sk, wall):
+        "Adjust motion upon collision with wall"
+        w, h = sk.size
+        x, y = self.pos
+        r = self.radius
+        vx, vy = self.vel
+        x1 = w - 1 - r
+        y1 = h - 1 - r
+        if x < r: x, vx = r, 0
+        elif x > x1: x, vx = x1, 0
+        if y < r: y, vy = r, 0
+        elif y > y1: y, vy = y1, 0
+        self.pos = x, y
+        self.vel = vx, vy
+        self.collision = True
+
+    def oncollide(self, sk): self.collision = True
+
+    def ondraw(self, sk):
         "Update robot sprite each frame"
 
+        if not self.active: raise InactiveError()
+
         # Target wheel speed...
-        v = self.maxSpeed
+        v = self.maxSpeed * sk.width
         v1, v2 = self._motors
         v1 *= v
         v2 *= v
@@ -122,43 +162,63 @@ class Robot(Sprite):
         p = self.power
         self.costumeTime = 0 if p == 0 else round(36 / (1 + 5 * p))
 
-        # Update...
-        super().ondraw(cv)
+        # Update position and angle...
+        super().ondraw(sk)
 
-        #
+        # Update sensors if requested...
         if self._updateSensors:
             try:
                 self.checkDown()
+                self.checkFront()
                 self.drawLEDs()
                 self._updateSensors = False
             except: logError()
 
-        # Check sensors...
-#         stall = not self.motorsOff and (self.edgeAdjust or self.collideUpdate)
-#         if stall:
-#             if self._stallTime is None:
-#                 self._stallTime = self.sketch.time if stall else None
-#         else: self._stallTime = None
-#         self.downColor = self._downColor()
-#         self._closest_obstacle()
-#         if self._starting: self._starting = False
+    def checkFront(self):
+        "Update the front color sensor"
 
+        # Get sensor position
+        pos = delta(self.pos, vec2d(-self.radius, self.angle))
+
+        # Sensor distance to edge of sketch
+        sk = self.sketch
+        obj = sk
+        prox = _distToWall(pos, self.angle, self.sensorWidth, *sk.size)
+
+        # Find closest object within sensor width
+        objs = list(sk)
+        u = vec2d(1, self.angle)
+        sw = self.sensorWidth * DEG
+        for gr in objs:
+            if gr is not self and gr.avgColor and hasattr(gr, "rect"):
+                dr = delta(gr.rect.center, pos)
+                d = hypot(*dr)
+                r = gr.radius
+                if d - r < prox:
+                    minDot = cos(sw + asin(r/d) / 2) if r < d else 0
+                    if sprod(u, dr) > d * minDot: obj, prox = gr, d - r
+
+        # Save data
+        c = rgba(sk.border if obj is sk else obj.avgColor)
+        c.a = 255
+        self.sensorFront = noise(c, self.sensorNoise)
+        self.proximity = prox 
 
     def checkDown(self):
         "Update the down color sensor"
+        x, y = self.rect.center
+        r = 0.8 * self.radius
+        dx, dy = vec2d(r, self.angle)
+        r = max(1, round(0.25 * r))
+        d = 2 * r
         sk = self.sketch
-        if isinstance(sk.bg, Image):
-            x, y = self.rect.center
-            r = 0.8 * self.radius
-            dx, dy = vec2d(r, self.angle)
-            r = max(1, round(0.25 * r))
-            d = 2 * r
-            r = pygame.Rect(x + dx - r, y + dy - r, d, d).clip(sk.rect)
-            if r.width:
-                c = noise(pygame.transform.average_color(sk.bg.image.subsurface(r)))
-            else: c = None
-        else: c = sk.bg
-        self.sensorDown = c
+        r = pygame.Rect(x + dx - r, y + dy - r, d, d).clip(sk.rect)
+        if r.width:
+            if isinstance(sk.bg, Image):
+                c = pygame.transform.average_color(sk.bg.image.subsurface(r))
+            else: c = sk.bg
+        else: c = 0, 0, 0
+        self.sensorDown = noise(c, self.sensorNoise)
 
     def drawLEDs(self):
         "Draw LEDs on the robot to indicate color sensor data"
@@ -173,3 +233,19 @@ class Robot(Sprite):
                 pygame.draw.circle(orig, c if c else (0,0,0), pos, r)
                 pygame.draw.circle(orig, (0,0,0), pos, r, 1)
             srfs.dumpCache()
+
+
+def _distToWall(pos, angle, sWidth, w, h):
+    "Calculate the distance to the sketch walls in the specified direction"
+    walls = [(0,0), (w,0), (w,h), (0,h), (0,0)]
+    walls = [Line(*walls[i:i+2]) for i in range(4)]
+    d = None
+    w += h
+    for n in (-1, 0, 1):
+        v = vec2d(w, angle + n * sWidth)
+        pts = [Line(pos, vector=v).intersect(wall) for wall in walls]
+        try:
+            d1 = min(dist(pos, pt) for pt in pts if pt is not None)
+            if d is None or d1 < d: d = d1
+        except: pass
+    return 0 if d is None else d

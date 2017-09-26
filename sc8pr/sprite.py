@@ -58,6 +58,9 @@ class Sprite(BaseSprite):
         return self
 
     @property
+    def avgColor(self): return self.costume().avgColor
+
+    @property
     def image(self):
         "Return the current costume as a scaled and rotated surface"
         return self.costume().image
@@ -176,7 +179,7 @@ def elasticCircles(mass1, mass2):
         return True
 
 def physics(sk, model=elasticCircles):
-    "Update colliding masses on a pair-wise basis"
+    "Update colliding masses on a pair-wise basis; call oncollide handlers"
     masses = list(sk.sprites("mass"))
     coll = []
     n = len(masses)
@@ -185,4 +188,7 @@ def physics(sk, model=elasticCircles):
         for m2 in range(m1 + 1, n):
             args = m, masses[m2]
             if model(*args): coll.extend(args)
-    return list(m for m in masses if m in coll)
+    coll = list(m for m in masses if m in coll)
+    for m in coll:
+        if hasattr(m, "oncollide"): m.oncollide(sk)
+    return coll

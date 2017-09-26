@@ -23,6 +23,9 @@ DEG = pi / 180
 def dist(p1, p2):
     return hypot(p2[0] - p1[0], p2[1] - p1[1])
 
+def sprod(v1, v2):
+    return v1[0] * v2[0] + v1[1] * v2[1]
+
 def delta(vf, vi=None, mag=None):
     if vi:
         x = vf[0] - vi[0]
