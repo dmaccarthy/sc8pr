@@ -83,7 +83,7 @@ def collide_rect_mask(left, right):
     return collide_rect(left, right) and collide_mask(left, right)
 
 def collide_rect_circ(left, right):
-    print(left.rect, right.rect)
+#    print(left.rect, right.rect)
     return collide_rect(left, right) and collide_circle(left, right)
 
 

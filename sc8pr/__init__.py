@@ -59,7 +59,7 @@ class Graphic:
     of the surface passed as an argument. Alternatively, the subclass may
     provide a 'surface' property which can be drawn by Graphic.draw."""
     autoPositionOnResize = True
-    avgColor = None
+    _avgColor = None
     canvas = None
     pos = 0, 0
     anchor = CENTER
@@ -87,6 +87,9 @@ class Graphic:
             else:
                 setattr(self, n, f.__get__(self, self.__class__))
         return self
+
+    @property
+    def avgColor(self): return self._avgColor
 
 #     @property
 #     def polygon(self):
@@ -293,13 +296,20 @@ class Renderable(Graphic):
         if self.stale: self.image
 
     @property
+    def avgColor(self):
+        self.refresh()
+        if self._avgColor is None:
+            self._avgColor = pygame.transform.average_color(self._srf)
+        return self._avgColor
+
+    @property
     def image(self):
         if self.stale:
             self._srf = self.render()
             self._rotated = None
             self.stale = False
+            self._avgColor = None
         srf = self._srf
-        self._avgColor = pygame.transform.average_color(srf)
         a = self.angle
         if a:
             r = self._rotated
@@ -312,13 +322,8 @@ class Renderable(Graphic):
     @property
     def size(self):
         self.refresh()
-#        if self.stale: self._srf = self.render()
         return self._srf.get_size()
 
-    @property
-    def avgColor(self):
-        self.refresh()
-        return self._avgColor
 
 class BaseSprite(Graphic):
     "Base class for sprite animations"
@@ -447,7 +452,12 @@ class Image(Graphic):
     def __init__(self, srf=(1,1), bg=None):
         self._srf = CachedSurface(srf, bg)
         self._size = self._srf.get_size()
-        self.avgColor = pygame.transform.average_color(self._srf.original)
+
+    @property
+    def avgColor(self):
+        if self._avgColor is None:
+            self._avgColor = pygame.transform.average_color(self._srf.original)
+        return self._avgColor
 
     def dumpCache(self): self._srf.dumpCache()
 

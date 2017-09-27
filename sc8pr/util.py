@@ -51,6 +51,12 @@ def noise(c, amt=8, alpha=None):
     if alpha is not None: c.a = alpha
     return c
 
+def divAlpha(c):
+    a = c.a
+    if a < 255:
+        c = rgba(tuple(min(255, round(i * 255 / a)) for i in c[:3]))
+    return c
+
 def logError():
     "Print error message to stderr"
     print(format_exc(), file=sys.stderr)

@@ -19,12 +19,12 @@
 from time import sleep
 from threading import Thread
 from sys import stderr
-from math import hypot, asin, cos
+from math import hypot, asin, cos, sqrt, pi
 import pygame
-from sc8pr.sprite import Sprite
-from sc8pr.util import sc8prData, logError, rgba, noise
-from sc8pr.geom import vec2d, delta, DEG, dist, sprod
 from sc8pr import Image, Sketch
+from sc8pr.sprite import Sprite
+from sc8pr.util import sc8prData, logError, rgba, noise, divAlpha
+from sc8pr.geom import vec2d, delta, DEG, dist, sprod
 from sc8pr.shape import Line
 
 
@@ -45,8 +45,8 @@ class RobotThread(Thread):
             args = "{}.{}".format(b.__module__, b.__name__), str(r), id(self)
             print('{} is controlling "{}" in thread {}.'.format(*args), file=stderr)
         try:
-            while not r.sketch.frameCount: r.sleep()
-            b(r.updateSensors())
+            while r.startup: r.sleep()
+            b(r)
             if r.shutdown: r.shutdown()
         except: logError()
         if self.log:
@@ -59,8 +59,9 @@ class InactiveError(Exception):
 
 class Robot(Sprite):
     _motors = 0, 0
-    _updateSensors = False
-    sensorNoise = 16
+    _updateSensors = True
+    startup = True
+    sensorNoise = 8
     collision = False
     maxSpeed = 1 / 512
     shutdown = None
@@ -173,6 +174,9 @@ class Robot(Sprite):
                 self.drawLEDs()
                 self._updateSensors = False
             except: logError()
+        self.startup = False
+
+    def sensorObjects(self, sk): return list(sk.sprites())
 
     def checkFront(self):
         "Update the front color sensor"
@@ -186,23 +190,28 @@ class Robot(Sprite):
         prox = _distToWall(pos, self.angle, self.sensorWidth, *sk.size)
 
         # Find closest object within sensor width
-        objs = list(sk)
         u = vec2d(1, self.angle)
         sw = self.sensorWidth * DEG
-        for gr in objs:
+        for gr in self.sensorObjects(sk):
             if gr is not self and gr.avgColor and hasattr(gr, "rect"):
                 dr = delta(gr.rect.center, pos)
                 d = hypot(*dr)
                 r = gr.radius
-                if d - r < prox:
-                    minDot = cos(sw + asin(r/d) / 2) if r < d else 0
-                    if sprod(u, dr) > d * minDot: obj, prox = gr, d - r
+                if r >= d:
+                    prox = 0
+                    obj = gr
+                elif d - r < prox:
+                    minDot = cos(min(sw + asin(r/d), pi / 2))
+                    x = (1 - sprod(u, dr) / d) / (1 - minDot)
+                    if x < 1:
+                        obj = gr
+                        prox = (d - r) * (1 - x) + x * sqrt(d*d-r*r)
 
         # Save data
         c = rgba(sk.border if obj is sk else obj.avgColor)
-        c.a = 255
-        self.sensorFront = noise(c, self.sensorNoise)
-        self.proximity = prox 
+        self.sensorFront = noise(divAlpha(c), self.sensorNoise)
+        self.proximity = prox
+        self.closestObject = obj
 
     def checkDown(self):
         "Update the down color sensor"
