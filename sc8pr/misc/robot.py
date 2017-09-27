@@ -21,6 +21,7 @@ from threading import Thread
 from sys import stderr
 from math import hypot, asin, cos, sqrt, pi
 import pygame
+from pygame.constants import K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE
 from sc8pr import Image, Sketch
 from sc8pr.sprite import Sprite
 from sc8pr.util import sc8prData, logError, rgba, noise, divAlpha
@@ -33,24 +34,22 @@ class RobotThread(Thread):
 
     log = True
 
-    def __init__(self, robot, brain):
+    def __init__(self, robot):
         super().__init__()
         self.robot = robot
-        self.brain = brain
 
     def run(self):
         r = self.robot
-        b = self.brain
         if self.log:
-            args = "{}.{}".format(b.__module__, b.__name__), str(r), id(self)
-            print('{} is controlling "{}" in thread {}.'.format(*args), file=stderr)
+            args = r, id(self)
+            print('{} is running in thread {}.'.format(*args), file=stderr)
         try:
             while r.startup: r.sleep()
-            b(r)
+            r.brain()
             if r.shutdown: r.shutdown()
         except: logError()
         if self.log:
-            print('{} is shutting down in "{}".'.format(*args), file=stderr)
+            print('{} is shutting down in thread {}.'.format(*args), file=stderr)
 
 
 class InactiveError(Exception):
@@ -70,8 +69,7 @@ class Robot(Sprite):
     sensorWidth = 10
     proximity = None
 
-    def __init__(self, brain=None, colors=None):
-        self.brain = brain
+    def __init__(self, colors=None):
         img = Image.fromBytes(sc8prData("robot"))
         if colors:
             px = pygame.PixelArray(img.image)
@@ -84,11 +82,12 @@ class Robot(Sprite):
     def setCanvas(self, sk):
         if not isinstance(sk, Sketch):
             raise Exception("Robot cannot be added to {}".format(type(sk).__name__))
+        b = hasattr(self, "brain")
+        if b and self.canvas: raise Exception("Robot is already active!")
         super().setCanvas(sk)
-        b = self.brain
         if b:
             self._startFrame = sk.frameCount
-            RobotThread(self, b).start()
+            RobotThread(self).start()
 
     @property
     def active(self):
@@ -157,7 +156,12 @@ class Robot(Sprite):
 
         # Acceleration...
         v = vec2d(v, self.angle)
-        self.acc = delta(v, self.vel, 0.05)
+        a = delta(v, self.vel)
+        if hypot(*a) > 0.05:
+            self.acc = delta(a, mag=0.05)
+        else:
+            self.vel = v
+            self.acc = 0, 0
 
         # Adjust wheel speed...
         p = self.power
@@ -242,6 +246,17 @@ class Robot(Sprite):
                 pygame.draw.circle(orig, c if c else (0,0,0), pos, r)
                 pygame.draw.circle(orig, (0,0,0), pos, r, 1)
             srfs.dumpCache()
+
+    @staticmethod
+    def remote(sk, ev):
+        try:
+            r = sk.remote
+            key = ev.key
+            if key == K_SPACE: r.motors = 0
+            else:
+                dm = {K_UP:(1,1), K_DOWN:(-1,-1), K_LEFT:(-1,1), K_RIGHT:(1,-1)}
+                r.motors = tuple(0.1 * dm[key][i] + r.motors[i] for i in (0,1))
+        except: pass
 
 
 def _distToWall(pos, angle, sWidth, w, h):

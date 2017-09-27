@@ -155,7 +155,7 @@ class Line(Shape):
                     return self.point(s1)
         else: # Lines are parallel
             s0, d = self.parameters(other.point())
-            if d <= self.resolution:
+            if abs(d) <= self.resolution:
                 if self.length is None:  # self is a line
                     return True if other.length is None else other.midpoint()
                 if other.length is None: # other is a line

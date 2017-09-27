@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from math import hypot, pi, sin, cos
+from math import hypot, pi, sin, cos, atan2
 
 DEG = pi / 180
 
@@ -42,6 +42,10 @@ def delta(vf, vi=None, mag=None):
 def vec2d(r, a, deg=True):
     if deg: a *= DEG
     return r * cos(a), r * sin(a)
+
+def polar2d(vx, vy, deg=True):
+    a = atan2(vy, vx)
+    return hypot(vx, vy), (a / DEG if deg else a)
 
 def _matrix(rotate=0, scale=1, rev=False):
     "Create a 2x2 matrix (as a 4-tuple) to perform a scale transformation and a rotation"

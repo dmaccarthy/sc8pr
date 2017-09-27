@@ -17,7 +17,7 @@
 
 
 import pygame
-from sc8pr import Renderable, Image
+from sc8pr import Renderable, Image, BaseSprite
 from sc8pr.shape import Shape
 
 
@@ -90,3 +90,6 @@ class Locus(Renderable, Shape):
         self.stale = True
 
     contains = Image.contains
+
+
+class LocusSprite(Locus, BaseSprite): pass
