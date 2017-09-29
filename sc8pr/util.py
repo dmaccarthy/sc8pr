@@ -107,7 +107,8 @@ def style(srf, bg=None, border=(0,0,0), weight=0, padding=0):
  
 def drawBorder(srf, color=(0,0,0), weight=1, r=None):
     "Draw a border around the edges of the surface"
-    r0 = pygame.Rect((0, 0), srf.get_size())
+    r0 = srf.get_clip()
+#    r0 = pygame.Rect((0, 0), srf.get_size())
     if r is None: r = r0
     w, h = r.size
     x, y = r.topleft

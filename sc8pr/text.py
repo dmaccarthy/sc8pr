@@ -85,6 +85,7 @@ class Text(Renderable):
         "Render the text as an Image"
         key = _makeKey(self.font, self.fontSize, self.fontStyle)
         font = _loadFont(*key)
+#        print(self, key, font)
         text = str(self.data).split("\n")
         srfs = [font.render(t, True, self.color) for t in text]
         return self._joinLines(srfs)

@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from time import sleep
+from time import sleep, time
 from threading import Thread
 from sys import stderr
 from math import hypot, asin, cos, sqrt, pi
@@ -45,6 +45,7 @@ class RobotThread(Thread):
             print('{} is running in thread {}.'.format(*args), file=stderr)
         try:
             while r.startup: r.sleep()
+            r._startTime = time()
             r.brain()
             if r.shutdown: r.shutdown()
         except: logError()
@@ -78,6 +79,9 @@ class Robot(Sprite):
                 px.replace(c, rgba(colors[i]))
         img = img.tiles(2)
         super().__init__(img)
+
+    @property
+    def uptime(self): return time() - self._startTime
 
     def setCanvas(self, sk):
         if not isinstance(sk, Sketch):
