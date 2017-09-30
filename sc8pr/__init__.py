@@ -275,7 +275,9 @@ class Graphic:
         if kwargs: srf = style(srf, **kwargs)
         return Image(srf)
 
-    def save(self, fn, **kwargs): self.snapshot(**kwargs).save(fn)
+    def save(self, fn, **kwargs):
+        self.snapshot(**kwargs).save(fn)
+        return self
 
     def match(self, *args, **kwargs):
         "Check if instance attributes match the specified criteria"
@@ -489,7 +491,10 @@ class Image(Graphic):
             except: pass
         return False
 
-    def save(self, fn): pygame.image.save(self._srf.original, fn)
+    def save(self, fn):
+        pygame.image.save(self._srf.original, fn)
+        return self
+
     def copy(self): return Image(self.image.copy())
 
 

@@ -18,19 +18,20 @@
 
 from sc8pr import Canvas, LEFT
 from sc8pr.text import Text
-from sc8pr.gui.button import Button
+from sc8pr.gui.button import Button, cacheTiles
 
 
 class Radio(Canvas):
 
-    def __init__(self, text, space=4, **kwargs):
+    def __init__(self, text, imgs=None, space=4, **kwargs):
+        if imgs is None: imgs = cacheTiles("radio", (2,2))
         text = [Text(t).config(**kwargs) for t in text]
         check = []
         y = w = 0
         h = kwargs["fontSize"] if "fontSize" in kwargs else Text.fontSize
         for t in text:
-            cb = Button.checkbox()
-            h = max(t.height, cb.height)
+            h = t.height
+            cb = Button(imgs).config(height=h)
             yc = y + h / 2
             check.append(cb.config(height=h, pos=(0, yc), anchor=LEFT))
             t.config(pos=(cb.width + space, yc), anchor=LEFT, **kwargs)
