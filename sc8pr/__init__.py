@@ -796,7 +796,7 @@ class Sketch(Canvas):
                 self.frameCount += 1
                 self.draw()
                 _pd.flip()
-                if self.ondraw: self.ondraw() 
+                if self.ondraw: self.ondraw()
                 for ev in pygame.event.get():
                     if ev.type == pygame.VIDEORESIZE and ev.size != self.size:
                         self.resize(ev.size)
