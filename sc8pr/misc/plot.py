@@ -17,9 +17,10 @@
 
 
 import pygame
-from sc8pr import Renderable, Image, BaseSprite
+from sc8pr import Renderable, Image, BaseSprite, Graphic
 from sc8pr.shape import Shape
 from sc8pr.util import rgba
+from sc8pr.text import Text
 
 
 def coordTr(lrbt, size):
@@ -48,6 +49,7 @@ class Plot(Renderable):
     bg = None
     _coords = None
     _data = []
+    _text = []
 
     def __init__(self, size, lrbt):
         self._size = size
@@ -73,15 +75,24 @@ class Plot(Renderable):
         self.stale = True
         return self
 
+    def label(self, text, pos, **kwargs):
+        attr = {"marker":Text(text).config(**kwargs)}
+        self._text.append(([pos], attr))
+        self.stale = True
+        return self
+
     def removeSeries(self, n):
         d = self._data
         d.remove(d[n])
 
     def render(self):
+#         noDraw = not hasattr(self, "rect")
+#         if noDraw: self.rect = pygame.Rect((0,0), self.size)
         srf = Image(self._size, self.bg).image
         transform = coordTr(self._coords, self._size)
-        for d, k in self._data:
+        for d, k in (self._data + self._text):
             self.plot(srf, d, transform, **k)
+#         if noDraw: del self.rect
         return srf
 
     def plot(self, srf, data, transform, **kwargs):
@@ -98,14 +109,18 @@ class Plot(Renderable):
         # Plot markers
         marker = kwargs.get("marker")
         if marker:
-            if isinstance(marker, Image) or isinstance(marker[0], Image):
-                img = marker
-            else:
-                img = None
+            if not (isinstance(marker, Graphic) or isinstance(marker[0], Graphic)):
                 color, radius = marker
                 color = rgba(color)
+                marker = None
+            i = 0
             for p in pts:
-                if img:
+                if marker:
+                    if isinstance(marker, Graphic): img = marker
+                    else:
+                        img = marker[i]
+                        i += 1
+                    if img.canvas: img.remove()
                     img.pos = p
                     pos = img.blitPosition((0,0), img.size)
                     srf.blit(img.image, pos)
@@ -125,10 +140,11 @@ class PlotSprite(Plot, BaseSprite): pass
 
 class Locus(Shape):
     "Class for drawing point sequences directly to the canvas"
+    snapshot = None
 
-    def __init__(self, lrbt, data, **kwargs):
-        self.lrbt = lrbt
+    def __init__(self, data, lrbt, **kwargs):
         self.data = data
+        self.lrbt = lrbt
         self.kwargs = kwargs
 
     def contains(self, pos): return False
@@ -137,12 +153,18 @@ class Locus(Shape):
     def size(self):
         return self.rect.size if hasattr(self, "rect") else (0,0)
 
-    def draw(self, srf):
+    def draw(self, srf, snapshot=False):
+        offset = 0, 0
+        try:
+            if not snapshot: offset = self.canvas.rect.topleft
+        except: pass 
         s, w = self.stroke, self.weight
         transform = coordTr(self.lrbt, self.canvas.size)
         d = self.data
         pts = d if type(d) in (list, tuple) else locus(d, **self.kwargs)
         pts = [transform(p) for p in pts]
+        if offset != (0, 0):
+            pts = [(x + offset[0], y + offset[1]) for (x, y) in pts]
         return pygame.draw.lines(srf, s, False, pts, w)
 
     def pointGen(self, size=None):
