@@ -8,7 +8,8 @@ sc8pr 2.0 features include:
 * physics-based collisions
 * video effects / transitions
 * a selection of GUI controls
-* robotics simulator [experimental]
+* curve plotting
+* robotics simulator
 
 For more information, please see the [documentation](http://dmaccarthy.github.io/sc8pr/).
 

@@ -6,4 +6,5 @@ Features include:
 * physics-based collisions
 * video effects / transitions
 * a selection of GUI controls
-* robotics simulator [experimental]
+* curve plotting
+* robotics simulator 
