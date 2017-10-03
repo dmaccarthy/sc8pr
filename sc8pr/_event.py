@@ -122,14 +122,19 @@ class EventManager:
     def _overOut(self, path, ev):
         oldHover = self.hover.path
         obj = oldHover[0]
+#        target = ev.target
         while obj not in path:
-            if hasattr(obj, "onmouseout"):
-                getattr(obj, "onmouseout")(ev)
+            setattr(ev, "target", obj)
+            self.handle(obj, "onmouseout", ev)
+#             if hasattr(obj, "onmouseout"):
+#                 getattr(obj, "onmouseout")(ev)
             obj = obj.canvas
         i = path.index(obj)
         for obj in reversed(path[:i]):
-            if hasattr(obj, "onmouseover"):
-                getattr(obj, "onmouseover")(ev)
+            setattr(ev, "target", obj)
+            self.handle(obj, "onmouseover", ev)
+#             if hasattr(obj, "onmouseover"):
+#                 getattr(obj, "onmouseover")(ev)
 
 
 def _find(p, a):

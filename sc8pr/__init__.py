@@ -22,7 +22,7 @@ import pygame
 import pygame.display as _pd
 from pygame.transform import flip as _pyflip
 from sc8pr._event import EventManager
-from sc8pr.geom import transform2d, transform2dGen, positiveAngle
+from sc8pr.geom import transform2d, transform2dGen, positiveAngle, delta
 from sc8pr.util import CachedSurface, style, logError, sc8prData,\
     tile, rgba, drawBorder
 
@@ -362,8 +362,8 @@ class BaseSprite(Graphic):
     def onwrap(self, cv, update): self.penReset()
 
     def circleBounce(self, cv):
-        "Bounce the sprite from the edges"
-        x, y = self.rect.center #self.pos
+        "Bounce the sprite from the edges of the canvas"
+        x, y = delta(self.rect.center, cv.rect.topleft) #self.pos
         r = self.radius
         vx, vy = self.vel
         w, h = cv.size
@@ -378,7 +378,7 @@ class BaseSprite(Graphic):
         if update and self.onbounce: self.onbounce(cv, update)
 
     def simpleWrap(self, cv):
-        "Wrap sprite when it leaves the sketch"
+        "Wrap sprite when it leaves the canvas"
         r = self.rect
         x, y = self.pos
         if not cv.rect.colliderect(r):
