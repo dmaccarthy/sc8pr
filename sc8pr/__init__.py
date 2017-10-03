@@ -22,7 +22,7 @@ import pygame
 import pygame.display as _pd
 from pygame.transform import flip as _pyflip
 from sc8pr._event import EventManager
-from sc8pr.geom import transform2d, transform2dGen
+from sc8pr.geom import transform2d, transform2dGen, positiveAngle
 from sc8pr.util import CachedSurface, style, logError, sc8prData,\
     tile, rgba, drawBorder
 
@@ -423,7 +423,7 @@ class BaseSprite(Graphic):
             self.pos = x + (vx + dvx / 2) * t, y + (vy + dvy / 2) * t
             self.vel = vx + dvx, vy + dvy
         else: self.pos = x + vx * t, y + vy * t
-        self.angle += self.spin * t
+        self.angle = positiveAngle(self.angle + self.spin * t)
         d = self.drag 
         if d:
             if type(d) in (int, float): s = d

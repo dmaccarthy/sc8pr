@@ -25,7 +25,7 @@ from pygame.constants import K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE
 from sc8pr import Image, Sketch
 from sc8pr.sprite import Sprite
 from sc8pr.util import sc8prData, logError, rgba, noise, divAlpha
-from sc8pr.geom import vec2d, delta, DEG, dist, sprod
+from sc8pr.geom import vec2d, delta, DEG, dist, sprod, positiveAngle
 from sc8pr.shape import Line
 
 
@@ -83,6 +83,14 @@ class Robot(Sprite):
     @property
     def uptime(self): return time() - self._startTime
 
+    @property
+    def gyro(self):
+        return positiveAngle(self.angle - self._gyro)
+
+    @gyro.setter
+    def gyro(self, g):
+        self._gyro = positiveAngle(g - self.angle)
+
     def setCanvas(self, sk):
         if not isinstance(sk, Sketch):
             raise Exception("Robot cannot be added to {}".format(type(sk).__name__))
@@ -91,6 +99,7 @@ class Robot(Sprite):
         super().setCanvas(sk)
         if b:
             self._startFrame = sk.frameCount
+            self._gyro = self.angle
             RobotThread(self).start()
 
     @property

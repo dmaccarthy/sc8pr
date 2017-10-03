@@ -16,17 +16,28 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from math import hypot, pi, sin, cos, atan2
+from math import hypot, pi, sin, cos, atan2, floor
 
 DEG = pi / 180
 
+def positiveAngle(a):
+    "Return an angle between 0 and 360"
+    return a - 360 * floor(a / 360)
+
+def angleDifference(a2, a1=0):
+    "Difference between 2 directions; [-180,180)"
+    return positiveAngle(a2 - a1 + 180) - 180
+
 def dist(p1, p2):
+    "Distance between two points"
     return hypot(p2[0] - p1[0], p2[1] - p1[1])
 
 def sprod(v1, v2):
+    "2D scalar product"
     return v1[0] * v2[0] + v1[1] * v2[1]
 
 def delta(vf, vi=None, mag=None):
+    "vf - vi, rescaled to specified magnitude"
     if vi:
         x = vf[0] - vi[0]
         y = vf[1] - vi[1]
@@ -40,10 +51,12 @@ def delta(vf, vi=None, mag=None):
     return x, y
 
 def vec2d(r, a, deg=True):
+    "2D Polar to Cartesian conversion"
     if deg: a *= DEG
     return r * cos(a), r * sin(a)
 
 def polar2d(vx, vy, deg=True):
+    "2D Cartesian to Polar conversion"
     a = atan2(vy, vx)
     return hypot(vx, vy), (a / DEG if deg else a)
 
