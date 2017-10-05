@@ -71,12 +71,12 @@ class Sprite(BaseSprite):
         img.rect = self.rect
         return img.contains(pos)
 
-    def ondraw(self, cv):
+    def ondraw(self):
         "Update sprite after drawing"
         n = self.costumeTime
-        if n and cv.sketch.frameCount % n == 0:
+        if n and self.sketch.frameCount % n == 0:
             self.costumeNumber = self._costumeNumber + 1
-        super().ondraw(cv)
+        super().ondraw()
 
 
 def collide_rect_mask(left, right):
@@ -190,5 +190,5 @@ def physics(sk, model=elasticCircles):
             if model(*args): coll.extend(args)
     coll = list(m for m in masses if m in coll)
     for m in coll:
-        if hasattr(m, "oncollide"): m.oncollide(sk)
+        if hasattr(m, "oncollide"): m.oncollide()
     return coll

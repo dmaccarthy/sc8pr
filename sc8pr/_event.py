@@ -38,7 +38,7 @@ class EventManager:
 
         # Fire sk.onevent
         if hasattr(sk, "onevent"):
-            if sk.onevent(ev) is False: return
+            if sk.onevent(ev): return #  is False
 
         # Get event target and handler name
         path = sk.objectAt(sk.mouse.pos).path
@@ -63,17 +63,21 @@ class EventManager:
         # unless its focusable property is False
         elif ev.type == pygame.MOUSEBUTTONDOWN:
             focus = _find(path, "onclick")
+            if focus is None: focus = sk
             if self.drag is not None: self._dragRelease(ev)
-            elif self.focus not in (focus, None) and hasattr(self.focus, "onblur"):
+#            elif self.focus not in (focus, None) and hasattr(self.focus, "onblur"):
+            elif self.focus is not focus and hasattr(self.focus, "onblur"):
+                setattr(ev, "target", self.focus)
                 getattr(self.focus, "onblur")(ev)
-            if focus is not None and hasattr(focus, "onclick"):
+                setattr(ev, "target", path[0])
+            if hasattr(focus, "onclick"): # focus is not None and ...
                 getattr(focus, "onclick")(ev)
                 if focus.focusable is False:
                     for g in path[1:]:
                         if g.focusable:
                             focus = g
                             break
-            self.focus = sk if focus is None else focus
+            self.focus = focus # sk if focus is None else ...
 
         # Send MOUSEUP events to the object bring dragged
         elif ev.type == pygame.MOUSEBUTTONUP:
@@ -122,7 +126,6 @@ class EventManager:
     def _overOut(self, path, ev):
         oldHover = self.hover.path
         obj = oldHover[0]
-#        target = ev.target
         while obj not in path:
             setattr(ev, "target", obj)
             self.handle(obj, "onmouseout", ev)

@@ -39,7 +39,7 @@ class Slider(Canvas):
         super().__init__(size)
         if not isinstance(knob, Graphic): knob = Image(bg=knob)
         w, h = size
-        kwargs = {"width":w-2} if h > w else {"height":h-2}
+        kwargs = {"width":w} if h > w else {"height":h}
         self += knob.bind(ondrag).config(**kwargs)
         self.knob = knob
         self.steps = steps

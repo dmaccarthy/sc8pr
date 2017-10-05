@@ -359,7 +359,7 @@ class BaseSprite(Graphic):
         p = self._pen
         if p: self._pen = p[:2] + (None,)
 
-    def onwrap(self, cv, update): self.penReset()
+    def onwrap(self, update): self.penReset()
 
     def circleBounce(self, cv):
         "Bounce the sprite from the edges of the canvas"
@@ -375,7 +375,7 @@ class BaseSprite(Graphic):
         if b & VERTICAL and (y < r and vy < 0 or y > h-r and vy > 0):
             self.vel = vx, -vy
             update += VERTICAL
-        if update and self.onbounce: self.onbounce(cv, update)
+        if update and self.onbounce: self.onbounce(update)
 
     def simpleWrap(self, cv):
         "Wrap sprite when it leaves the canvas"
@@ -410,7 +410,7 @@ class BaseSprite(Graphic):
             if wrapX or wrapY:
                 update = HORIZONTAL if wrapX else 0
                 if wrapY: update += VERTICAL
-                self.onwrap(cv, update)
+                self.onwrap(update)
             self.pos = x, y
 
     def kinematics(self):
@@ -432,8 +432,9 @@ class BaseSprite(Graphic):
             self.vel = d * vx, d * vy
             self.spin *= 1 - s 
 
-    def ondraw(self, cv):
+    def ondraw(self):
         "Update sprite properties after drawing each frame"
+        cv = self.canvas
         if self.bounce: self.circleBounce(cv)
         if self.wrap and self.simpleWrap(cv): return True
         self.kinematics()
@@ -628,7 +629,7 @@ class Canvas(Graphic):
                 grect = g.draw(srf)
                 g.rect = grect
                 if br: self.blitRegions.append(grect)
-                if g.ondraw and g.ondraw(self): g.remove()
+                if g.ondraw and g.ondraw(): g.remove()
 
         # Draw border
         if self.weight: drawBorder(srf, self.border, self.weight, r)
@@ -800,7 +801,8 @@ class Sketch(Canvas):
                 for ev in pygame.event.get():
                     if ev.type == pygame.VIDEORESIZE and ev.size != self.size:
                         self.resize(ev.size)
-                        self.bubble("onresize", ev)
+                        if hasattr(self, "onresize"): self.onresize(ev)
+#                        self.bubble("onresize", ev)
                     try: self.evMgr.dispatch(ev)
                     except: logError()
                 self._clock.tick(self.frameRate)

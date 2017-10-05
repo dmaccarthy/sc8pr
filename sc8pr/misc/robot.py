@@ -91,6 +91,9 @@ class Robot(Sprite):
     def gyro(self, g):
         self._gyro = positiveAngle(g - self.angle)
 
+    @property
+    def stopped(self): return self.vel == (0,0)
+
     def setCanvas(self, sk):
         if not isinstance(sk, Sketch):
             raise Exception("Robot cannot be added to {}".format(type(sk).__name__))
@@ -146,14 +149,15 @@ class Robot(Sprite):
         self.vel = vx, vy
         self.collision = True
 
-    def oncollide(self, sk): self.collision = True
+    def oncollide(self): self.collision = True
 
-    def ondraw(self, sk):
+    def ondraw(self):
         "Update robot sprite each frame"
 
         if not self.active: raise InactiveError()
 
         # Target wheel speed...
+        sk = self.sketch
         v = self.maxSpeed * sk.width
         v1, v2 = self._motors
         v1 *= v
@@ -181,7 +185,7 @@ class Robot(Sprite):
         self.costumeTime = 0 if p == 0 else round(36 / (1 + 5 * p))
 
         # Update position and angle...
-        super().ondraw(sk)
+        super().ondraw()
 
         # Update sensors if requested...
         if self._updateSensors:

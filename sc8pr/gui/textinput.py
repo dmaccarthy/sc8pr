@@ -23,7 +23,7 @@ from sc8pr.util import style, rgba
 
 
 class TextInput(Text):
-    "Editable text: fires onfocus, onchange, onaction"
+    "Editable text: handles onclick, onblur; triggers onchange"
     focusable = True
     cursorTime = 1.0
     cursorOn = 0.35
@@ -81,7 +81,8 @@ class TextInput(Text):
         u = ev.unicode
         if u in ("\n", "\r", "\t"):
             self.blur()
-            return self.bubble("onblur", ev)
+            return self.onblur(ev)
+#            return self.bubble("onblur", ev)
         d = self.data
         n = len(d)
         cursor = self.cursor
@@ -118,7 +119,7 @@ class TextInput(Text):
         return (font.size(d[:i])[0] + font.size(d[:i+1])[0]) // 2
 
     def onclick(self, ev):
-        if not self.focussed: self.bubble("onfocus", ev)
+#        if not self.focussed: self.bubble("onfocus", ev)
         self.startCursor()
         x = self.relXY(ev.pos)[0] - self.padding
         n = len(self.data)
@@ -128,4 +129,4 @@ class TextInput(Text):
 
     def onblur(self, ev):
         if not self.data: self.stale = True
-        self.bubble("onaction", ev)
+#        self.bubble("onaction", ev)
