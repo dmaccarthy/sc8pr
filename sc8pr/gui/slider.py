@@ -96,7 +96,12 @@ class Slider(Canvas):
 
     def onkeydown(self, ev):
         "Handler arrow keys when the slider is focussed"
-        dx = 1 if ev.key in (K_UP, K_RIGHT) else -1 if ev.key in (K_DOWN, K_LEFT) else 0
+        if tall(*self.size):
+            dx = 1 if ev.key == K_DOWN else -1 if ev.key == K_UP else 0
+        else:
+            dx = 1 if ev.key == K_RIGHT else -1 if ev.key == K_LEFT else 0
+        if self.flip: dx = -dx
+#        dx = 1 if ev.key in (K_UP, K_RIGHT) else -1 if ev.key in (K_DOWN, K_LEFT) else 0
         if dx:
             cur = self._val
             s = self.steps

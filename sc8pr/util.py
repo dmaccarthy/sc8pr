@@ -37,7 +37,7 @@ def _rgba(*args):
 
 def rgba(*args):
     "Return a color or list of colors from str or tuple data"
-    c = tuple(_rgba(*args))
+    c = list(_rgba(*args))
     return c[0] if len(c) == 1 else c
 
 def randPixel(size):
@@ -84,7 +84,7 @@ def hasAlpha(srf):
     return srf.get_masks()[3] != 0
 
 def setAlpha(srf, a):
-    "Create a new surface with a minimum transparency "
+    "Adjust surface with a minimum transparency "
     srf.fill((255,255,255,a), special_flags=pygame.BLEND_RGBA_MIN)
     return srf
 
@@ -105,13 +105,13 @@ def style(srf, bg=None, border=(0,0,0), weight=0, padding=0):
 
     return img
  
-def drawBorder(srf, color=(0,0,0), weight=1, r=None):
+def drawBorder(srf, color=(0,0,0), weight=1):#, r=None):
     "Draw a border around the edges of the surface"
     r0 = srf.get_clip()
 #    r0 = pygame.Rect((0, 0), srf.get_size())
-    if r is None: r = r0
-    w, h = r.size
-    x, y = r.topleft
+#    if r is None: r = r0
+    w, h = r0.size
+    x, y = r0.topleft
     hor = w, weight
     ver = weight, h - 2 * weight
     color = rgba(color)
@@ -142,6 +142,12 @@ def surfaceData(srf, compress=zlib.compress):
     mode = struct.pack("!3I", mode, w, h)
     data = pygame.image.tostring(srf, "RGBA" if a else "RGB")
     return (compress(data) if compress else data), mode
+
+def ondrag(gr, ev):
+    "Move a Graphic instance while dragging"
+    pos = gr.pos
+    dp = ev.rel
+    gr.pos = pos[0] + dp[0], pos[1] + dp[1]
 
 
 class CachedSurface:

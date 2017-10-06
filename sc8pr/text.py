@@ -111,7 +111,7 @@ class Text(Renderable):
         srf = Image((w + dx, h + dx), self.bg).image
         a = self.color.a
         for s in srfs:
-            if a: s = setAlpha(s, a)
+            if a < 255: setAlpha(s, a)
             x = self.padding + wt
             if self.align != LEFT:
                 dx = wMax - s.get_size()[0]

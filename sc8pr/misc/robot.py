@@ -133,9 +133,9 @@ class Robot(Sprite):
     @property
     def power(self): return sum(abs(m) for m in self._motors) / 2
 
-    def onbounce(self, sk, wall):
+    def onbounce(self, wall):
         "Adjust motion upon collision with wall"
-        w, h = sk.size
+        w, h = self.sketch.size
         x, y = self.pos
         r = self.radius
         vx, vy = self.vel

@@ -46,12 +46,6 @@ REMOVE_X = 4
 REMOVE_Y = 8
 REMOVE = 12
 
-def ondrag(gr, ev):
-    "Move a Graphic instance while dragging"
-    pos = gr.pos
-    dp = ev.rel
-    gr.pos = pos[0] + dp[0], pos[1] + dp[1]
-
 
 class Graphic:
     """Base class for graphics objects. Subclasses may provide a 'draw' method
@@ -375,7 +369,8 @@ class BaseSprite(Graphic):
         if b & VERTICAL and (y < r and vy < 0 or y > h-r and vy > 0):
             self.vel = vx, -vy
             update += VERTICAL
-        if update and self.onbounce: self.onbounce(update)
+        if update and self.onbounce:
+            self.onbounce(update)
 
     def simpleWrap(self, cv):
         "Wrap sprite when it leaves the canvas"
@@ -632,7 +627,7 @@ class Canvas(Graphic):
                 if g.ondraw and g.ondraw(): g.remove()
 
         # Draw border
-        if self.weight: drawBorder(srf, self.border, self.weight, r)
+        if self.weight: drawBorder(srf, self.border, self.weight) #, r)
 
         srf.set_clip(None)
         return r
@@ -681,7 +676,6 @@ class Sketch(Canvas):
     realTime = False
     frameRate = 60
     anchor = 0
-    focusable = True
     _fixedAspect = True
     blitRegions = []
 
@@ -690,6 +684,9 @@ class Sketch(Canvas):
         self.quit = False
         self.frameCount = 0
         self.evMgr = EventManager(self)
+
+    @property
+    def focusable(self): return True
 
     @property
     def timeFactor(self):

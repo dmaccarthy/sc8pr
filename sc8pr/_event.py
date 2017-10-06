@@ -36,7 +36,7 @@ class EventManager:
         elif hasattr(ev, "pos"): sk.mouse = ev
         else: other = True
 
-        # Fire sk.onevent
+        # Trigger sk.onevent
         if hasattr(sk, "onevent"):
             if sk.onevent(ev): return #  is False
 
@@ -59,25 +59,19 @@ class EventManager:
             self.handle(current.path, name, ev)
 
         # Send MOUSEDOWN events to the onblur and onclick methods of the
-        # respective objects. When onclick is defined the object gains focus
-        # unless its focusable property is False
+        # respective objects. Set focus if a focusable object is clicked
         elif ev.type == pygame.MOUSEBUTTONDOWN:
-            focus = _find(path, "onclick")
-            if focus is None: focus = sk
+            for p in path:
+                if p.focusable:
+                    focus = p
+                    break
             if self.drag is not None: self._dragRelease(ev)
-#            elif self.focus not in (focus, None) and hasattr(self.focus, "onblur"):
             elif self.focus is not focus and hasattr(self.focus, "onblur"):
                 setattr(ev, "target", self.focus)
                 getattr(self.focus, "onblur")(ev)
                 setattr(ev, "target", path[0])
-            if hasattr(focus, "onclick"): # focus is not None and ...
-                getattr(focus, "onclick")(ev)
-                if focus.focusable is False:
-                    for g in path[1:]:
-                        if g.focusable:
-                            focus = g
-                            break
-            self.focus = focus # sk if focus is None else ...
+            self.focus = focus
+            self.handle(path, "onclick", ev)
 
         # Send MOUSEUP events to the object bring dragged
         elif ev.type == pygame.MOUSEBUTTONUP:
@@ -85,7 +79,7 @@ class EventManager:
                 self.handle(path, "onmouseup", ev)
 
         # Send MOUSEMOTION events to the onmouseout and onmouseover
-        # methods of the respective objects; also fire ondrag method
+        # methods of the respective objects; trigger ondrag method
         # if an object is begin dragged
         elif ev.type == pygame.MOUSEMOTION:
             self._overOut(path, ev)
@@ -101,7 +95,7 @@ class EventManager:
                     drag = True
             if not drag: self.handle(path, "onmousemotion", ev)
 
-        # Fire sk.onhandled
+        # Trigger sk.onhandled
         self.hover = path[0]
         if hasattr(sk, "onhandled"): sk.onhandled(ev)
 
@@ -129,15 +123,11 @@ class EventManager:
         while obj not in path:
             setattr(ev, "target", obj)
             self.handle(obj, "onmouseout", ev)
-#             if hasattr(obj, "onmouseout"):
-#                 getattr(obj, "onmouseout")(ev)
             obj = obj.canvas
         i = path.index(obj)
         for obj in reversed(path[:i]):
             setattr(ev, "target", obj)
             self.handle(obj, "onmouseover", ev)
-#             if hasattr(obj, "onmouseover"):
-#                 getattr(obj, "onmouseover")(ev)
 
 
 def _find(p, a):
