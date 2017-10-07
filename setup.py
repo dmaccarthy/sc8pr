@@ -22,7 +22,7 @@ setup(
     
     # URLs
     url = "http://dmaccarthy.github.io/sc8pr",
-    download_url = "https://github.com/dmaccarthy/sc8pr2/archive/{}.zip".format(archive),
+    download_url = "https://github.com/dmaccarthy/sc8pr/archive/{}.zip".format(archive),
 
     # Details
     description = "Create interactive animations with features inspired by Scratch, Processing, and robotics",
