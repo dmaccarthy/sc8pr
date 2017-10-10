@@ -273,15 +273,6 @@ class Graphic:
         self.snapshot(**kwargs).save(fn)
         return self
 
-    def match(self, *args, **kwargs):
-        "Check if instance attributes match the specified criteria"
-        for a in args:
-            if not hasattr(self, a): return False
-        for a, v in kwargs.items():
-            if not hasattr(self, a) or getattr(self, a) != v:
-                return False
-        return True
-
 
 class Renderable(Graphic):
     "Graphics produced by calling a render method"
@@ -376,6 +367,7 @@ class BaseSprite(Graphic):
         "Wrap sprite when it leaves the canvas"
         r = self.rect
         x, y = self.pos
+        vx, vy = self.vel # !
         if not cv.rect.colliderect(r):
             if cv.canvas:
                 dx, dy = cv.rect.topleft
@@ -385,8 +377,8 @@ class BaseSprite(Graphic):
             if w & 5: # HORIZONTAL | REMOVE_X
                 d = r.width + cv.width
                 wrapX = True
-                if r.right < 0: x += d
-                elif r.left >= cv.width: x -= d
+                if r.right < 0 and vx <= 0: x += d
+                elif r.left >= cv.width and vx >= 0: x -= d
                 else: wrapX = False
                 if wrapX and (w & 4):
                     self.remove()
@@ -395,8 +387,8 @@ class BaseSprite(Graphic):
             if w & 10: # VERTICAL | REMOVE_Y
                 wrapY = True
                 d = r.height + cv.height
-                if r.bottom < 0: y += d
-                elif r.top >= cv.height: y -= d
+                if r.bottom < 0 and vy <= 0: y += d
+                elif r.top >= cv.height and vy >= 0: y -= d
                 else: wrapY = False
                 if wrapY and (w & 8):
                     self.remove()
@@ -662,14 +654,12 @@ class Canvas(Graphic):
             except: pass
         return obj
 
-    def filter(self, *args, **kwargs):
-        "Generate a sequence of items that match the search criteria"
+    def instOf(self, cls):
+        "Yield all instance of the specified Graphics class"
         for g in self:
-            if g.match(*args, **kwargs): yield g
+            if isinstance(g, cls): yield g
 
-    def sprites(self, *args, **kwargs):
-        for g in self.filter(*args, **kwargs):
-            if isinstance(g, BaseSprite): yield g
+    def sprites(self): return self.instOf(BaseSprite)
 
 
 class Sketch(Canvas):
@@ -799,7 +789,6 @@ class Sketch(Canvas):
                     if ev.type == pygame.VIDEORESIZE and ev.size != self.size:
                         self.resize(ev.size)
                         if hasattr(self, "onresize"): self.onresize(ev)
-#                        self.bubble("onresize", ev)
                     try: self.evMgr.dispatch(ev)
                     except: logError()
                 self._clock.tick(self.frameRate)

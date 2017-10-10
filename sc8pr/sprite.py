@@ -83,7 +83,6 @@ def collide_rect_mask(left, right):
     return collide_rect(left, right) and collide_mask(left, right)
 
 def collide_rect_circ(left, right):
-    print(left.rect, right.rect)
     return collide_rect(left, right) and collide_circle(left, right)
 
 
@@ -180,7 +179,7 @@ def elasticCircles(mass1, mass2):
 
 def physics(sk, model=elasticCircles):
     "Update colliding masses on a pair-wise basis; call oncollide handlers"
-    masses = list(sk.sprites("mass"))
+    masses = [m for m in sk if isinstance(m, BaseSprite) and hasattr(m, "mass")]
     coll = []
     n = len(masses)
     for m1 in range(n-1):
