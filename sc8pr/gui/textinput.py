@@ -82,7 +82,6 @@ class TextInput(Text):
         if u in ("\n", "\r", "\t"):
             self.blur()
             return self.onblur(ev)
-#            return self.bubble("onblur", ev)
         d = self.data
         n = len(d)
         cursor = self.cursor
@@ -119,7 +118,6 @@ class TextInput(Text):
         return (font.size(d[:i])[0] + font.size(d[:i+1])[0]) // 2
 
     def onclick(self, ev):
-#        if not self.focussed: self.bubble("onfocus", ev)
         self.startCursor()
         x = self.relXY(ev.pos)[0] - self.padding
         n = len(self.data)
@@ -129,4 +127,3 @@ class TextInput(Text):
 
     def onblur(self, ev):
         if not self.data: self.stale = True
-#        self.bubble("onaction", ev)

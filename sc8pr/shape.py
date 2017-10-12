@@ -17,7 +17,7 @@
 
 
 from random import random
-from math import hypot, ceil, atan2
+from math import hypot, ceil, atan2, sqrt
 import pygame
 from sc8pr import Graphic, BaseSprite
 from sc8pr.util import rgba, hasAny
@@ -93,6 +93,23 @@ class Circle(Shape):
         "Determine if the point is within the circle; do not account for canvas offset"
         return dist(self.pos, pos) < self.radius
 
+    def intersectCircle(self, other):
+        "Find the intersection(s) of two circles as list of points"
+        R = self.radius
+        r = other.radius
+        d = dist(self.pos, other.pos)
+        if d > r + R or d == 0 or d < abs(r - R): return []
+        r2 = r * r
+        x = (d*d + r2 - R*R) / (2*d)
+        ux, uy = delta(self.pos, other.pos, 1)
+        x0, y0 = other.pos
+        x0 += x * ux
+        y0 += x * uy
+        if x < r:
+            y = sqrt(r2 - x*x)
+            return [(x0 - y * uy, y0 + y * ux), (x0 + y * uy, y0 - y * ux)]
+        else: return [(x0, y0)]
+
 
 class Line(Shape):
     resolution = 1e-10
@@ -109,8 +126,14 @@ class Line(Shape):
             uy = vector
         else: ux, uy = vector
         self._size = abs(ux), abs(uy)
-        self.length = u = hypot(ux, uy)
+        u = hypot(ux, uy)
+        self.length = u #if point else None
         self.u = ux / u, uy / u
+
+    def __repr__(self):
+        if self.length is None: p = " u={}".format(self.u)
+        else: p = ",{}".format(self.point(self.length))
+        return "<{} {}{}>".format(type(self).__name__, self.pos, p)
 
     def point(self, s=0):
         "Return the coordinates of a point on the line"
@@ -277,6 +300,17 @@ class Polygon(Shape):
     def segments(self):
         if not self._segCache: self._segCache = tuple(self._segments())
         return self._segCache
+
+    def intersect(self, other):
+        "Find intersection(s) of polygon with another polygon or line as list of points"
+        pts = []
+        if isinstance(other, Polygon): other = other.segments
+        else: other = other,
+        for s in self.segments:
+            for so in other:
+                pt = s.intersect(so)
+                if pt: pts.append(pt)
+        return pts
 
     def containsPoint(self, pos):
         "Determine if the point is within the polygon; do not account for canvas offset"

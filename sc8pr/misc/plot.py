@@ -134,6 +134,9 @@ class Plot(Renderable):
 
     contains = Image.contains
 
+    def pixelCoords(self, xy):
+        return coordTr(self._coords, self._size)(xy)
+
 
 class PlotSprite(Plot, BaseSprite): pass
 

@@ -40,6 +40,12 @@ def rgba(*args):
     c = list(_rgba(*args))
     return c[0] if len(c) == 1 else c
 
+def hsva(h, s, v=100, a=100):
+    "Create a color from HSVA values"
+    c = pygame.Color(0, 0, 0)
+    c.hsva = h, s, v, a
+    return c
+
 def randPixel(size):
     "Select a pixel randomly"
     if type(size) not in (list, tuple): size = size.size
