@@ -40,8 +40,8 @@ class RobotThread(Thread):
 
     def run(self):
         r = self.robot
+        args = r, id(self)
         if self.log:
-            args = r, id(self)
             print('{} is running in thread {}.'.format(*args), file=stderr)
         try:
             while r.startup: r.sleep()
