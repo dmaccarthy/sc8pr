@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
-
+#
 
 from math import hypot
 from pygame.sprite import collide_mask, collide_rect, collide_circle
