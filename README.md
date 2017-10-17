@@ -16,7 +16,7 @@ For more information, please see the [documentation](http://dmaccarthy.github.io
 # Installation
 
 ```
-pip3 install setuptools wheel
+pip3 install setuptools
 pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
 ```
 
