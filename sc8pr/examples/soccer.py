@@ -16,16 +16,17 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
+if __name__ == "__main__": import _pypath
 from random import uniform
 from sc8pr import Sketch, Canvas, Image, BOTH,\
     LEFT, RIGHT, TOPLEFT, TOPRIGHT, TOP, BOTTOM
 from sc8pr.sprite import Sprite, physics
 from sc8pr.geom import vec2d, polar2d, dist
-from sc8pr.text import Text
+from sc8pr.text import Text, MONO
 from sc8pr.robot import Robot
 from sc8pr.gui.radio import Radio
 from sc8pr.gui.button import TextButton
-from sc8pr.util import sc8prData
+from sc8pr.util import sc8prPath
 
 
 def isGrey(color):
@@ -102,7 +103,8 @@ class Dialog(Canvas):
 class SoccerBall(Sprite):
 
     def __init__(self):
-        img = Image.fromBytes(sc8prData("soccerBall"))
+        img = Image(sc8prPath("/img/ball.png", __file__))
+#        img = Image.fromBytes(sc8prData("soccerBall"))
         super().__init__(img)
         self.config(height = 30, mass = 1, drag = 0.0001, bounce = BOTH)
 
@@ -204,4 +206,4 @@ def main(*brains, **kwargs):
     elif len(brains) == 2: sk.brains = brains
     sk.play("Robot Soccer")
 
-if __name__ == "__main__": main()
+if __name__ == "__main__": main(font=MONO)

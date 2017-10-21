@@ -24,7 +24,7 @@ import pygame
 from pygame.constants import K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE
 from sc8pr import Image, Sketch
 from sc8pr.sprite import Sprite
-from sc8pr.util import sc8prData, logError, rgba, noise, divAlpha
+from sc8pr.util import sc8prData, logError, rgba, noise, divAlpha, hasAlpha
 from sc8pr.geom import vec2d, delta, DEG, dist, sprod, positiveAngle
 from sc8pr.shape import Line, Polygon
 
@@ -291,18 +291,3 @@ def _distToWall(pos, angle, sWidth, w, h):
         line = Line(pos, vector=v)
         pts.extend(walls.intersect(line))
     return min(dist(pos, pt) for pt in pts) if len(pts) else None
-
-# def _distToWall(pos, angle, sWidth, w, h):
-#     "Calculate the distance to the sketch walls in the specified direction"
-#     walls = [(0,0), (w,0), (w,h), (0,h), (0,0)]
-#     walls = [Line(*walls[i:i+2]) for i in range(4)]
-#     d = None
-#     w += h
-#     for n in (-1, 0, 1):
-#         v = vec2d(w, angle + n * sWidth)
-#         pts = [Line(pos, vector=v).intersect(wall) for wall in walls]
-#         try:
-#             d1 = min(dist(pos, pt) for pt in pts if pt is not None)
-#             if d is None or d1 < d: d = d1
-#         except: pass
-#     return 0 if d is None else d

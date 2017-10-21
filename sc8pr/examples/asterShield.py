@@ -16,7 +16,8 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-import json
+if __name__ == "__main__": import _pypath
+import json, os
 from time import time
 from math import pow
 from random import uniform, randint
@@ -29,7 +30,7 @@ from sc8pr.geom import vec2d, delta
 from sc8pr.gui.textinput import TextInput
 from sc8pr.gui.button import TextButton
 
-JSON = __file__.replace(".py", "_scores.json")
+JSON = "asterShield_scores.json"
 
 
 class Ship(Sprite):
@@ -203,9 +204,9 @@ class Game(Sketch):
             self += Text(data=s).config(anchor=RIGHT, pos=(x-20, y), **attr)
             self += Text(data=name).config(anchor=LEFT, pos=(x, y), **attr)
             y += self[-1].height + 8
-        okay = TextButton.okay((w/8, h/10))
+        okay = TextButton.okay((w/8, h/10)).bind(onclick=restart)
         self += okay.config(pos=(self.center[0], 0.9 * h), anchor=BOTTOM)
-        okay[0].config(font=MONO).bind(onclick=restart)
+        okay[0].config(font=MONO)
 
 
 def restart(gr, ev):
@@ -242,4 +243,8 @@ class Score(Text):
         self.config(data = self.data + n, fontSize=round(self.sketch.height/15))
 
 
-Game((960,540)).play("Asteroid Shield")
+def main():
+    os.chdir(os.path.dirname(__file__))
+    Game((960,540)).play("Asteroid Shield")
+
+if __name__ == "__main__": main()

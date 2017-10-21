@@ -16,6 +16,8 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
+if __name__ == "__main__": import _pypath
+import os
 from sc8pr import Sketch, Image, Graphic
 from sc8pr.shape import Line
 from sc8pr.sprite import Sprite
@@ -76,6 +78,8 @@ def ondraw(game):
         if TkDialog(bool, msg + "!\nPlay again?", TITLE).run(): startGame(game)
         else: game.quit = True
 
-          
-# Run the game
-Sketch((340,340)).bind(ondraw).play(TITLE)
+def main():
+    os.chdir(os.path.dirname(__file__))
+    Sketch((340,340)).bind(ondraw).play(TITLE)
+
+if __name__ == "__main__": main()

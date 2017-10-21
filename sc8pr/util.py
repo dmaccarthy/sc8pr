@@ -21,9 +21,9 @@ from random import randint
 from traceback import format_exc
 from zipfile import ZipFile
 
-def sc8prPath(rel=""):
+def sc8prPath(rel="", file=__file__):
     "Return path to sc8pr folder"
-    path = os.path.dirname(__file__)
+    path = os.path.dirname(file)
     if rel: path += "/" + rel
     return os.path.normpath(path)
 

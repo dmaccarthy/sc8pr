@@ -17,6 +17,7 @@
 
 "A simulation of the electric force (Coulomb's Law) between two spheres"
 
+if __name__ == "__main__": import _pypath
 from math import hypot, asin, degrees
 from random import uniform
 from sc8pr import Sketch, Canvas, Image, BOTTOM, TOPRIGHT
@@ -135,4 +136,4 @@ Blue:
  q = {:.3f} μC"""
     TkDialog(None, msg.format(sk.mass, sk.q1, sk.q2), "Electric Force").runAlone()
 
-main()
+if __name__ == "__main__": main()

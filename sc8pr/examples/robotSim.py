@@ -16,6 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
+if __name__ == "__main__": import _pypath
 from math import sin, pi
 from random import randint, uniform, choice
 from sc8pr import Sketch, Image, Canvas, BOTH
@@ -24,22 +25,31 @@ from sc8pr.util import rgba, randPixel
 from sc8pr.robot import Robot
 from sc8pr.sprite import physics
 from sc8pr.misc.plot import Plot
+
+
+class BrainSketch(Sketch):
+
+	def bindBrain(self, robot):
+		brain = self.brain
+		if brain is None:
+			self.bind(onkeydown=Robot.remote).config(remote=robot)
+		else: robot.bind(brain=brain)
+		return robot
+
 		
-def dumb(r): pass
-
-
-class Arena(Sketch):
+class Arena(BrainSketch):
 
 	def setup(self):
 		self.bg = self.renderBG()
-		robo = Robot(["#ff5050", "#ffd428"]).bind(brain=self.brain)
-		self += robo.config(width=60, pos=(100,400), angle=270, bounce=BOTH)
+		robo = Robot(["#ff5050", "#ffd428"]).config(name="Red")
+		self += self.bindBrain(robo).config(width=60,
+			pos=(100,400), angle=270, bounce=BOTH)
 		robo.gyro = robo.angle
 
 	def renderBG(self): return Image(self.size, "white")
 
 	@classmethod
-	def run(cls, brain=dumb, **kwargs):
+	def run(cls, brain=None, **kwargs):
 		cls((640,480)).config(brain=brain).play("Robot Arena")
 
 
@@ -54,26 +64,25 @@ class Circles(Arena):
 		return cv.snapshot()
 
 
-class Trace(Sketch):
+class Trace(BrainSketch):
 
 	def setup(self):
 		pl = Plot(self.size, [-4, 4, -1.5, 1.5]).config(bg="white")
 		pl.series(sin, param=[-pi, pi, 2 * self.width - 1], marker=("blue", 4))
 		self.bg = pl.snapshot()
-		robo = Robot(["#ff5050", "#ffd428"]).bind(brain=self.brain)
-		self += robo.config(width=60, pos=self.center)
+		robo = Robot(["#ff5050", "#ffd428"]).config(name="Traci")
+		self += self.bindBrain(robo).config(width=60, pos=self.center)
 
 	@staticmethod
-	def run(brain=dumb):
+	def run(brain=None):
 		Trace((640,480)).config(brain=brain).play("Trace the Curve")
 
 
-class ParkingLot(Sketch):
+class ParkingLot(BrainSketch):
 
 	def __init__(self, size, brain):
 		self.brain = brain
 		super().__init__(size)
-#		self.config(weight=1, border="yellow")
 
 	def drawLot(self):
 		n = 3.5
@@ -106,13 +115,9 @@ class ParkingLot(Sketch):
 
 	def ondraw(self): physics(self)
 
-	def bindBrain(self, robot):
-		brain = self.brain
-		if brain is None:
-			self.bind(onkeydown=Robot.remote).config(remote=robot)
-		else: robot.bind(brain=brain)
-		return robot
-
 	@staticmethod
-	def run(brain=dumb):
+	def run(brain=None):
 		ParkingLot((640,360), brain).play("Robot Parking Lot", mode=False)
+
+
+if __name__ == "__main__": ParkingLot.run()
