@@ -34,7 +34,7 @@ def findFont(*args):
         f = f.replace(" ", "").lower()
         if f in fontList: return f
 
-MONO = findFont("Inconsolata", "SourceCodePro", "DroidSansMono", "LucidaConsole", "Monaco", "CourierNew", "Courier")
+MONO = findFont("Inconsolata", "LucidaConsole", "DroidSansMono", "SourceCodePro", "Monaco", "CourierNew", "Courier")
 SERIF = findFont("DroidSerif", "Garamond", "Georgia", "TimesNewRoman", "Times")
 SANS = findFont("Oxygen", "OpenSans", "DroidSans", "Verdana", "Geneva", "Helvetica", "Arial")
 

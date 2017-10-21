@@ -155,7 +155,7 @@ def elasticCircles(mass1, mass2):
     nx = x2 - x1
     ny = y2 - y1
     r = hypot(nx, ny)
-    if r >= mass1.radius + mass2.radius:
+    if r >= mass1.radius + mass2.radius or r == 0:
         return # No contact!
     nx /= r
     ny /= r
