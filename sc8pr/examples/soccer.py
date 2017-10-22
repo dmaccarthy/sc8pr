@@ -26,7 +26,7 @@ from sc8pr.text import Text, MONO
 from sc8pr.robot import Robot
 from sc8pr.gui.radio import Radio
 from sc8pr.gui.button import TextButton
-from sc8pr.util import sc8prPath
+from sc8pr.util import resolvePath
 
 
 def isGrey(color):
@@ -103,8 +103,7 @@ class Dialog(Canvas):
 class SoccerBall(Sprite):
 
     def __init__(self):
-        img = Image(sc8prPath("/img/ball.png", __file__))
-#        img = Image.fromBytes(sc8prData("soccerBall"))
+        img = Image(resolvePath("img/ball.png", __file__))
         super().__init__(img)
         self.config(height = 30, mass = 1, drag = 0.0001, bounce = BOTH)
 

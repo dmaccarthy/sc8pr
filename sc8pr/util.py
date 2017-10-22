@@ -16,16 +16,17 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-import sys, os, zlib, struct, pygame
+import sys, zlib, struct, pygame
 from random import randint
 from traceback import format_exc
 from zipfile import ZipFile
+from pathlib import Path
 
-def sc8prPath(rel="", file=__file__):
-    "Return path to sc8pr folder"
-    path = os.path.dirname(file)
-    if rel: path += "/" + rel
-    return os.path.normpath(path)
+def resolvePath(rel, start=__file__, isDir=False):
+    "Return an absolute path relative to a starting file or folder"
+    p = Path(start)
+    if not isDir: p = p.parent
+    return str(p.joinpath(rel).resolve())
 
 def _rgba(*args):
     "Generate a sequence of pygame.Color instances"
@@ -80,7 +81,7 @@ def zipData(archive, *args):
     with ZipFile(archive) as zf:
         for a in args: yield(zf.read(a))
 
-def sc8prData(*args, archive=sc8prPath("sc8pr.data")):
+def sc8prData(*args, archive=resolvePath("sc8pr.data")):
     "Read data from a zipfile"
     t = list(zipData(archive, *args))
     return t if len(args) > 1 else t[0]
@@ -114,8 +115,6 @@ def style(srf, bg=None, border=(0,0,0), weight=0, padding=0):
 def drawBorder(srf, color=(0,0,0), weight=1):#, r=None):
     "Draw a border around the edges of the surface"
     r0 = srf.get_clip()
-#    r0 = pygame.Rect((0, 0), srf.get_size())
-#    if r is None: r = r0
     w, h = r0.size
     x, y = r0.topleft
     hor = w, weight

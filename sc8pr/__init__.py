@@ -36,7 +36,7 @@ RIGHT = 6
 BOTTOMLEFT = 8
 BOTTOM = 9
 BOTTOMRIGHT = 10
-ALL = 15
+#ALL = 15
 
 # Other constants
 HORIZONTAL = 1
@@ -183,11 +183,12 @@ class Graphic:
 
 # Canvas interaction
 
-    def setCanvas(self, cv):#, before=None):
+    def setCanvas(self, cv):
         "Add the object to a canvas"
         self.remove()
         self.canvas = cv
         cv._items.append(self)
+        return self
 
     def remove(self, deleteRect=True):
         "Remove the instance from its canvas"
@@ -222,7 +223,9 @@ class Graphic:
 
     def blur(self):
         sk = self.sketch
-        sk.evMgr.focus = sk
+        ev = sk.evMgr
+        if ev.focus is self: ev.focus = sk
+        return self
 
     @property
     def path(self):
