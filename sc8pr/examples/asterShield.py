@@ -73,10 +73,15 @@ class Missile(Sprite):
     def __init__(self, ship):
         "Fire a new missile from the ship"
         super().__init__(self.original)
+
+        # Initial position of missile
         u = vec2d(1.3 * ship.radius, ship.angle)
         pos = ship.pos[0] + u[0], ship.pos[1] + u[1]
-        u = delta(u, mag=4)
+
+        # Initial velocity of missile
+        u = delta(u, mag=ship.sketch.height/135)
         vel = ship.vel[0] + u[0], ship.vel[1] + u[1]
+
         self.config(width=ship.width/4, pos=pos,
             vel=vel, spin=ship.spin, angle=ship.angle)
 
@@ -86,13 +91,18 @@ class Asteroid(Sprite):
     def __init__(self, sk):
         "Create a new asteroid"
         super().__init__(self.original)
+       
+        # Random size and mass
         m = uniform(1, 100)
         w = pow(m, 1/3) / 100 * sk.width
+
+        # Random position and velocity
+        pos = randint(0, sk.width - 1), -w
         vel = uniform(0.25, 1) * sk.asteroidSpeed
         vel = vec2d(vel, uniform(10, 170))
-        pos = randint(0, sk.width - 1), -w
-        self.config(width=w, wrap=BOTH,
-            pos=pos, vel=vel, spin=uniform(-2,2), mass=m)
+
+        self.config(width=w, wrap=BOTH, pos=pos,
+            vel=vel, spin=uniform(-2,2), mass=m)
 
 
 class Game(Sketch):
@@ -117,7 +127,7 @@ class Game(Sketch):
 
         # Start the game
         self.playerName = None
-        self.score = Score().config(data=0)
+        self.score = Score()
         self.collisions = Collisions(self)
         self.start()
 
@@ -139,16 +149,18 @@ class Game(Sketch):
 
             # Asteroid collisions
             physics(self)
-            n = self.collisions.between(self.instOf(Missile), self.instOf(Asteroid), True)
-            n = len(n[1])
+            c = self.collisions
+            m, a = c.between(self.instOf(Missile), self.instOf(Asteroid))
 
-            # Update score
-            if n:
-                p.hits += n
-                self.score.add(n * round(10 + 40 * p.hits / p.fired))
+            # Remove sprites and update score
+            if a:
+                self -= m + a
+                a = len(a)
+                p.hits += a
+                self.score.add(a * round(10 + 40 * p.hits / p.fired))
 
             # Detect ship collision
-            if self.collisions.collisions(p, asBool=True):
+            if c.involving(p, asBool=True):
                 self.gameover()
 
             # Create new asteroids
@@ -158,7 +170,7 @@ class Game(Sketch):
     @property
     def asteroidSpeed(self):
         "Increase asteroid velocity as play time increases"
-        return 2 + (time() - self.time) / 60
+        return (2 + (time() - self.time) / 60) * self.height / 540
 
     @property
     def frequency(self):
@@ -236,8 +248,8 @@ class Score(Text):
 
     def __init__(self):
         super().__init__()
-        self.config(anchor=TOPLEFT,
-            pos=(8,0), color="red", font=MONO, fontSize=36)
+        self.config(anchor=TOPLEFT, pos=(8,0),
+            color="red", font=MONO, fontSize=36)
 
     def add(self, n):
         self.config(data = self.data + n, fontSize=round(self.sketch.height/15))

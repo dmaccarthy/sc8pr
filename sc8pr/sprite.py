@@ -97,7 +97,7 @@ class Collisions:
         if convert and type(g) not in (tuple, list, set): g = list(g)
         return g
 
-    def collisions(self, sprite, group=None, asBool=False):
+    def involving(self, sprite, group=None, asBool=False):
         "Detect whether a sprite is colliding with any of the specified sprites"
         coll = {}
         for s in self._group(group):
@@ -113,27 +113,23 @@ class Collisions:
         group2 = self._group(group2, True)
         collMap = {}
         for s in self._group(group1):
-            for k, v in self.collisions(s, group2).items():
+            for k, v in self.involving(s, group2).items():
                 collMap[(s,k)] = v
         return collMap
 
-    def between(self, group1, group2=None, remove=False):
+    def between(self, group1, group2=None):
         "Detect collisions between two groups and return a 2-tuple of lists"
         collMap = self.betweenMap(group1, group2)
-        s1 = list(s[0] for s in collMap)
-        s2 = list(s[1] for s in collMap)
-        if remove:
-            for s in s1 + s2: s.remove()
-        return s1, s2
+        return [list(s[i] for s in collMap) for i in (0,1)]
 
-    def among(self, group=None, remove=False):
+    def among(self, group=None):
         "Return a map of collisions within a group of sprites"
         collMap = {}
         group = self._group(group, True)
         n = len(group)
         for i in range(n):
             s = group[i]
-            c = self.collisions(s, group[i+1:])
+            c = self.involving(s, group[i+1:])
             if c:
                 if s not in collMap: collMap[s] = {}
                 m = collMap[s]
@@ -141,8 +137,6 @@ class Collisions:
                     m[k] = v
                     if k not in collMap: collMap[k] = {s:True}
                     else: collMap[k][s] = True
-        if remove:
-            for k in collMap: k.remove()
         return collMap
 
 
@@ -150,8 +144,8 @@ def elasticCircles(mass1, mass2):
     "Set final velocities for an elastic collision between two circles"
 
     # Calculate the normal vector at contact point
-    x1, y1 = mass1.rect.center #pos
-    x2, y2 = mass2.rect.center #pos
+    x1, y1 = mass1.rect.center
+    x2, y2 = mass2.rect.center
     nx = x2 - x1
     ny = y2 - y1
     r = hypot(nx, ny)
