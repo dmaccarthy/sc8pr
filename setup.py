@@ -15,7 +15,7 @@ setup(
 
     # Author
     author = "David MacCarthy",
-    author_email = "devwigs@gmail.com",
+    author_email = "sc8pr.py@gmail.com",
 
     # Dependencies
     install_requires = ["pygame(>=1.9.1)"],
