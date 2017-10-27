@@ -15,29 +15,39 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
+"A collection of robotics simulations for sc8pr 2.0"
+
 
 if __name__ == "__main__": import _pypath
 from math import sin, pi
-from random import randint, uniform, choice
+from random import randint, uniform, choice, shuffle
 from sc8pr import Sketch, Image, Canvas, BOTH
+from sc8pr.geom import dist 
 from sc8pr.shape import Circle 
-from sc8pr.util import rgba, randPixel 
-from sc8pr.robot import Robot
-from sc8pr.sprite import physics
+from sc8pr.util import rgba, randPixel
+from sc8pr.robot import Robot, RobotThread
+from sc8pr.sprite import physics, Collisions
 from sc8pr.misc.plot import Plot
 
 
 class BrainSketch(Sketch):
+	"Sketch class that binds a robot brain OR attaches a robot remote control"
+
+	@staticmethod
+	def sensorBrain(robot):
+		"Update sensors only"
+		while robot.active: robot.updateSensors()
 
 	def bindBrain(self, robot):
 		brain = self.brain
 		if brain is None:
 			self.bind(onkeydown=Robot.remote).config(remote=robot)
-		else: robot.bind(brain=brain)
-		return robot
+			brain = self.sensorBrain
+		return robot.bind(brain=brain)
 
 		
 class Arena(BrainSketch):
+	"Empty arena for robot challenges"
 
 	def setup(self):
 		self.bg = self.renderBG()
@@ -54,6 +64,7 @@ class Arena(BrainSketch):
 
 
 class Circles(Arena):
+	"Arena painted in random colors"
 
 	def renderBG(self, n=50):
 		size = self.size
@@ -65,6 +76,7 @@ class Circles(Arena):
 
 
 class Trace(BrainSketch):
+	"Sketch that implements a follow-the-blue-curve challenge"
 
 	def setup(self):
 		pl = Plot(self.size, [-4, 4, -1.5, 1.5]).config(bg="white")
@@ -79,6 +91,7 @@ class Trace(BrainSketch):
 
 
 class ParkingLot(BrainSketch):
+	"Sketch that implements a robot parking challenge"
 
 	def __init__(self, size, brain):
 		self.brain = brain
@@ -118,6 +131,100 @@ class ParkingLot(BrainSketch):
 	@staticmethod
 	def run(brain=None):
 		ParkingLot((640,360), brain).play("Robot Parking Lot", mode=False)
+
+
+RADIUS = 20  # Determines robot size
+
+class Party(BrainSketch):
+	"Sketch that implements a robot-mingling party"
+	friends = 12
+
+	def setup(self):
+		RobotThread.log = False
+		self.config(bg="white", border="blue", weight=1)
+		for i in range(self.friends): self += PartyRobot(self)
+		RobotThread.log = True
+		robo = Robot(["#ff5050", "#ffd428"])
+		self += self.bindBrain(robo).config(width=2*RADIUS, pos=self.center,
+			mass=1, bounce=BOTH, greet=None, name="Red")
+		for r in self:
+			while min(dist(r.pos, s.pos) for s in self if s is not r) < 2 * r.radius:
+				r.pos = r.randPos(self)
+		self.cd = Collisions(self)
+
+	def ondraw(self):
+		robot = self[-1]
+		if robot in physics(self):
+			robot.greet = sorted(t.name for t in self.cd.involving(robot))[0]
+			
+
+	@staticmethod
+	def run(brain=None):
+		Party((640,480)).config(brain=brain).play("Robot Party")
+
+
+class PartyRobot(Robot):
+	"Robots at the party"
+	restart = 0
+	bounce = BOTH
+	mass = 1
+
+	names = ['Liam', 'Olivia', 'Benjamin', 'Emma', 'Lucas', 'Sophia', 'Oliver',
+		'Ava', 'Noah', 'Emily', 'William', 'Charlotte', 'Ethan', 'Amelia', 'Jack',
+		'Abigail', 'Lincoln', 'Chloe', 'Owen', 'Aria', 'Jacob', 'Grace', 'Isabella',
+		'Alexander', 'James', 'Logan', 'Avery', 'Elizabeth', 'Hunter', 'Lily',
+		'Nathan', 'Hannah', 'Carter', 'Ella', 'Grayson', 'Henry', 'Ellie', 'Quinn',
+		'Scarlett', 'Isaac', 'Mason', 'Anna', 'Jackson', 'Harper', 'Gabriel',
+		'Hailey', 'Daniel', 'Luke', 'Brooklyn', 'Evelyn', 'Samuel', 'Wyatt', 'Isla',
+		'Mia', 'Connor', 'Sarah', 'Hudson', 'Claire', 'Bennett', 'Elijah', 'Madison',
+		'Mila', 'Joshua', 'Victoria', 'Thomas', 'Addison', 'Caleb', 'Emmett',
+		'Natalie', 'Zoey', 'Adam', 'Hazel', 'Matthew', 'Eva', 'Maya', 'David',
+		'Zachary', 'Isabelle', 'Michael', 'Sadie', 'Sophie', 'Aiden', 'Jaxon',
+		'Everly', 'Sofia', 'Violet', 'Ryan', 'Austin', 'Jayden', 'John', 'Ivy',
+		'Paisley', 'Max', 'Brielle', 'Zoe', 'Parker', 'Levi', 'Aubrey', 'Leo',
+		'Theodore', 'Nora', 'Audrey', 'Asher', 'Stella', 'Cooper', 'Sebastian',
+		'Aurora', 'Alice', 'Dominic', 'Gavin', 'Nolan', 'Piper', 'Kinsley', 'Julia',
+		'Naomi', 'Ruby', 'Willow', 'Joseph', 'Eli', 'Blake', 'Harrison', 'Ryker',
+		'Sawyer', 'Layla', 'Samantha', 'Mackenzie', 'Brody', 'Clara', 'Leah', 'Maria',
+		'Penelope', 'Riley', 'Dylan', 'Evan', 'Marcus', 'Andrew', 'Charles', 'Ryder',
+		'Lillian', 'Alexandra']
+	shuffle(names)
+	names = names[:Party.friends]
+
+	def __init__(self, sk):
+		super().__init__([False, False])
+		self.config(width=2*RADIUS, pos=sk.center,
+			angle=uniform(0,360), name=self.names[len(sk)])
+
+	def randPos(self, sk):
+		w, h = sk.size
+		return randint(RADIUS, w-1-RADIUS), randint(RADIUS, h-1-RADIUS)
+
+	def randMotors(self):
+		"Randomize the motors"
+		f = uniform(-1, 1)
+		d = uniform(-0.2, 0.2)
+		self.motors = f + d, f - d
+	
+	def randStart(self):
+		"Schedule motor randomization"
+		self.restart = self.uptime + uniform(3, 7)
+
+	def oncollide(self):
+		self.randStart()
+		self.collision = False
+		self.motors = 0
+
+	def onbounce(self, u): self.oncollide()
+
+	def brain(self):
+		"Robot control function"
+		self.randMotors()
+		while self.active:
+			self.updateSensors()
+			if self.restart < self.uptime:
+				self.randStart()
+				self.randMotors()
 
 
 if __name__ == "__main__": ParkingLot.run()

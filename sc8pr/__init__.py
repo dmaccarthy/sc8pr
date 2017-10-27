@@ -534,7 +534,10 @@ class Canvas(Graphic):
         return bg.avgColor if isinstance(bg, Image) else bg
 
     def paint(self, p1, p2, c=(255,0,0), w=4):
-        cs = self.bg._srf
+        try: cs = self.bg._srf
+        except AttributeError:
+            msg = "painting on canvas requires a background image"
+            raise AttributeError(msg)
         key, scaled = cs.scaled
         if scaled is cs.original:
             scaled = scaled.copy()
