@@ -19,7 +19,7 @@
 import pygame
 
 class EventManager:
-    "A class for inspecting and dispatching events from the event queue"
+    "A class for inspecting and dispatching events"
 
     def __init__(self, sk):
         self.sk = sk
@@ -38,7 +38,7 @@ class EventManager:
 
         # Trigger sk.onevent
         if hasattr(sk, "onevent"):
-            if sk.onevent(ev): return #  is False
+            if sk.onevent(ev): return
 
         # Get event target and handler name
         path = sk.objectAt(sk.mouse.pos).path

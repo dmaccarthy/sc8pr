@@ -22,7 +22,7 @@ import pygame
 import pygame.display as _pd
 from pygame.transform import flip as _pyflip
 from sc8pr._event import EventManager
-from sc8pr.geom import transform2d, transform2dGen, positiveAngle, delta
+from sc8pr.geom import transform2d, positiveAngle, delta
 from sc8pr.util import CachedSurface, style, logError, sc8prData,\
     tile, rgba, drawBorder
 
@@ -36,9 +36,8 @@ RIGHT = 6
 BOTTOMLEFT = 8
 BOTTOM = 9
 BOTTOMRIGHT = 10
-#ALL = 15
 
-# Other constants
+# Edge behaviour constants
 HORIZONTAL = 1
 VERTICAL = 2
 BOTH = 3
@@ -51,7 +50,7 @@ class Graphic:
     """Base class for graphics objects. Subclasses may provide a 'draw' method
     that draws the graphic onto the canvas as described by the clipping region
     of the surface passed as an argument. Alternatively, the subclass may
-    provide a 'surface' property which can be drawn by Graphic.draw."""
+    provide a 'image' property which gives a surface that Graphic.draw can use."""
     autoPositionOnResize = True
     _avgColor = None
     canvas = None
@@ -60,20 +59,18 @@ class Graphic:
     focusable = False
     ondraw = None
     effects = None
-#     _shapeModel = (-0.5,-0.5), (0.5,-0.5), (0.5,0.5), (-0.5,0.5)
-#     _shapeCache = None,
 
-    def __repr__(self):
+    def __str__(self):
         name = self.name if hasattr(self, "name") else id(self)
         return "<{} '{}'>".format(type(self).__name__, name)
 
     def config(self, **kwargs):
         "Set multiple instance properties"
-        for k, v in kwargs.items(): setattr(self, k, v)
+        for i in kwargs.items(): setattr(self, *i)
         return self
 
     def bind(self, *args, **kwargs):
-        "Bind a function to an instance as one of its methods"
+        "Bind functions to an instance as methods"
         for f in args:
             setattr(self, f.__name__, f.__get__(self, self.__class__))
         for n, f in kwargs.items():
@@ -84,21 +81,6 @@ class Graphic:
 
     @property
     def avgColor(self): return self._avgColor
-
-#     @property
-#     def polygon(self):
-#         s = self._shapeModel
-#         return None if type(s) in (int, float) else s
-# 
-#     @polygon.setter
-#     def polygon(self, pts):
-#         self._shapeModel = pts
-#         self._shapeCache = None,
-# 
-#     def circle(self, r=1):
-#         self._shapeModel = r
-#         self._shapeCache = None,
-#         return self
 
 # Metrics
 
@@ -115,12 +97,11 @@ class Graphic:
 
     @property
     def radius(self): return sum(self.size) / 4
-#         s = self._shapeModel
-#         return r * s if type(s) in (int, float) else r
 
     @property
     def aspectRatio(self):
-        return self.size[0] / self.size[1]
+        size = self.size
+        return size[0] / size[1]
 
     @size.setter
     def size(self, size): self.resize(size)
@@ -136,7 +117,7 @@ class Graphic:
     @property
     def center(self):
         size = self.size
-        return size[0] / 2, size[1] / 2
+        return (size[0] - 1) / 2, (size[1] - 1) / 2
 
     def blitPosition(self, offset, blitSize):
         "Return the position (top left) to which the graphic is drawn"
@@ -243,7 +224,6 @@ class Graphic:
 
     @property
     def timeFactor(self):
-        "Get the sketch timeFactor"
         sk = self.sketch
         return sk.timeFactor if (sk and sk.realTime) else 1
 
@@ -351,7 +331,7 @@ class BaseSprite(Graphic):
 
     def circleBounce(self, cv):
         "Bounce the sprite from the edges of the canvas"
-        x, y = delta(self.rect.center, cv.rect.topleft) #self.pos
+        x, y = delta(self.rect.center, cv.rect.topleft)
         r = self.radius
         vx, vy = self.vel
         w, h = cv.size
@@ -370,7 +350,7 @@ class BaseSprite(Graphic):
         "Wrap sprite when it leaves the canvas"
         r = self.rect
         x, y = self.pos
-        vx, vy = self.vel # !
+        vx, vy = self.vel
         if not cv.rect.colliderect(r):
             if cv.canvas:
                 dx, dy = cv.rect.topleft
@@ -430,7 +410,7 @@ class BaseSprite(Graphic):
         self.kinematics()
         if self._pen:
             c, w, pos = self._pen
-            if pos: cv.paint(pos, self.pos, c, w)
+            if pos: cv._paint(pos, self.pos, c, w)
             self._pen = c, w, self.pos
 
     def resize(self, size):
@@ -442,8 +422,8 @@ class Image(Graphic):
     "A class representing scaled and rotated images"
     angle = 0
 
-    def __init__(self, srf=(1,1), bg=None):
-        self._srf = CachedSurface(srf, bg)
+    def __init__(self, data=(1,1), bg=None):
+        self._srf = CachedSurface(data, bg)
         self._size = self._srf.get_size()
 
     @property
@@ -493,7 +473,7 @@ class Canvas(Graphic):
     _border = rgba("black")
     weight = 0
 
-    def __init__(self, image=None, bg=None):
+    def __init__(self, image, bg=None):
         if type(image) is str: bg = Image(image, bg)
         self._size = bg.size if isinstance(bg, Image) else image
         self.bg = bg
@@ -533,7 +513,7 @@ class Canvas(Graphic):
         bg = self.bg
         return bg.avgColor if isinstance(bg, Image) else bg
 
-    def paint(self, p1, p2, c=(255,0,0), w=4):
+    def _paint(self, p1, p2, c=(255,0,0), w=4):
         try: cs = self.bg._srf
         except AttributeError:
             msg = "painting on canvas requires a background image"
@@ -566,7 +546,7 @@ class Canvas(Graphic):
         return self
 
     def __isub__(self, gr):
-        "Remove items from the canvas"
+        "Remove item(s) from the canvas"
         if isinstance(gr, Graphic):
             if gr in self: gr.remove()
             else: raise ValueError("Cannot remove {} from {}".format(gr, self))
@@ -576,11 +556,11 @@ class Canvas(Graphic):
 
     append = __iadd__
 
-    def purge(self):
-        "Remove all content recursively"
+    def purge(self, recursive=False):
+        "Remove all content"
         while len(self._items):
             gr = self[-1]
-            if isinstance(gr, Canvas): gr.purge()
+            if recursive and isinstance(gr, Canvas): gr.purge()
             gr.remove()
 
     def resize(self, size):
@@ -609,7 +589,7 @@ class Canvas(Graphic):
             if isinstance(self._bg, Image):
                 self._bg.config(size=self._size)
                 if isSketch and self.blitRegions is not None:
-                    self.drawBlitRegions(srf)
+                    self._drawBlitRegions(srf)
                 else: srf.blit(self._bg.image, r.topleft)
             elif self._bg: srf.fill(self._bg)
 
@@ -617,7 +597,7 @@ class Canvas(Graphic):
         if mode & 2:
             br = isSketch and self.blitRegions is not None
             if br: self.blitRegions = []
-            for g in list(self):  # Use list to modify while iterating
+            for g in list(self):
                 srf.set_clip(self.clipRect)
                 grect = g.draw(srf)
                 g.rect = grect
@@ -625,7 +605,7 @@ class Canvas(Graphic):
                 if g.ondraw and g.ondraw(): g.remove()
 
         # Draw border
-        if self.weight: drawBorder(srf, self.border, self.weight) #, r)
+        if self.weight: drawBorder(srf, self.border, self.weight)
 
         srf.set_clip(None)
         return r
@@ -692,6 +672,30 @@ class Sketch(Canvas):
 
     def onquit(self, ev): self.quit = True
 
+    @property
+    def bg(self): return self._bg
+
+    @bg.setter
+    def bg(self, bg):
+        self._setBg(bg)
+        if self.fixedAspect and hasattr(bg, "aspectRatio"):
+            self.fixedAspect = bg.aspectRatio
+        if self.blitRegions is not None:
+            self.blitRegions = [pygame.Rect((0,0), self._size)]
+
+    @property
+    def cursor(self): return pygame.mouse.get_cursor()
+
+    @cursor.setter
+    def cursor(self, c):
+        if c is True: c = pygame.cursors.arrow
+        elif c is False: c = (8,8), (5,4), (0,0,0,0,0,0,0,0), (0,0,0,0,0,0,0,0)
+        pygame.mouse.set_cursor(*c)
+
+    def save(self, fn=None):
+        if fn is None: fn = "save/img{:05d}.png".format(self.frameCount)
+        pygame.image.save(self.image, fn)
+
 # Resizing methods
 
     @property
@@ -743,23 +747,14 @@ class Sketch(Canvas):
         if self.blitRegions is not None:
             self.blitRegions = [pygame.Rect((0,0), self._size)]
 
-    def drawBlitRegions(self, srf):
-        "Redraw the background image into the blitRegions only"
-        sRect = self.rect
-        br = self.blitRegions
-        drawAll = len(br) == 0 or br[0] == sRect
-        if drawAll: self.blitRegions = [sRect]
-        for r in self.blitRegions:
-            blitRect = r.clip(sRect)
-            try: # Subsurface may be outside drawing surface
-                srf.blit(self._bg.image.subsurface(blitRect), blitRect.topleft)
-            except: pass 
+# Drawing methods
 
     def play(self, caption="sc8pr", icon=None, mode=True):
         "Initialize pygame and run the main drawing / event handling loop"
 
         # Initialize
         pygame.init()
+        self._clock = pygame.time.Clock()
         pygame.key.set_repeat(400, 80)
         _pd.set_caption(caption)
         try:
@@ -773,7 +768,8 @@ class Sketch(Canvas):
         self._mode = mode
         self.image = _pd.set_mode(self._size, mode)
         self.key = None
-        self.mouse = pygame.event.Event(pygame.USEREVENT, code=None, pos=(0,0), description="Sketch startup")
+        self.mouse = pygame.event.Event(pygame.USEREVENT,
+            code=None, pos=(0,0), description="Sketch startup")
 
         # Run setup
         try:
@@ -784,47 +780,38 @@ class Sketch(Canvas):
         except: logError()
 
         # Drawing/event loop
-        self._clock = pygame.time.Clock()
         while not self.quit:
+            self.frameCount += 1
             try:
-                self.frameCount += 1
                 self.draw()
+                self._clock.tick(self.frameRate)
                 _pd.flip()
                 if self.ondraw: self.ondraw()
-                for ev in pygame.event.get():
-                    if ev.type == pygame.VIDEORESIZE and ev.size != self.size:
-                        self.resize(ev.size)
-                        if hasattr(self, "onresize"): self.onresize(ev)
-                    try: self.evMgr.dispatch(ev)
-                    except: logError()
-                self._clock.tick(self.frameRate)
+                self._evHandle()
             except: logError()
 
         pygame.quit()
         return self
 
-# Other methods
+    def _evHandle(self):
+        "Handle events in the pygame event queue"
+        for ev in pygame.event.get():
+            try:
+                if ev.type != pygame.VIDEORESIZE:
+                    self.evMgr.dispatch(ev)
+                elif ev.size != self.size:
+                    self.resize(ev.size)
+                    if hasattr(self, "onresize"): self.onresize(ev)
+            except: logError()
 
-    def save(self, fn=None):
-        if fn is None: fn = "save/img{:05d}.png".format(self.frameCount)
-        pygame.image.save(self.image, fn)
-
-    @property
-    def bg(self): return self._bg
-
-    @bg.setter
-    def bg(self, bg):
-        self._setBg(bg)
-        if self.fixedAspect and hasattr(bg, "aspectRatio"):
-            self.fixedAspect = bg.aspectRatio
-        if self.blitRegions is not None:
-            self.blitRegions = [pygame.Rect((0,0), self._size)]
-
-    @property
-    def cursor(self): return pygame.mouse.get_cursor()
-
-    @cursor.setter
-    def cursor(self, c):
-        if c is True: c = pygame.cursors.arrow
-        elif c is False: c = (8,8), (5,4), (0,0,0,0,0,0,0,0), (0,0,0,0,0,0,0,0)
-        pygame.mouse.set_cursor(*c)
+    def _drawBlitRegions(self, srf):
+        "Redraw the background image into the blitRegions only"
+        sRect = self.rect
+        br = self.blitRegions
+        drawAll = len(br) == 0 or br[0] == sRect
+        if drawAll: self.blitRegions = [sRect]
+        for r in self.blitRegions:
+            blitRect = r.clip(sRect)
+            try: # Subsurface may be outside drawing surface
+                srf.blit(self._bg.image.subsurface(blitRect), blitRect.topleft)
+            except: pass
