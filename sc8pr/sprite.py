@@ -29,7 +29,7 @@ class Sprite(BaseSprite):
     def __init__(self, image, cols=1, rows=1, flip=0, padding=0):
         # Clone costumes images from existing list
         if type(image) in (list, tuple):
-            tiles = [Image(s.image) for s in image]
+            tiles = [Image(s if type(s) is str else s.image) for s in image]
 
         # Slice spritesheet into individual costumes and make flipped copies
         else: tiles = Image(image).tiles(cols, rows, flip, padding)

@@ -16,6 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
+from sys import stderr
 import pygame.font as pf
 from sc8pr import Renderable, BaseSprite, Image, LEFT, RIGHT
 from sc8pr.util import rgba, hasAny, setAlpha, drawBorder
@@ -23,38 +24,74 @@ from sc8pr.util import rgba, hasAny, setAlpha, drawBorder
 BOLD = 1
 ITALIC = 2
 
-fontCacheSize = 32
-_fontCache = {}
 
-fontList = sorted(pf.get_fonts())
+class Font:
+    cacheSize = 32
+    _sort = None
+    _cache = {}
+    _cacheOrder = []
+    _serif = ("Merriweather", "DroidSerif", "Palatino", "Garamond",
+        "Georgia", "Century", "TimesNewRoman", "Times")
+    _sans = ("MerriweatherSans", "OpenSans", "Arsenal", "Oxygen",
+        "DroidSans", "LucidaSans", "Verdana", "Geneva", "Helvetica", "Arial")
+    _mono = ("SourceCodePro", "Inconsolata", "LucidaConsole",
+        "DroidSansMono", "Monaco", "CourierNew", "Courier")
 
-def findFont(*args):
-    "Find an available font from a sequence of font names"
-    for f in args:
-        f = f.replace(" ", "").lower()
-        if f in fontList: return f
+    @staticmethod
+    def key(name, size=24, style=0):
+        if name and "." not in name:
+            name = name.replace(" ", "").lower()
+        size = round(size)
+        return name, size, style
 
-MONO = findFont("Inconsolata", "LucidaConsole", "DroidSansMono", "SourceCodePro", "Monaco", "CourierNew", "Courier")
-SERIF = findFont("DroidSerif", "Garamond", "Georgia", "TimesNewRoman", "Times")
-SANS = findFont("Oxygen", "OpenSans", "DroidSans", "Verdana", "Geneva", "Helvetica", "Arial")
+    @classmethod
+    def dumpCache(cls): cls._cache.clear()
 
-def _makeKey(font, size, style):
-    "Normalize the (font, size, style) tuple used as _fontCache key"
-    if type(size) is float: size = round(size)
-    return font, size, style
+    @classmethod
+    def get(cls, name, size=24, style=0):
+        if name and type(name) is not str: name = cls.find(*name)
+        key = cls.key(name, size, style)
+        cache = cls._cache
+        if key in cache:
+            font = cache[key]
+        else:
+            font = cls._get(*key)
+            cache[key] = font
+            order = cls._cacheOrder
+            order.append(key)
+            if len(cache) > cls.cacheSize:
+                print("sc8pr.text.Font cache is full! Deleting", order[0], file=stderr)
+                del cache[order[0]]
+                cls._cacheOrder = order[1:]
+        return font
 
-def _loadFont(font, size, style=0, cache=True):
-    "Load a font into the _fontCache"
-    global _fontCache
-    key = _makeKey(font, size, style)
-    keys = _fontCache.keys()
-    if key in keys: return _fontCache[key]
-    try: font = pf.Font(*key[:2])
-    except: font = pf.SysFont(key[0], key[1], style & 1, style & 2)
-    if cache:
-        if len(keys) >= fontCacheSize: del _fontCache[tuple(keys)[0]]
-        _fontCache[key] = font
-    return font
+    @classmethod
+    def _get(cls, name, size, style):
+        if name and "." in name:
+            font = pf.Font(name, size)
+        else:
+            font = pf.SysFont(name, size, style & 1, style & 2)
+        return font
+    
+    @classmethod
+    def installed(cls):
+        if not cls._sort: cls._sort = sorted(pf.get_fonts())
+        return cls._sort
+
+    @classmethod
+    def find(cls, *args):
+        for f in args:
+            f = cls.key(f)[0]
+            if f in Font.installed(): return f
+
+    @staticmethod
+    def mono(): return Font.find(*Font._mono)
+
+    @staticmethod
+    def sans(): return Font.find(*Font._sans)
+
+    @staticmethod
+    def serif(): return Font.find(*Font._serif)
 
 
 class Text(Renderable):
@@ -83,9 +120,7 @@ class Text(Renderable):
 
     def render(self):
         "Render the text as an Image"
-        key = _makeKey(self.font, self.fontSize, self.fontStyle)
-        font = _loadFont(*key)
-#        print(self, key, font)
+        font = Font.get(self.font, self.fontSize, self.fontStyle)
         text = str(self.data).split("\n")
         srfs = [font.render(t, True, self.color) for t in text]
         return self._joinLines(srfs)

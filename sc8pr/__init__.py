@@ -422,7 +422,7 @@ class Image(Graphic):
     "A class representing scaled and rotated images"
     angle = 0
 
-    def __init__(self, data=(1,1), bg=None):
+    def __init__(self, data=(2,2), bg=None):
         self._srf = CachedSurface(data, bg)
         self._size = self._srf.get_size()
 
@@ -605,7 +605,10 @@ class Canvas(Graphic):
                 if g.ondraw and g.ondraw(): g.remove()
 
         # Draw border
-        if self.weight: drawBorder(srf, self.border, self.weight)
+        if mode & 1 and self.weight:
+            try:
+                drawBorder(srf.subsurface(self.clipRect), self.border, self.weight)
+            except: pass
 
         srf.set_clip(None)
         return r
@@ -791,6 +794,8 @@ class Sketch(Canvas):
             except: logError()
 
         pygame.quit()
+        mod = sys.modules.get("sc8pr.text")
+        if mod: mod.Font.dumpCache()
         return self
 
     def _evHandle(self):

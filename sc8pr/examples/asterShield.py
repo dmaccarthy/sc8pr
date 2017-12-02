@@ -24,14 +24,14 @@ from random import uniform, randint
 from pygame.constants import K_UP, K_DOWN, K_LEFT, K_RIGHT
 from sc8pr import Sketch, Image, TOPLEFT, BOTH, RIGHT, LEFT, BOTTOM
 from sc8pr.sprite import Sprite, physics, Collisions
-from sc8pr.text import Text, MONO
+from sc8pr.text import Text, Font
 from sc8pr.util import randPixel, rgba
 from sc8pr.geom import vec2d, delta
 from sc8pr.gui.textinput import TextInput
 from sc8pr.gui.button import TextButton
 
 JSON = "asterShield_scores.json"
-
+MONO = Font.mono()
 
 class Ship(Sprite):
     "The spaceship is controlled by the player using the keyboard"
@@ -234,8 +234,7 @@ class PlayerName(TextInput):
         self.config(font=MONO, color="red",
             promptColor="black", bg="white", padding=8)
 
-    def onblur(self, ev):
-        TextInput.onblur(self, ev)
+    def onaction(self, ev):
         if len(self.data):
             sk = self.sketch
             sk.playerName = self.data
@@ -257,6 +256,6 @@ class Score(Text):
 
 def main():
     os.chdir(os.path.dirname(__file__))
-    Game((960,540)).play("Asteroid Shield")
+    Game((960,540)).play("Asteroid Shield", "img/target.png")
 
 if __name__ == "__main__": main()

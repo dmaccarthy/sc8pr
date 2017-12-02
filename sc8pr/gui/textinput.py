@@ -17,13 +17,15 @@
 
 
 import pygame
-from pygame.constants import K_ESCAPE, K_BACKSPACE, K_LEFT, K_RIGHT, K_DELETE, K_HOME, K_END, KMOD_CTRL, KMOD_ALT
-from sc8pr.text import Text, _makeKey, _loadFont
+from pygame.constants import K_ESCAPE, K_BACKSPACE, K_LEFT, K_RIGHT,\
+    K_DELETE, K_HOME, K_END, KMOD_CTRL, KMOD_ALT
+from sc8pr.text import Text, Font
 from sc8pr.util import style, rgba
 
 
 class TextInput(Text):
-    "Editable text: handles onclick, onblur; triggers onchange"
+    """Editable text GUI control:
+    handles onclick, onkeydown, onblur; triggers onchange, onaction"""
     focusable = True
     cursorTime = 1.0
     cursorOn = 0.35
@@ -57,8 +59,7 @@ class TextInput(Text):
 
     def render(self):
         "Render the text as an Image"
-        key = _makeKey(self.font, self.fontSize, self.fontStyle)
-        font = _loadFont(*key)
+        font = Font.get(self.font, self.fontSize, self.fontStyle)
         if self.prompt and not self.data and self is not self.sketch.evMgr.focus:
             color = self.promptColor
             text = self.prompt
@@ -97,7 +98,6 @@ class TextInput(Text):
         elif cursor < n and k == K_DELETE:
             self.data = d[:cursor] + d[cursor+1:]
         elif k >= 32 and k < 127:
-#            print("*{} '{}'".format(k, u))
             self.data = d[:cursor] + u + d[cursor:]
             cursor += 1
         else: change = False
@@ -112,8 +112,7 @@ class TextInput(Text):
         self.cursor = cursor
 
     def _widthTo(self, i):
-        key = _makeKey(self.font, self.fontSize, self.fontStyle)
-        font = _loadFont(*key)
+        font = Font.get(self.font, self.fontSize, self.fontStyle)
         d = self.data
         return (font.size(d[:i])[0] + font.size(d[:i+1])[0]) // 2
 
@@ -127,3 +126,4 @@ class TextInput(Text):
 
     def onblur(self, ev):
         if not self.data: self.stale = True
+        self.bubble("onaction", ev)

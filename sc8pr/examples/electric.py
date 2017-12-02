@@ -22,11 +22,12 @@ from math import hypot, asin, degrees
 from random import uniform
 from sc8pr import Sketch, Canvas, Image, BOTTOM, TOPRIGHT
 from sc8pr.shape import Circle, Line
-from sc8pr.text import Text, MONO, BOLD
+from sc8pr.text import Text, Font, BOLD
 from sc8pr.geom import delta
 from sc8pr.util import ondrag
 from sc8pr.gui.tkdialog import TkDialog
 
+MONO = Font.mono()
 
 class Simulation(Sketch):
 
@@ -47,9 +48,9 @@ class Simulation(Sketch):
         self += Line(pivot, (x, y)).config(name="string", weight=3)
         self += Charge().config(pos=(x, y))
         self += Circle(12).bind(ondrag).config(pos=(40,y), fill="blue", name="blue")
-        self += Ruler(self.scale).config(pos=self.center)
         self += Text().config(pos=pivot, anchor=TOPRIGHT, font=MONO,
             color="red", name="angle").config(height=24)
+        self += Ruler(self.scale).config(pos=self.center)
 
 
 class Charge(Circle):
@@ -108,7 +109,7 @@ class Ruler(Image):
         h = 3.5 * scale
         r = Canvas((coord(size + 1), h)).config(**cfg)
         x = 0
-        cfg = dict(anchor=BOTTOM, font=MONO, fontStyle=BOLD)
+        cfg = dict(anchor=BOTTOM, font=MONO, fontStyle=BOLD, color="#000000a0")
         while x <= size:
             r += Text(x).config(pos=(coord(x), h-1), **cfg)
             x += step

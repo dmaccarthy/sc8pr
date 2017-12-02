@@ -21,37 +21,53 @@ from sc8pr.text import Text
 from sc8pr.gui.button import Button, cacheTiles
 
 
-class Radio(Canvas):
+class Options(Canvas):
+    """GUI control consisting of check boxes and text;
+    buttons handle onclick; trigger onaction"""
+    imgs = cacheTiles("checkbox", (2,2))
 
-    def __init__(self, text, imgs=None, space=4, **kwargs):
-        if imgs is None: imgs = cacheTiles("radio", (2,2))
+    def __init__(self, text, size=None, space=4, imgs=None, **kwargs):
+        if imgs is None: imgs = self.imgs
         text = [Text(t).config(**kwargs) for t in text]
         check = []
         y = w = 0
-        h = kwargs["fontSize"] if "fontSize" in kwargs else Text.fontSize
+        if not size: size = text[0].height
         for t in text:
-            h = t.height
-            cb = Button(imgs).config(height=h)
-            yc = y + h / 2
-            check.append(cb.config(height=h, pos=(0, yc), anchor=LEFT))
+            cb = Button(imgs).config(height=size)
+            yc = y + size / 2
+            check.append(cb.config(height=size, pos=(0, yc), anchor=LEFT))
             t.config(pos=(cb.width + space, yc), anchor=LEFT, **kwargs)
-            y += h + space
+            y += size + space
             w1 = cb.width + t.width
             if w1 > w: w = w1
         super().__init__((w + space, y - space))
         self += check + text
         self.boxes = check
-        check[0].selected = True
+        if hasattr(self, "selected"): self.selected = 0
+
+
+class Radio(Options):
+    """GUI control consisting of radio buttons and text;
+    buttons handle onclick; radio handles onaction and triggers onchange"""
+    imgs = cacheTiles("radio", (2,2))
 
     @property
     def selected(self):
         for cb in self.boxes:
             if cb.selected: return cb
 
-    def onaction(self, ev):
-        change = not ev.target.selected
+    @selected.setter
+    def selected(self, n):
+        i = 0
         for cb in self.boxes:
-            cb.selected = cb is ev.target
+            cb.selected = i == n
+            i += 1
+
+    def onaction(self, ev):
+        change = ev.target.selected
+        for cb in self.boxes:
+            cb.selected = ev.target is cb
         if change:
             setattr(ev, "target", self)
             self.bubble("onchange", ev)
+    

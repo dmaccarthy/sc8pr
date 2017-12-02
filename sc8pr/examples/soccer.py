@@ -22,7 +22,7 @@ from sc8pr import Sketch, Canvas, Image, BOTH,\
     LEFT, RIGHT, TOPLEFT, TOPRIGHT, TOP, BOTTOM
 from sc8pr.sprite import Sprite, physics
 from sc8pr.geom import vec2d, polar2d, dist
-from sc8pr.text import Text, MONO
+from sc8pr.text import Text, Font
 from sc8pr.robot import Robot
 from sc8pr.gui.radio import Radio
 from sc8pr.gui.button import TextButton
@@ -70,7 +70,7 @@ class Dialog(Canvas):
 
         # Okay button
         okay = TextButton.okay((72,32)).config(anchor=BOTTOM)
-        okay[0].config(font=font, fontSize=14)
+        okay[0].config(font=font, fontSize=14, data="Play")
 
         # Create canvas
         items = radio + text + [okay]
@@ -205,4 +205,4 @@ def main(*brains, **kwargs):
     elif len(brains) == 2: sk.brains = brains
     sk.play("Robot Soccer")
 
-if __name__ == "__main__": main(font=MONO)
+if __name__ == "__main__": main(font=Font.mono())

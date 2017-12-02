@@ -49,7 +49,8 @@ class BaseButton(Graphic):
         self.status = 1 + (self.status & 254)
 
     def onmouseout(self, ev):
-        self.status = self.status & 254
+        if ev.target is self:
+            self.status = self.status & 254
 
     def onclick(self, ev):
         if self.selectable: self.selected = not self.selected
@@ -115,13 +116,14 @@ class TextButton(CanvasButton):
         w, h = size
         if icon:
             s = h - 2 * padding
+            w += s + padding
             self += Image(icon).config(
                 size = (s, s),
                 pos = (padding, padding),
                 anchor = 0
             )
         else: s = 0
-        tx = Text(text).config(pos = ((w + s + padding) / 2, h / 2))
+        tx = Text(text).config(pos = (w / 2, h / 2))
         self += tx
         tx.layer = 0
 

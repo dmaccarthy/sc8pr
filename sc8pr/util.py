@@ -187,7 +187,7 @@ class CachedSurface:
         if size is None: size = self.original.get_size()
         else: size = max(1, round(size[0])), max(1, round(size[1]))
         sz, srf = self.scaled
-        if sz != size:
+        if sz != size: # smoothscale crashes sometimes for 1x1 surface!!
             srf = pygame.transform.smoothscale(self.original, size)
             self.scaled = size, srf
             self.rotated = 0, srf
