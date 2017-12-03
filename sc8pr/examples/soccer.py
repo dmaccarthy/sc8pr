@@ -17,7 +17,7 @@
 
 
 if __name__ == "__main__": import _pypath
-from random import uniform
+from random import uniform, randint
 from sc8pr import Sketch, Canvas, Image, BOTH,\
     LEFT, RIGHT, TOPLEFT, TOPRIGHT, TOP, BOTTOM
 from sc8pr.sprite import Sprite, physics
@@ -189,6 +189,7 @@ class SoccerGame(Sketch):
         self.bindBrain(red, self.brains[0])
         self.bindBrain(yellow, self.brains[1])
         x, y = self.center
+        x += (2 * randint(0, 1) - 1) * 16
         self += yellow.config(pos=(1.5 * x, y), width=y/4, angle=90)
         self += red.config(pos=(0.5 * x, y), width=y/4, angle=270)
 

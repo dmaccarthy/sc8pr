@@ -784,11 +784,17 @@ class Sketch(Canvas):
 
         # Drawing/event loop
         while not self.quit:
-            self.frameCount += 1
             try:
+                self.frameCount += 1
+                br = self.blitRegions
                 self.draw()
+                if br is None: flip = True
+                else:
+                    br += self.blitRegions
+                    flip = len(br) == 0 or self.rect in br
                 self._clock.tick(self.frameRate)
-                _pd.flip()
+                if flip: _pd.flip()
+                else: _pd.update(br)
                 if self.ondraw: self.ondraw()
                 self._evHandle()
             except: logError()
