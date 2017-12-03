@@ -197,8 +197,10 @@ class Line(Shape):
         dx, dy = (0, 0) if snapshot else cv.rect.topleft
         x1, y1 = self.point(0)
         x2, y2 = self.point(self.length)
-        return pygame.draw.line(srf, self._stroke, (x1+dx,y1+dy),
-            (x2+dx,y2+dy), max(1,round(self.weight)))
+        wt = max(1, round(self.weight))
+        r = pygame.draw.line(srf, self._stroke, (x1+dx,y1+dy),
+            (x2+dx,y2+dy), wt)
+        return r.inflate(wt, wt)
 
     def contains(self, pos):
         return abs(self.parameters(pos)[1]) <= 1 + self.weight / 2

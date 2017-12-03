@@ -22,6 +22,8 @@ from traceback import format_exc
 from zipfile import ZipFile
 from pathlib import Path
 
+scale = pygame.transform.smoothscale
+
 def resolvePath(rel, start=__file__, isDir=False):
     "Return an absolute path relative to a starting file or folder"
     p = Path(start)
@@ -188,7 +190,7 @@ class CachedSurface:
         else: size = max(1, round(size[0])), max(1, round(size[1]))
         sz, srf = self.scaled
         if sz != size: # smoothscale crashes sometimes for 1x1 surface!!
-            srf = pygame.transform.smoothscale(self.original, size)
+            srf = scale(self.original, size)
             self.scaled = size, srf
             self.rotated = 0, srf
         if angle:

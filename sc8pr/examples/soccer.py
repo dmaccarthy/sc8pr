@@ -17,7 +17,7 @@
 
 
 if __name__ == "__main__": import _pypath
-from random import uniform, randint
+from random import uniform, randint, choice
 from sc8pr import Sketch, Canvas, Image, BOTH,\
     LEFT, RIGHT, TOPLEFT, TOPRIGHT, TOP, BOTTOM
 from sc8pr.sprite import Sprite, physics
@@ -45,9 +45,10 @@ def dumbBrain(r):
         if r.collision or r.uptime > r.schedule: randomMotor(r)
 
 def followBall(r):
+    m = choice((0.5, -0.5))
     while r.active:
-        r.updateSensors()
-        r.motors = 1 if isGrey(r.sensorFront) else (0.5, -0.5)
+        r.updateSensors() 
+        r.motors = 1 if isGrey(r.sensorFront) else (m, -m)
 
 
 class Dialog(Canvas):

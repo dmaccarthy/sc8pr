@@ -56,6 +56,7 @@ class Graphic:
     canvas = None
     pos = 0, 0
     anchor = CENTER
+    angle = 0
     focusable = False
     ondraw = None
     effects = None
@@ -137,7 +138,8 @@ class Graphic:
 
     def relXY(self, pos):
         "Calculate coordinates relative to the graphic object"
-        if hasattr(self, "angle") and self.angle:
+#        if hasattr(self, "angle") and self.angle:
+        if self.angle:
             xc, yc = self.rect.center
             x, y = transform2d(pos, preShift=(-xc,-yc), rotate=-self.angle)
             xc, yc = self.center
@@ -148,7 +150,8 @@ class Graphic:
 
     def contains(self, pos):
         "Check if the graphic contains the coordinates"
-        if hasattr(self, "angle") and self.angle:
+#        if hasattr(self, "angle") and self.angle:
+        if self.angle:
             r = pygame.Rect((0,0), self.size)
             pos = self.relXY(pos)
         else: r = self.rect
@@ -259,7 +262,7 @@ class Graphic:
 
 class Renderable(Graphic):
     "Graphics produced by calling a render method"
-    angle = 0
+#    angle = 0
     stale = True
 
     def refresh(self):
@@ -303,7 +306,7 @@ class BaseSprite(Graphic):
     onbounce = None
 
     # Kinematics
-    angle = 0
+#    angle = 0
     spin = 0
     vel = 0, 0
     acc = None
@@ -420,7 +423,7 @@ class BaseSprite(Graphic):
 
 class Image(Graphic):
     "A class representing scaled and rotated images"
-    angle = 0
+#    angle = 0
 
     def __init__(self, data=(2,2), bg=None):
         self._srf = CachedSurface(data, bg)
@@ -588,20 +591,20 @@ class Canvas(Graphic):
             srf.set_clip(self.clipRect)
             if isinstance(self._bg, Image):
                 self._bg.config(size=self._size)
-                if isSketch and self.blitRegions is not None:
-                    self._drawBlitRegions(srf)
+                if isSketch and self.dirtyRegions:
+                    self._drawDirtyRegions(srf)
                 else: srf.blit(self._bg.image, r.topleft)
             elif self._bg: srf.fill(self._bg)
 
         # Draw objects
         if mode & 2:
-            br = isSketch and self.blitRegions is not None
-            if br: self.blitRegions = []
+            br = isSketch and self.dirtyRegions is not None
+            if br: self.dirtyRegions = []
             for g in list(self):
                 srf.set_clip(self.clipRect)
                 grect = g.draw(srf)
                 g.rect = grect
-                if br: self.blitRegions.append(grect)
+                if br: self.dirtyRegions.append(grect)
                 if g.ondraw and g.ondraw(): g.remove()
 
         # Draw border
@@ -656,7 +659,7 @@ class Sketch(Canvas):
     frameRate = 60
     anchor = 0
     _fixedAspect = True
-    blitRegions = []
+    dirtyRegions = []
 
     def __init__(self, size=(512,288)):
         super().__init__(size, "white")
@@ -683,8 +686,8 @@ class Sketch(Canvas):
         self._setBg(bg)
         if self.fixedAspect and hasattr(bg, "aspectRatio"):
             self.fixedAspect = bg.aspectRatio
-        if self.blitRegions is not None:
-            self.blitRegions = [pygame.Rect((0,0), self._size)]
+        if self.dirtyRegions is not None:
+            self.dirtyRegions = [pygame.Rect((0,0), self._size)]
 
     @property
     def cursor(self): return pygame.mouse.get_cursor()
@@ -747,8 +750,8 @@ class Sketch(Canvas):
             return self.resize(size)
         super().resize(self.size)
         self._size = self.size
-        if self.blitRegions is not None:
-            self.blitRegions = [pygame.Rect((0,0), self._size)]
+        if self.dirtyRegions is not None:
+            self.dirtyRegions = [pygame.Rect((0,0), self._size)]
 
 # Drawing methods
 
@@ -786,12 +789,12 @@ class Sketch(Canvas):
         while not self.quit:
             try:
                 self.frameCount += 1
-                br = self.blitRegions
+                br = self.dirtyRegions
+                flip = br is None
                 self.draw()
-                if br is None: flip = True
-                else:
-                    br += self.blitRegions
-                    flip = len(br) == 0 or self.rect in br
+                if not flip:
+                    br += self.dirtyRegions
+                    flip = self._largeArea()
                 self._clock.tick(self.frameRate)
                 if flip: _pd.flip()
                 else: _pd.update(br)
@@ -815,14 +818,25 @@ class Sketch(Canvas):
                     if hasattr(self, "onresize"): self.onresize(ev)
             except: logError()
 
-    def _drawBlitRegions(self, srf):
-        "Redraw the background image into the blitRegions only"
+    def _drawDirtyRegions(self, srf):
+        "Redraw the background image into the dirtyRegions only"
         sRect = self.rect
-        br = self.blitRegions
-        drawAll = len(br) == 0 or br[0] == sRect
-        if drawAll: self.blitRegions = [sRect]
-        for r in self.blitRegions:
-            blitRect = r.clip(sRect)
-            try: # Subsurface may be outside drawing surface
-                srf.blit(self._bg.image.subsurface(blitRect), blitRect.topleft)
-            except: pass
+        br = self.dirtyRegions
+        if br:
+            if br[0] == sRect: self.dirtyRegions = [sRect]
+            for r in self.dirtyRegions:
+                blitRect = r.clip(sRect)
+                try: # Subsurface may be outside drawing surface
+                    srf.blit(self._bg.image.subsurface(blitRect), blitRect.topleft)
+                except: pass
+
+    def _largeArea(self):
+        "Determine if dirtyRegions area exceeds total sketch area"
+        screen = self.rect
+        large = screen.width * screen.height
+        area = 0
+        for r in self.dirtyRegions:
+            r = r.clip(screen)
+            area += r.width * r.height
+            if area >= large: return True
+        return False
