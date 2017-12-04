@@ -80,10 +80,10 @@ class Sprite(BaseSprite):
 
 
 def collide_rect_mask(left, right):
-    return collide_rect(left, right) and collide_mask(left, right)
+    return 1 if collide_rect(left, right) and collide_mask(left, right) else 0
 
 def collide_rect_circ(left, right):
-    return collide_rect(left, right) and collide_circle(left, right)
+    return 1 if collide_rect(left, right) and collide_circle(left, right) else 0
 
 
 class Collisions:
