@@ -15,6 +15,8 @@ For more information, please see the [documentation](http://dmaccarthy.github.io
 
 # Installation
 
+Run the following commands as an administrator. Windows users may need to replace 'pip3' by 'py -3 -m pip' if 'pip3' is not in your system PATH.
+
 ```
 pip3 install setuptools
 pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
