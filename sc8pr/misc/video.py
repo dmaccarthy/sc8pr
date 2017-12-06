@@ -18,9 +18,9 @@
 
 from zipfile import ZipFile
 from os.path import isfile
-from sc8pr import Image
+from sc8pr import Image, BaseSprite
 from sc8pr.sprite import Sprite
-from sc8pr.util import hasAlpha, surfaceData#, logError
+from sc8pr.util import hasAlpha, surfaceData
 from struct import unpack
 from json import loads, dumps
 
@@ -160,6 +160,12 @@ class Video(Sprite):
         if notify: notify(fn, None, vid)
         return vid
 
+    def capture(self, sk):
+        "Capture the current frame of the sketch"
+        try: n = self.interval
+        except: self.interval = n = 1
+        if sk.frameCount % n == 0: self += sk.image
+
 
 def _lastFile(fn, start=0, jump=512):
     "Determine the last file in a numbered sequence"
@@ -172,3 +178,6 @@ def _lastFile(fn, start=0, jump=512):
         else: end = n
     if end > start: return end if isfile(fn.format(end)) else start 
     else: return start
+
+
+class VideoSprite(Video, BaseSprite): pass

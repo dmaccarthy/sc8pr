@@ -18,7 +18,7 @@
 
 from sys import stderr
 import pygame.font as pf
-from sc8pr import Renderable, BaseSprite, Image, LEFT, RIGHT
+from sc8pr import Renderable, Image, LEFT, RIGHT, BaseSprite
 from sc8pr.util import rgba, hasAny, setAlpha, drawBorder
 
 BOLD = 1

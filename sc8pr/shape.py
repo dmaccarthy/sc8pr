@@ -361,10 +361,10 @@ class Polygon(Shape):
 class CircleSprite(Circle, BaseSprite): pass
 class PolygonSprite(Polygon, BaseSprite): pass
 
-def arrow(pos, tail, width=0.1, head=0.1, flatness=2, sprite=False):
+def arrow(pos, tail, width=0.1, head=0.1, flatness=2, cls=Polygon):
     "Create an arrow-shaped Polygon or PolygonSprite"
     pts, angle = Polygon.arrow(pos, tail, width, head, flatness)
-    a = PolygonSprite(pts, 0) if sprite else Polygon(pts, 0)
+    a = cls(pts, 0)
     a.pos = pos
     if angle: a.angle = angle / DEG
     return a

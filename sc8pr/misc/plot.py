@@ -17,7 +17,7 @@
 
 
 import pygame
-from sc8pr import Renderable, Image, BaseSprite, Graphic
+from sc8pr import Renderable, Image, Graphic, BaseSprite
 from sc8pr.shape import Shape
 from sc8pr.util import rgba
 from sc8pr.text import Text

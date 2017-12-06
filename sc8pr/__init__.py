@@ -655,6 +655,7 @@ class Canvas(Graphic):
 
 
 class Sketch(Canvas):
+    capture = None
     realTime = False
     frameRate = 60
     anchor = 0
@@ -798,6 +799,7 @@ class Sketch(Canvas):
                 self._clock.tick(self.frameRate)
                 if flip: _pd.flip()
                 else: _pd.update(br)
+                if self.capture is not None: self.capture.capture(self)
                 if self.ondraw: self.ondraw()
                 self._evHandle()
             except: logError()

@@ -29,6 +29,7 @@ from sc8pr.util import randPixel, rgba
 from sc8pr.geom import vec2d, delta
 from sc8pr.gui.textinput import TextInput
 from sc8pr.gui.button import TextButton
+from sc8pr.misc.video import Video
 
 JSON = "asterShield_scores.json"
 MONO = Font.mono()
@@ -254,8 +255,11 @@ class Score(Text):
         self.config(data = self.data + n, fontSize=round(self.sketch.height/15))
 
 
-def main():
+def main(record=False):
     os.chdir(os.path.dirname(__file__))
-    Game((960,540)).play("Asteroid Shield", "img/target.png")
+    sk = Game((960,540))
+    if record: sk.config(capture=Video().config(interval=2))
+    sk.play("Asteroid Shield", "img/target.png")
+    if record: sk.capture.save("movie.s8v")
 
 if __name__ == "__main__": main()
