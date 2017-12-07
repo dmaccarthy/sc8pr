@@ -60,7 +60,9 @@ class TextInput(Text):
     def render(self):
         "Render the text as an Image"
         font = Font.get(self.font, self.fontSize, self.fontStyle)
-        if self.prompt and not self.data and self is not self.sketch.evMgr.focus:
+        try: focus = self is self.sketch.evMgr.focus
+        except: focus = False
+        if self.prompt and not self.data and not focus:
             color = self.promptColor
             text = self.prompt
         else: 

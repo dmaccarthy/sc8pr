@@ -110,7 +110,7 @@ class CanvasButton(Canvas, BaseButton):
 
 
 class TextButton(CanvasButton):
-    
+
     def __init__(self, size, text, icon=None, padding=6):
         super().__init__(size)
         w, h = size
