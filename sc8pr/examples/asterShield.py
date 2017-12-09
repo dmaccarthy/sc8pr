@@ -260,6 +260,8 @@ def main(record=False):
     sk = Game((960,540))
     if record: sk.config(capture=Video().config(interval=2))
     sk.play("Asteroid Shield", "img/target.png")
-    if record: sk.capture.save("movie.s8v")
+    if record:
+        sk.capture.save("movie.s8v")
+#        sk.capture.exportFrames("save/frame{:05d}.png")
 
 if __name__ == "__main__": main()

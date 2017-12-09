@@ -18,10 +18,9 @@
 
 from zipfile import ZipFile
 from os.path import isfile
-from sc8pr import Image, BaseSprite
+from sc8pr import Image, BaseSprite, version
 from sc8pr.sprite import Sprite
 from sc8pr.util import hasAlpha, surfaceData
-from struct import unpack
 from json import loads, dumps
 
 
@@ -47,22 +46,11 @@ class Video(Sprite):
     def __len__(self): return len(self._costumes)
 
     def _loadMeta(self, zf):
-        try:
-            meta = loads(str(zf.read("meta.json"), encoding="utf8"))
-            if meta:
-                for k in meta:
-                    self.meta[k] = zf.read(k)
+        try: self.meta = loads(str(zf.read("metadata"), encoding="utf8"))
         except: pass
 
     def _saveMeta(self, zf):
-        if self.meta:
-            keys = list(self.meta.keys())
-            zf.writestr("meta.json", dumps(keys))
-            for k in keys:
-                data = self.meta[k]
-                if type(data) not in (str, bytes): data = str(data)
-                if type(data) is str: data = bytes(data, encoding="utf8")
-                zf.writestr(k, data)
+        if self.meta: zf.writestr("metadata", dumps(self.meta))
 
     def _load(self, fn, notify=False):
         "Load the video from a ZIP file"
@@ -73,26 +61,22 @@ class Video(Sprite):
             while i >= 0:
                 try:
                     data = zf.read(str(i))
-                    data = data[:-12], data[-12:]
+                    if data: data = data[:-12], data[-12:]
+                    else: data = self._costumes[i-1]
                     i += 1
                     self._costumes.append(data)
                     if notify: notify(fn, i, self)
                 except:
                     if notify: notify(fn, None, self)
                     i = -1
-        try: # Adjust for duplicated frames
-            cs = unpack("!{:d}B".format(len(self._costumes)), self.meta["repeat"])
-            i = 0
-            for repeat in cs:
-                if repeat:
-                    frame = self._costumes[i]
-                    self._costumes = self._costumes[:i] + [frame for n in range(repeat)] + self._costumes[i:]
-                i += 1 + repeat
-        except: pass
 
-    def costume(self):
+    def costumeSequence(self, seq):
+        msg = "{}.costumeSequence is not available"
+        raise NotImplementedError(msg.format(type(self).__name__))
+
+    def costume(self, n=None):
         "Return an Image instance of the current costume"
-        n = self.costumeNumber
+        if n is None: n = self.costumeNumber
         if n != self._current[0]:
             self._current = n, Image(*self._costumes[n])
         img = self._current[1]
@@ -120,17 +104,24 @@ class Video(Sprite):
         vid._size = self.size
         costumes = self._costumes
         if end is None: end = len(costumes)
-        vid._costumes = costumes[start:end]
+        vid._costumes = [costumes[i]
+            for i in range(start, end, 1 if end > start else -1)]
         return vid
 
     def save(self, fn, notify=False):
         "Save the video as a ZIP file"
+        self.meta["sc8pr.version"] = version
         with ZipFile(fn, "w") as zf:
             self._saveMeta(zf)
             costumes = self._costumes
+            data0 = None
             for i in range(len(costumes)):
                 data, mode = costumes[i]
-                zf.writestr(str(i), data + mode)
+                data += mode
+                if data0 is not None and data == data0:
+                    data = b'' # Duplicate frame
+                else: data0 = data
+                zf.writestr(str(i), data)
                 if notify: notify(fn, i + 1, self)
         if notify: notify(fn, None, self)
 
@@ -164,7 +155,7 @@ class Video(Sprite):
         "Capture the current frame of the sketch"
         try: n = self.interval
         except: self.interval = n = 1
-        if sk.frameCount % n == 0: self += sk.image
+        if sk.frameCount % n == 0: self += sk
 
 
 def _lastFile(fn, start=0, jump=512):

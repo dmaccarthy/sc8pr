@@ -24,7 +24,7 @@ import pygame
 from pygame.constants import K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE
 from sc8pr import Image, Sketch
 from sc8pr.sprite import Sprite
-from sc8pr.util import sc8prData, logError, rgba, noise, divAlpha, hasAlpha
+from sc8pr.util import sc8prData, logError, rgba, noise, divAlpha#, hasAlpha
 from sc8pr.geom import vec2d, delta, DEG, dist, sprod, positiveAngle
 from sc8pr.shape import Line, Polygon
 
