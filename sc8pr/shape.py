@@ -217,7 +217,7 @@ class Polygon(Shape):
     autoPositionOnResize = False
     _angle = 0
 
-    def __init__(self, pts, pos=None):
+    def setPoints(self, pts, pos=None):
         (x0, x1), (y0, y1) = tuple((min(x[i] for x in pts),
             max(x[i] for x in pts)) for i in (0,1))
         if pos is None: pos = (x0 + x1) / 2, (y0 + y1) / 2
@@ -227,6 +227,8 @@ class Polygon(Shape):
         self._rect = pygame.Rect((x0, y0), size)
         self.vertices = list(pts)
         self.dumpCache()
+
+    __init__ = setPoints
 
     def config(self, **kwargs):
         keys = "fill", "stroke", "weight"
@@ -245,7 +247,7 @@ class Polygon(Shape):
         dx = pos[0] - xy[0]
         dy = pos[1] - xy[1]
         pts = list((x+dx,y+dy) for (x,y) in self.vertices)
-        self.__init__(pts, pos)
+        self.setPoints(pts, pos)
 
     @property
     def angle(self): return self._angle
@@ -333,38 +335,29 @@ class Polygon(Shape):
             x, y = pts[i]
             pts[i] = f[0] * x, f[1] * y
         x, y = self._pos
-        self.__init__(pts, (f[0] * x, f[1] * y))
+        self.setPoints(pts, (f[0] * x, f[1] * y))
         return f
 
     def rotate(self, angle=0):
         "Rotate the Polygon around its anchor point"
         shift = self._pos
         pts = transform2dGen(self.vertices, rotate=angle, shift=shift, preShift=True)
-        self.__init__(list(pts), self._pos)
+        self.setPoints(list(pts), self._pos)
         self._angle += angle
 
-    @staticmethod
-    def arrow(pos, tail, width, head, flatness):
-        "Calculate data for creating an arrow-shaped Polygon"
-        if type(tail) in (int, float): angle = 0
-        else:
-            d = delta(pos, tail)
-            tail = hypot(*d)
-            angle = atan2(d[1], d[0])
-        width *= tail / 2
-        head *= tail
+
+class Arrow(Polygon):
+    "Arrow shaped graphic"
+
+    def __init__(self, length, width=0.1, head=0.1, flatness=2):
+        width *= length / 2
+        head *= length
         y = head * flatness / 2
-        return [(0,0), (-head, y), (-head, width), (-tail, width),
-            (-tail, -width), (-head, -width), (-head, -y)], angle
+        pts = [(0,0), (-head, y), (-head, width), (-length, width),
+            (-length, -width), (-head, -width), (-head, -y)]
+        super().__init__(pts, 0)
 
 
 class CircleSprite(Circle, BaseSprite): pass
 class PolygonSprite(Polygon, BaseSprite): pass
-
-def arrow(pos, tail, width=0.1, head=0.1, flatness=2, cls=Polygon):
-    "Create an arrow-shaped Polygon or PolygonSprite"
-    pts, angle = Polygon.arrow(pos, tail, width, head, flatness)
-    a = cls(pts, 0)
-    a.pos = pos
-    if angle: a.angle = angle / DEG
-    return a
+class ArrowSprite(Arrow, BaseSprite): pass

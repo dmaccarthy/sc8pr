@@ -16,16 +16,19 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
+"Play, import, and export sc8pr Video (s8v) files"
+
 if __name__ == "__main__": import _pypath
 from threading import Thread, active_count
 from sys import stderr
 from os.path import split
 from pygame.constants import K_LEFT, K_RIGHT, K_ESCAPE, K_HOME
 from sc8pr import Sketch, Image, TOPLEFT, BOTTOMRIGHT
+from sc8pr.util import fileExt
 from sc8pr.text import Text, Font
 from sc8pr.misc.video import Video
 from sc8pr.gui.tkdialog import askopenfilename, askinteger,\
-    askdirectory, asksaveasfilename, showinfo
+    askfloat, askdirectory, asksaveasfilename, showinfo
 
 FONT = Font.mono()
 EXTS = [("sc8pr Video", "*.s8v"), ("Image Files", "*.png;*.jpg")]
@@ -36,7 +39,7 @@ def noresize(gr, size): pass
 
 
 class ExportThread(Thread):
-    "Export Video as individual frames in a separate Thread"
+    "Export Video as individual frames in a separate thread"
 
     def __init__(self, vid, fn="save/frame{:05d}.png"):
         super().__init__()
@@ -59,10 +62,10 @@ class ExportThread(Thread):
 
 
 class ImportThread(Thread):
-    "Import frames into Video in a separate Thread"
+    "Import frames as a Video in a separate thread"
     vid = None
 
-    def __init__(self, fn="save/frame{:05d}.png", start=1):
+    def __init__(self, fn, start=1):
         super().__init__()
         self.files = fn
         self.startFrame = start
@@ -116,6 +119,9 @@ class Player(Sketch):
             if c == "x": self.export()
             elif c == "s": self.saveVid()
             elif c == "g": self.grab()
+            elif c == "h":
+                h = askinteger("Resize", "New height?")
+                if h > 63: self.height = h
             elif c == " ":
                 vid.costumeTime = 1 - vid.costumeTime
             elif c == "[":
@@ -123,8 +129,7 @@ class Player(Sketch):
             elif c == "]":
                 self.clip[1] = vid.costumeNumber + 1
             elif c == "f":
-                fps = askinteger("Frame Rate",
-                    "New frame rate in frames per second?")
+                fps = askfloat("Frame Rate", "New frame rate in frames per second?")
                 if fps and fps > 0: self.frameRate = fps
             else:
                 k = ev.key
@@ -151,9 +156,10 @@ class Player(Sketch):
     def open(self):
         fn = askopenfilename(initialdir=".", filetypes=EXTS)
         if fn:
-            if fn.split(".")[-1] == "s8v":
+            if fn.split(".")[-1].lower() == "s8v":
                 try:
-                    vid = Video(fn).config(anchor=TOPLEFT, costumeTime=1)
+                    vid = Video(fn)
+                    vid.config(anchor=TOPLEFT, costumeTime=1)
                     self.size = vid.size
                     if self.vid: self -= self.vid
                     self.vid = vid
@@ -182,7 +188,7 @@ class Player(Sketch):
             if fn:
                 vid = self.vidClip
                 vid.meta["frameRate"] = self.frameRate
-                vid.save(fn)
+                vid.save(fileExt(fn, "s8v"))
 
     def export(self):
         if self.vid:
@@ -197,10 +203,8 @@ class Player(Sketch):
         if self.vid:
             fn = asksaveasfilename(initialdir=".", filetypes=EXTS[1:])
             if fn:
-                if fn.split(".")[-1].lower() not in ("png", "jpg"):
-                    fn += ".png"
-                    try: self.vid.costume().save(fn)
-                    except: print("Unable to save '{}'".format(fn), file=stderr)
+                try: self.vid.costume().save(fileExt(fn, ("png", "jpg")))
+                except: print("Unable to save '{}'".format(fn), file=stderr)
 
     @staticmethod
     def parse(fn):
@@ -226,16 +230,18 @@ class Player(Sketch):
 
     @staticmethod
     def help():
-        msg = "sc8pr Video Player (c) 2017\n\nKeyboard Controls...\n\n"
-        ctrl = {"o":"Open / Import", "Space":"Play/Pause",
+        msg = """(c) 2015-2017 by D.G. MacCarthy
+http://dmaccarthy.github.io\n
+Keyboard Controls...\n\n"""
+        ctrl = {"o":"Open / Convert", "Space":"Play/Pause",
             "Left Arrow":"Previous Frame", "Right Arrow":"Next Frame",
             "Home":"First Frame", "[":"Mark Clip Start", "]":"Mark Clip End",
             "Escape":"Reset Clip", "x":"Export Clip Frames",
             "s":"Save Clip as s8v", "g":"Grab Frame", "f":"Frame Rate",
-            "?":"Show this screen again"}
+            "h":"Playback Height", "?":"Show this screen again"}
         for i in ctrl.items():
             msg += "{:>11s} = {}\n".format(*i)
         print(msg)
 
 
-Player().play()
+Player().play("sc8pr Video Utility")

@@ -428,6 +428,9 @@ class Image(Graphic):
     def __init__(self, data=(2,2), bg=None):
         self._srf = CachedSurface(data, bg)
         self._size = self._srf.get_size()
+    
+    @property
+    def original(self): return self._srf.original
 
     @property
     def avgColor(self):

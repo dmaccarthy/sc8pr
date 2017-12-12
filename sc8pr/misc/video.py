@@ -17,11 +17,18 @@
 
 
 from zipfile import ZipFile
+from json import loads, dumps
 from os.path import isfile
 from sc8pr import Image, BaseSprite, version
 from sc8pr.sprite import Sprite
 from sc8pr.util import hasAlpha, surfaceData
-from json import loads, dumps
+
+
+def jsonToBytes(obj):
+    return bytes(dumps(obj, ensure_ascii=False), encoding="utf8")
+
+def jsonFromBytes(b):
+    return loads(str(b, encoding="utf8"))
 
 
 class Video(Sprite):
@@ -35,7 +42,7 @@ class Video(Sprite):
         self.meta = {}
         t = type(data)
         if t is str: self._load(data, notify)
-        elif t is tuple and type(data[0]) is int: self._size = data[0]
+        elif t is tuple and type(data[0]) is int: self._size = data#[0]
         elif data:
             self._costumes = [surfaceData(img) for img in data]
         if len(self._costumes):
@@ -45,12 +52,39 @@ class Video(Sprite):
 
     def __len__(self): return len(self._costumes)
 
+    def __iadd__(self, img):
+        "Append a frame to the video"
+        self._costumes.append(surfaceData(img))
+        return self
+
+    append = __iadd__
+
+    def __getitem__(self, n):
+        "Return a frame as an Image instance"
+        if n != self._current[0]:
+            self._current = n, Image(*self._costumes[n])
+        img = self._current[1]
+        srf = img.original #img.image
+        if self.alpha and not hasAlpha(srf):
+            img = Image(srf.convert_alpha())
+            self._current = n, img
+        return img.config(size=self.size, angle=self.angle)
+
+    def costume(self):
+        "Return the current costume"
+        return self[self.costumeNumber]
+
+    def extend(self, imgs):
+        "Append multiple frames to the video"
+        self._costumes.append([surfaceData(img) for img in imgs])
+        return self
+
     def _loadMeta(self, zf):
-        try: self.meta = loads(str(zf.read("metadata"), encoding="utf8"))
+        try: self.meta = jsonFromBytes(zf.read("metadata"))
         except: pass
 
     def _saveMeta(self, zf):
-        if self.meta: zf.writestr("metadata", dumps(self.meta))
+        if self.meta: zf.writestr("metadata", jsonToBytes(self.meta))
 
     def _load(self, fn, notify=False):
         "Load the video from a ZIP file"
@@ -60,52 +94,29 @@ class Video(Sprite):
             i = 0
             while i >= 0:
                 try:
+                    if notify: notify(fn, i, self)
                     data = zf.read(str(i))
                     if data: data = data[:-12], data[-12:]
                     else: data = self._costumes[i-1]
                     i += 1
                     self._costumes.append(data)
-                    if notify: notify(fn, i, self)
                 except:
                     if notify: notify(fn, None, self)
                     i = -1
 
     def costumeSequence(self, seq):
-        msg = "{}.costumeSequence is not available"
-        raise NotImplementedError(msg.format(type(self).__name__))
-
-    def costume(self, n=None):
-        "Return an Image instance of the current costume"
-        if n is None: n = self.costumeNumber
-        if n != self._current[0]:
-            self._current = n, Image(*self._costumes[n])
-        img = self._current[1]
-        srf = img.image
-        if self.alpha and not hasAlpha(srf):
-            img = Image(srf.convert_alpha())
-            self._current = n, img
-        return img.config(size=self.size, angle=self.angle)
-
-    def __iadd__(self, img):
-        "Append a frame to the video"
-        self._costumes.append(surfaceData(img))
-        return self
-
-    append = __iadd__
-
-    def extend(self, imgs):
-        "Append multiple frames to the video"
-        self._costumes.append([surfaceData(img) for img in imgs])
-        return self
+        msg = "In-place costume sequencing is not supported; use the clip method instead"
+        raise NotImplementedError(msg)
 
     def clip(self, start=0, end=None):
-        "Extract a continuous sequence of frames as a new Video instance"
+        "Extract a sequence of frames as a new Video instance"
         vid = Video(alpha=self.alpha)
         vid._size = self.size
         costumes = self._costumes
-        if end is None: end = len(costumes)
-        vid._costumes = [costumes[i]
-            for i in range(start, end, 1 if end > start else -1)]
+        if type(start) is int:
+            if end is None: end = len(costumes)
+            start = range(start, end, 1 if end > start else -1)
+        vid._costumes = [costumes[i] for i in start]
         return vid
 
     def save(self, fn, notify=False):
@@ -114,23 +125,18 @@ class Video(Sprite):
         with ZipFile(fn, "w") as zf:
             self._saveMeta(zf)
             costumes = self._costumes
-            data0 = None
             for i in range(len(costumes)):
+                if notify: notify(fn, i, self)
                 data, mode = costumes[i]
-                data += mode
-                if data0 is not None and data == data0:
-                    data = b'' # Duplicate frame
-                else: data0 = data
-                zf.writestr(str(i), data)
-                if notify: notify(fn, i + 1, self)
+                zf.writestr(str(i), b'' if i and costumes[i] == costumes[i-1] else data + mode)
         if notify: notify(fn, None, self)
 
     def exportFrames(self, fn="save/frame{:05d}.png", notify=False):
         "Save the video as a sequence of individual frames"
         costumes = self._costumes
         for i in range(len(costumes)):
+            if notify: notify(fn, i, self)
             Image(*costumes[i]).save(fn.format(i))
-            if notify: notify(fn, i + 1, self)
         if notify: notify(fn, None, self)
 
     @staticmethod
@@ -141,10 +147,10 @@ class Video(Sprite):
         vid = Video(alpha=alpha)
         n = 0
         for s in seq:
+            if notify: notify(fn, n, vid)
             img = Image(fn.format(s))
             vid += img
             n += 1
-            if notify: notify(fn, n, vid)
         img = Image(*vid._costumes[0])
         vid._size = img.size
         vid._current = 0, img

@@ -156,6 +156,13 @@ def ondrag(gr, ev):
     dp = ev.rel
     gr.pos = pos[0] + dp[0], pos[1] + dp[1]
 
+def fileExt(fn, ext):
+    "Force file extension"
+    ext = [e.lower() for e in ([ext] if type(ext) is str else ext)]
+    if fn.split(".")[-1].lower() not in ext:
+        fn += "." + ext[0]
+    return fn
+
 
 class CachedSurface:
     "A class for caching scaled and rotated surfaces"
