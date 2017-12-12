@@ -33,13 +33,12 @@ def jsonFromBytes(b):
 
 class Video(Sprite):
     "A class for storing and retrieving sequences of compressed images"
-
-    _costumes = []
     _current = None,
 
     def __init__(self, data=None, alpha=True, notify=False):
         self.alpha = alpha
         self.meta = {}
+        self._costumes = []
         t = type(data)
         if t is str: self._load(data, notify)
         elif t is tuple and type(data[0]) is int: self._size = data#[0]

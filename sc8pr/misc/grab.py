@@ -15,6 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
+"""Perform screen captures using PIL.ImageGrab and convert to sc8pr.Image;
+Usage...
+    Grabber(rect).image(mode, alpha) --> sc8pr.Image
+    Grabber(rect).image(None) --> PIL.Image
+"""
 
 from PIL import ImageGrab
 from io import BytesIO
@@ -22,27 +27,21 @@ import pygame
 from sc8pr import Image
 from sc8pr.util import hasAlpha
 
-# Usage: Grabber(size, pos).image(mode, alpha) --> sc8pr.Image
-
 
 class Grabber:
     "A class for performing screen captures using PIL.ImageGrab"
     
-    def __init__(self, size=None, pos=(0,0)):
-        self.size = size
-        self.pos = pos
+    def __init__(self, rect=None):
+        if rect and not isinstance(rect, pygame.Rect):
+            if len(rect) == 2: rect = (0, 0), rect
+            rect = pygame.Rect(rect)
+        self.rect = rect
 
     @property
     def bbox(self):
         "Bounding box for capture"
-        if self.size:
-            w, h = self.size
-            x, y = self.pos
-            b = [x, y, x+w, y+h]
-        else: b = None
-        return b
-
-    def grabPIL(self): return ImageGrab.grab(self.bbox)
+        r = self.rect
+        if r: return [r.left, r.top, r.right, r.bottom]
 
     @staticmethod
     def encode(img, mode="TGA"):
@@ -52,19 +51,21 @@ class Grabber:
         b.seek(0)
         return b
 
-    def image(self, mode=0, alpha=False):
-        # 0 Image using tobytes
-        # 1 Image using TGA conversion
-        # 2 Uncompressed binary data
-        img = self.grabPIL()
+    def image(self, mode=0, alpha=False, img=None):
+        "Grab and/or convert an image using PIL.ImageGrab"
+        # None = PIL.Image
+        # 0 = sc8pr.Image using tobytes
+        # 1 = sc8pr.Image using TGA conversion
+        # 2 = Uncompressed binary data
+        if img is None:
+            img = ImageGrab.grab(self.bbox)
+            if mode is None: return img
         if mode == 1:
-            tga = self.encode(img)
-            srf = pygame.image.load(tga, "foo.tga")
+            srf = pygame.image.load(self.encode(img), "foo.tga")
         else:
             srf = img.tobytes()
             if mode == 0:
                 srf = pygame.image.fromstring(srf, img.size, img.mode)
-            else:
-                return srf, img.mode, img.size
+            else: return srf, img.mode, img.size
         if alpha and not hasAlpha(srf): srf = srf.convert_alpha()
         return Image(srf)
