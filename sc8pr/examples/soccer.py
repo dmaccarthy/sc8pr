@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
+# along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>. 
 
 
 if __name__ == "__main__": import _pypath
@@ -24,9 +24,9 @@ from sc8pr.sprite import Sprite, physics
 from sc8pr.geom import vec2d, polar2d, dist
 from sc8pr.text import Text, Font
 from sc8pr.robot import Robot
-from sc8pr.gui.radio import Radio
-from sc8pr.gui.button import TextButton
 from sc8pr.util import resolvePath
+from sc8pr.gui.radio import Radio
+from sc8pr.gui.button import Button, yesNo
 
 
 def isGrey(color):
@@ -64,17 +64,16 @@ class Dialog(Canvas):
         radio = [Radio(text, **attr).config(anchor=TOPLEFT),
             Radio(text[1:], **attr).config(anchor=TOPLEFT)]
 
+        # Play button
+        play = Button((96,36), 2).content("Play", yesNo(True), **attr)
+
         # Titles
         attr.update(anchor=TOP)
         text = [Text(t + " Robot").config(color=t, **attr)
             for t in ("Red", "Yellow")]
 
-        # Okay button
-        okay = TextButton.okay((72,32)).config(anchor=BOTTOM)
-        okay[0].config(font=font, fontSize=14, data="Play")
-
         # Create canvas
-        items = radio + text + [okay]
+        items = radio + text + [play]
         w = max(gr.width for gr in items) + 16
         h = sum(gr.height for gr in items) + 72
         super().__init__((w, h), "#d0d0d0")
@@ -87,7 +86,7 @@ class Dialog(Canvas):
             self += gr.config(pos=(x,y))
             y += gr.height + 8
             if gr is radio[0]: y += 16
-        self += okay.config(pos=(xc,h-8))
+        self += play.config(pos=(xc,h-8), anchor=BOTTOM)
 
     def onaction(self, ev):
         "Start game with selected robot controls"

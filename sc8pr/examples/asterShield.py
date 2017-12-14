@@ -28,7 +28,7 @@ from sc8pr.text import Text, Font
 from sc8pr.util import randPixel, rgba
 from sc8pr.geom import vec2d, delta
 from sc8pr.gui.textinput import TextInput
-from sc8pr.gui.button import TextButton
+from sc8pr.gui.button import Button, yesNo
 from sc8pr.misc.video import Video
 
 JSON = "asterShield_scores.json"
@@ -217,9 +217,9 @@ class Game(Sketch):
             self += Text(data=s).config(anchor=RIGHT, pos=(x-20, y), **attr)
             self += Text(data=name).config(anchor=LEFT, pos=(x, y), **attr)
             y += self[-1].height + 8
-        okay = TextButton.okay((w/8, h/10)).bind(onclick=restart)
-        self += okay.config(pos=(self.center[0], 0.9 * h), anchor=BOTTOM)
-        okay[0].config(font=MONO)
+
+        self += Button((w/7, h/10)).bind(onclick=restart).content("Okay", yesNo(True),
+            font=MONO).config(pos=(self.center[0], 0.9 * h), anchor=BOTTOM)
 
 
 def restart(gr, ev):
@@ -260,8 +260,6 @@ def main(record=False):
     sk = Game((960,540))
     if record: sk.config(capture=Video().config(interval=2))
     sk.play("Asteroid Shield", "img/target.png")
-    if record:
-        sk.capture.save("movie.s8v")
-#        sk.capture.exportFrames("save/frame{:05d}.png")
+    if record: sk.capture.save("movie.s8v")
 
 if __name__ == "__main__": main()

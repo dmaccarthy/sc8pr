@@ -18,22 +18,20 @@
 
 from sc8pr import Canvas, LEFT
 from sc8pr.text import Text
-from sc8pr.gui.button import Button, cacheTiles
+from sc8pr.gui.button import Button, _radio
 
 
 class Options(Canvas):
     """GUI control consisting of check boxes and text;
     buttons handle onclick; trigger onaction"""
-    imgs = cacheTiles("checkbox", (2,2))
 
     def __init__(self, text, size=None, space=4, imgs=None, **kwargs):
-        if imgs is None: imgs = self.imgs
         text = [Text(t).config(**kwargs) for t in text]
         check = []
         y = w = 0
         if not size: size = text[0].height
         for t in text:
-            cb = Button(imgs).config(height=size)
+            cb = Button.checkbox(imgs).config(height=size)
             yc = y + size / 2
             check.append(cb.config(height=size, pos=(0, yc), anchor=LEFT))
             t.config(pos=(cb.width + space, yc), anchor=LEFT, **kwargs)
@@ -49,7 +47,10 @@ class Options(Canvas):
 class Radio(Options):
     """GUI control consisting of radio buttons and text;
     buttons handle onclick; radio handles onaction and triggers onchange"""
-    imgs = cacheTiles("radio", (2,2))
+
+    def __init__(self, text, size=None, space=4, imgs=None, **kwargs):
+        if imgs is None: imgs = _radio
+        super().__init__(text, size, space, imgs, **kwargs)
 
     @property
     def selected(self):
