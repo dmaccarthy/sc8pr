@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>. 
 
 
-if __name__ == "__main__": import _pypath
+if __name__ == "__main__": import depends
 from random import uniform, randint, choice
 from sc8pr import Sketch, Canvas, Image, BOTH,\
     LEFT, RIGHT, TOPLEFT, TOPRIGHT, TOP, BOTTOM
@@ -26,7 +26,7 @@ from sc8pr.text import Text, Font
 from sc8pr.robot import Robot
 from sc8pr.util import resolvePath
 from sc8pr.gui.radio import Radio
-from sc8pr.gui.button import Button, yesNo
+from sc8pr.gui.button import Button
 
 
 def isGrey(color):
@@ -56,16 +56,17 @@ class Dialog(Canvas):
 
     options = "Human (Remote Control)", "Follow the Ball", "Random Motion"
 
-    def __init__(self, font):
+    def __init__(self, sk):
 
         # Radio buttons
         text = self.options
-        attr = {"font":font, "fontSize":16}
+        attr = {"font":sk.font, "fontSize":16}
         radio = [Radio(text, **attr).config(anchor=TOPLEFT),
             Radio(text[1:], **attr).config(anchor=TOPLEFT)]
 
         # Play button
-        play = Button((96,36), 2).content("Play", yesNo(True), **attr)
+        icon = Sprite(SoccerBall.ballImage).config(spin=1, costumeTime=10)
+        play = Button((96,36), 2).textIcon("Play", icon, **attr)
 
         # Titles
         attr.update(anchor=TOP)
@@ -104,6 +105,7 @@ class SoccerBall(Sprite):
 
     def __init__(self):
         img = Image(resolvePath("img/ball.png", __file__))
+        SoccerBall.ballImage = img
         super().__init__(img)
         self.config(height = 30, mass = 1, drag = 0.0001, bounce = BOTH)
 
@@ -176,7 +178,7 @@ class SoccerGame(Sketch):
         self.score = list(self)[-2:]
         self += SoccerBall().config(pos=self.center)
         if hasattr(self, "brains"): self.start()
-        else: self += Dialog(self.font).config(pos=self.center)
+        else: self += Dialog(self).config(pos=self.center)
 
     def bindBrain(self, robot, brain):
         if brain is None:

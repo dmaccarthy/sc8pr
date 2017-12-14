@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-if __name__ == "__main__": import _pypath
+if __name__ == "__main__": import depends
 import json, os
 from time import time
 from math import pow
@@ -28,7 +28,7 @@ from sc8pr.text import Text, Font
 from sc8pr.util import randPixel, rgba
 from sc8pr.geom import vec2d, delta
 from sc8pr.gui.textinput import TextInput
-from sc8pr.gui.button import Button, yesNo
+from sc8pr.gui.button import Button
 from sc8pr.misc.video import Video
 
 JSON = "asterShield_scores.json"
@@ -218,8 +218,10 @@ class Game(Sketch):
             self += Text(data=name).config(anchor=LEFT, pos=(x, y), **attr)
             y += self[-1].height + 8
 
-        self += Button((w/7, h/10)).bind(onclick=restart).content("Okay", yesNo(True),
-            font=MONO).config(pos=(self.center[0], 0.9 * h), anchor=BOTTOM)
+        icon = Sprite(Asteroid.original).config(spin=0.4)
+        self += Button((w/7, h/10)).bind(onclick=restart).textIcon("Okay",
+            icon, 10, font=MONO).config(pos=(self.center[0], 0.9 * h),
+            anchor=BOTTOM, border="blue", weight=3)
 
 
 def restart(gr, ev):

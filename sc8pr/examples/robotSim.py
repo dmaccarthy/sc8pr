@@ -18,7 +18,7 @@
 "A collection of robotics simulations for sc8pr 2.0"
 
 
-if __name__ == "__main__": import _pypath
+if __name__ == "__main__": import depends
 from math import sin, pi
 from random import randint, uniform, choice, shuffle
 from sc8pr import Sketch, Image, Canvas, BOTH

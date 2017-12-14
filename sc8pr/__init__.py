@@ -511,7 +511,7 @@ class Canvas(Graphic):
         t = type(bg)
         if t is str: bg = pygame.Color(bg)
         elif t in (tuple, list): bg = pygame.Color(*bg)
-        elif bg and t is not pygame.Color: bg = Image(bg)
+#        elif bg and t is not pygame.Color: bg = Image(bg)
         self._bg = bg
 
     @property

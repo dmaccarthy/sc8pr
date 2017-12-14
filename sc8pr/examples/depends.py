@@ -15,14 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-	Check if the PYTHONPATH is correctly configured by trying to import sc8pr.
-	Modify the PYTHONPATH if an exception occurs.
-"""
 
-try:
-	import sc8pr
-except:
-	import sys, os
-	p = os.path.abspath(os.path.dirname(__file__))
-	sys.path.append(os.path.abspath(p + "/../.."))
+def check():
+	"Check if pygame and sc8pr are available."
+	depend = 0
+	try: import pygame
+	except: depend = 1
+	try: import sc8pr
+	except: depend = 2
+	if depend:
+		print("Missing dependencies! Run the following to correct...\n")
+		if depend == 1: url = "pygame"
+		if depend == 2: url = "https://github.com/dmaccarthy/sc8pr/archive/master.zip"
+		input("  pip3 install {}\n\nPress ENTER to exit...".format(url))
+		exit()
+
+check()

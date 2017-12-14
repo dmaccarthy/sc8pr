@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from sc8pr import Canvas, Image, LEFT
+from sc8pr import Canvas, Graphic, Image, LEFT, RIGHT
 from sc8pr.text import Text
 from sc8pr.util import rgba, sc8prData
 
@@ -36,8 +36,8 @@ class Button(Canvas):
     weight = 1
 
     def __init__(self, size=None, options=None):
-        self.makeOptions(options)
-        if size is None: size = self.options[0].size
+        self.options = options
+        if size is None: size = self._options[0].size
         super().__init__(size)
 
     def statusName(self, i=None):
@@ -56,7 +56,7 @@ class Button(Canvas):
 
     @property
     def selectable(self):
-        return self._status < 4 and self.options[2] is not None
+        return self._status < 4 and self._options[2] is not None
 
     @property
     def selected(self): return self._status in (2, 3)
@@ -74,7 +74,11 @@ class Button(Canvas):
     def enabled(self, s=True):
         self._status = 0 if s else 4
 
-    def makeOptions(self, options):
+    @property
+    def options(self): return self._options
+
+    @options.setter
+    def options(self, options):
         "Convert options to a list of colors or images"
         if options is None: options = OPTIONS
         else:
@@ -83,30 +87,54 @@ class Button(Canvas):
                 options = [options.get(self.statusName(i)) for i in range(5)]
             elif t is int:
                 options = [OPTIONS[i] for i in range(options)]
+            elif t is not list: options = list(options)
             while len(options) < 5: options.append(None)
         c = lambda x: rgba(x) if type(x) in (str,list,tuple) else x
         options = [c(i) for i in options]
         if options[1] is None: options[1] = options[0] 
         if options[3] is None: options[3] = options[2]
-        self.options = options
+        self._options = options
 
-    def content(self, text, icon=None, padding=6, **textCfg):
+    def _icon(self, icon, padding):
+        h = self.height - 2 * padding
+        self += icon.config(height=h)
+        w = icon.width
+        icon.config(pos=(padding + w / 2, padding + h / 2))
+        return icon
+
+    def textIcon(self, text, icon=None, padding=6, textCfg={}):
+        "Add text and icon to button"
         x, y = self.center
         if icon:
-            h = self.height - 2 * padding
-            self += icon.config(height=h, anchor=LEFT,
-                pos=(padding, padding + h / 2))
-            x += (icon.width + padding) / 2
-        if not isinstance(text, Text): text = Text(text)
+            w = self._icon(icon, padding).width
+            x += (w + padding) / 2
+        if type(text) is str: text = Text(text)
         self += text.config(pos=(x,y)).config(**textCfg)
         return self
 
+    def menuItem(self, text, right=None, icon=0, padding=6, textCfg={}):
+        "Configure content as a menu item"
+        h = self.height - 2 * padding
+        w = self._icon(icon, padding).width if isinstance(icon, Graphic) else icon
+        if w is True: w = h
+        x = 2 * padding + w if w else padding
+        y = padding + h / 2
+        if type(text) is str: text = Text(text)
+        self += text.config(pos=(x,y), anchor=LEFT)
+        if isinstance(text, Text): text.config(**textCfg)
+        if right:
+            x = self.width - padding
+            if type(right) is str: right = Text(right)
+            if isinstance(right, Text): right.config(**textCfg)
+            self += right.config(pos=(x,y), anchor=RIGHT)
+        return self.config(weight=0)
+
     def draw(self, srf=None, mode=3):
-        self._bg = self.options[self._status]
+        self._bg = self._options[self._status]
         return Canvas.draw(self, srf, mode)
 
     def snapshot(self):
-        self._bg = self.options[self._status]
+        self._bg = self._options[self._status]
         return Canvas.snapshot(self)
 
     def onmouseover(self, ev):

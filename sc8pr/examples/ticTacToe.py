@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-if __name__ == "__main__": import _pypath
+if __name__ == "__main__": import depends
 import os
 from sc8pr import Sketch, Image, Graphic
 from sc8pr.shape import Line

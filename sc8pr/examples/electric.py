@@ -17,7 +17,7 @@
 
 "A simulation of the electric force (Coulomb's Law) between two spheres"
 
-if __name__ == "__main__": import _pypath
+if __name__ == "__main__": import depends
 from math import hypot, asin, degrees
 from random import uniform
 from sc8pr import Sketch, Canvas, Image, BOTTOM, TOPRIGHT

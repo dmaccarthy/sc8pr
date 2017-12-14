@@ -17,7 +17,7 @@
 
 "Play, import, export, and screen grab to sc8pr Video (s8v) files"
 
-if __name__ == "__main__": import _pypath
+if __name__ == "__main__": import depends
 from threading import Thread, active_count
 from sys import stderr
 from time import time
