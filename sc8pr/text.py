@@ -26,6 +26,7 @@ ITALIC = 2
 
 
 class Font:
+    log = True
     cacheSize = 32
     _sort = None
     _cache = {}
@@ -38,7 +39,7 @@ class Font:
         "DroidSansMono", "Monaco", "CourierNew", "Courier")
 
     @staticmethod
-    def key(name, size=24, style=0):
+    def _key(name, size=24, style=0):
         if name and "." not in name:
             name = name.replace(" ", "").lower()
         size = round(size)
@@ -50,7 +51,7 @@ class Font:
     @classmethod
     def get(cls, name, size=24, style=0):
         if name and type(name) is not str: name = cls.find(*name)
-        key = cls.key(name, size, style)
+        key = cls._key(name, size, style)
         cache = cls._cache
         if key in cache:
             font = cache[key]
@@ -60,7 +61,8 @@ class Font:
             order = cls._cacheOrder
             order.append(key)
             if len(cache) > cls.cacheSize:
-                print("sc8pr.text.Font cache is full! Deleting", order[0], file=stderr)
+                if cls.log: print("sc8pr.text.Font cache is full! Deleting",
+                    order[0], file=stderr)
                 del cache[order[0]]
                 cls._cacheOrder = order[1:]
         return font
@@ -81,7 +83,7 @@ class Font:
     @classmethod
     def find(cls, *args):
         for f in args:
-            f = cls.key(f)[0]
+            f = cls._key(f)[0]
             if f in Font.installed(): return f
 
     @staticmethod

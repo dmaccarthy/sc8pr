@@ -19,7 +19,7 @@
 from zipfile import ZipFile
 from json import loads, dumps
 from os.path import isfile
-from sc8pr import Image, BaseSprite, version
+from sc8pr import Image, version
 from sc8pr.sprite import Sprite
 from sc8pr.util import hasAlpha, surfaceData
 
@@ -174,6 +174,3 @@ def _lastFile(fn, start=0, jump=512):
         else: end = n
     if end > start: return end if isfile(fn.format(end)) else start 
     else: return start
-
-
-class VideoSprite(Video, BaseSprite): pass

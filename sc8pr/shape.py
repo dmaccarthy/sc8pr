@@ -17,11 +17,11 @@
 
 
 from random import random
-from math import hypot, ceil, atan2, sqrt
+from math import hypot, ceil, sqrt
 import pygame
 from sc8pr import Graphic, BaseSprite
 from sc8pr.util import rgba, hasAny
-from sc8pr.geom import transform2dGen, DEG, dist, delta
+from sc8pr.geom import transform2dGen, dist, delta
 
 
 class Shape(Graphic):

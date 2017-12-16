@@ -39,6 +39,7 @@ class Sprite(BaseSprite):
         self._size = tiles[0].size
 
     def __len__(self): return len(self._costumes)
+    def __getitem__(self, i): return len(self._costumes[i])
 
     @property
     def costumeNumber(self): return self._costumeNumber
