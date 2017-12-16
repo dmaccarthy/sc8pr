@@ -66,7 +66,7 @@ class Dialog(Canvas):
 
         # Play button
         icon = Sprite(SoccerBall.ballImage).config(spin=1, costumeTime=10)
-        play = Button((96,36), 2).textIcon("Play", icon, **attr)
+        play = Button((96,36), 2).textIcon("Play", icon, textCfg=attr)
 
         # Titles
         attr.update(anchor=TOP)

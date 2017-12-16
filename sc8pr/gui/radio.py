@@ -18,7 +18,7 @@
 
 from sc8pr import Canvas, LEFT
 from sc8pr.text import Text
-from sc8pr.gui.button import Button, _radio
+from sc8pr.gui.button import Button
 
 
 class Options(Canvas):
@@ -49,7 +49,7 @@ class Radio(Options):
     buttons handle onclick; radio handles onaction and triggers onchange"""
 
     def __init__(self, text, size=None, space=4, imgs=None, **kwargs):
-        if imgs is None: imgs = _radio
+        if imgs is None: imgs = Button.radioTiles()
         super().__init__(text, size, space, imgs, **kwargs)
 
     @property

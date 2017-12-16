@@ -24,6 +24,8 @@ from pathlib import Path
 
 scale = pygame.transform.smoothscale
 
+def nothing(*args): pass
+
 def resolvePath(rel, start=__file__, isDir=False):
     "Return an absolute path relative to a starting file or folder"
     p = Path(start)

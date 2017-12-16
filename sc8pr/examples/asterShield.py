@@ -220,7 +220,7 @@ class Game(Sketch):
 
         icon = Sprite(Asteroid.original).config(spin=0.4)
         self += Button((w/7, h/10)).bind(onclick=restart).textIcon("Okay",
-            icon, 10, font=MONO).config(pos=(self.center[0], 0.9 * h),
+            icon, 10, {"font":MONO}).config(pos=(self.center[0], 0.9 * h),
             anchor=BOTTOM, border="blue", weight=3)
 
 

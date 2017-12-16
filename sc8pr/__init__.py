@@ -62,8 +62,9 @@ class Graphic:
     effects = None
 
     def __str__(self):
-        name = self.name if hasattr(self, "name") else id(self)
-        return "<{} '{}'>".format(type(self).__name__, name)
+        name = getattr(self, "name", None)
+#        name = self.name if hasattr(self, "name") else id(self)
+        return "<{} '{}'>".format(type(self).__name__, name if name else id(self))
 
     def config(self, **kwargs):
         "Set multiple instance properties"
@@ -82,6 +83,7 @@ class Graphic:
 
     @property
     def avgColor(self): return self._avgColor
+
 
 # Metrics
 
@@ -138,7 +140,6 @@ class Graphic:
 
     def relXY(self, pos):
         "Calculate coordinates relative to the graphic object"
-#        if hasattr(self, "angle") and self.angle:
         if self.angle:
             xc, yc = self.rect.center
             x, y = transform2d(pos, preShift=(-xc,-yc), rotate=-self.angle)
@@ -150,7 +151,6 @@ class Graphic:
 
     def contains(self, pos):
         "Check if the graphic contains the coordinates"
-#        if hasattr(self, "angle") and self.angle:
         if self.angle:
             r = pygame.Rect((0,0), self.size)
             pos = self.relXY(pos)
@@ -262,7 +262,6 @@ class Graphic:
 
 class Renderable(Graphic):
     "Graphics produced by calling a render method"
-#    angle = 0
     stale = True
 
     def refresh(self):
@@ -306,7 +305,6 @@ class BaseSprite(Graphic):
     onbounce = None
 
     # Kinematics
-#    angle = 0
     spin = 0
     vel = 0, 0
     acc = None
@@ -423,7 +421,6 @@ class BaseSprite(Graphic):
 
 class Image(Graphic):
     "A class representing scaled and rotated images"
-#    angle = 0
 
     def __init__(self, data=(2,2), bg=None):
         self._srf = CachedSurface(data, bg)
@@ -534,14 +531,15 @@ class Canvas(Graphic):
 
     def __contains__(self, i):
         for gr in self._items:
-            if gr is i or (hasattr(gr, "name") and gr.name == i):
-                return True
+            if gr is i or getattr(gr, "name", None) == i: return True
         return False
 
     def __getitem__(self, i):
         if type(i) is int: return self._items[i]
-        for gr in self._items:
-            if hasattr(gr, "name") and gr.name == i: return gr
+        if i:
+            for gr in self._items:
+    #            if hasattr(gr, "name") and gr.name == i: return gr
+                if getattr(gr, "name", None) == i: return gr
         raise KeyError("{} contains no items with name '{}'".format(self,   i))
 
     def __iadd__(self, gr):
@@ -655,6 +653,18 @@ class Canvas(Graphic):
             if isinstance(g, cls): yield g
 
     def sprites(self): return self.instOf(BaseSprite)
+
+    def everything(self):
+        "Iterate through all Graphics recursively"
+        for gr in self:
+            yield gr
+            if isinstance(gr, Canvas):
+                for i in gr.everything(): yield i
+
+    def find(self, criteria, recursive=False):
+        "Yield all Graphics that meet the criteria"
+        for gr in (self.everything() if recursive else self):
+            if criteria(gr): yield gr
 
 
 class Sketch(Canvas):

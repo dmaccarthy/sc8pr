@@ -16,22 +16,19 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from sc8pr import Canvas, Graphic, Image, LEFT, RIGHT
+from sc8pr import Canvas, Image
 from sc8pr.text import Text
 from sc8pr.util import rgba, sc8prData
 
 OPTIONS = "#e0e0e0", "#b0b0ff", "#8080ff", "#8080ff", "grey"
-_check = Image.fromBytes(sc8prData("checkbox")).tiles(2, 2)
-_radio = Image.fromBytes(sc8prData("radio")).tiles(2, 2)
-_yesNo = Image.fromBytes(sc8prData("yesNo")).tiles(2)
 
-def yesNo(which=None):
-    if which is True: return Image(_yesNo[0])
-    if which is False: return Image(_yesNo[1])
-    if which is None: return [Image(_yesNo[i]) for i in (0,1)]
+def yesNo(): return Image.fromBytes(sc8prData("yesNo")).tiles(2)
 
 
 class Button(Canvas):
+    _statusNames = "normal", "hover", "selected", "hoverselected", "disabled"
+    _check = None
+    _radio = None
     _status = 0
     weight = 1
 
@@ -42,17 +39,37 @@ class Button(Canvas):
 
     def statusName(self, i=None):
         if i is None: i = self._status
-        return ("normal", "hover", "selected", "hoverselected", "disabled")[i]
+        return self._statusNames[i]
+
+    @property
+    def status(self): return self._status
+
+    @status.setter
+    def status(self, n):
+        if type(n) is str: n = self._statusNames.index(n.lower())
+        self._status = n
+
+    @staticmethod
+    def checkTiles():
+        if Button._check is None:
+            Button._check = Image.fromBytes(sc8prData("checkbox"))
+        return Button._check.tiles(2, 2)
+
+    @staticmethod
+    def radioTiles():
+        if Button._radio is None:
+            Button._radio = Image.fromBytes(sc8prData("radio"))
+        return Button._radio.tiles(2, 2)
 
     @staticmethod
     def checkbox(imgs=None):
         "Return a check box Button"
-        if imgs is None: imgs = _check
+        if imgs is None: imgs = Button.checkTiles()
         return Button(imgs[0].size,
             [Image(x) for x in imgs]).config(weight=0)
 
     @staticmethod
-    def radio(): return Button.checkbox(_radio)
+    def radio(): return Button.checkbox(Button.radioTiles())
 
     @property
     def selectable(self):
@@ -111,23 +128,6 @@ class Button(Canvas):
         if type(text) is str: text = Text(text)
         self += text.config(pos=(x,y)).config(**textCfg)
         return self
-
-    def menuItem(self, text, right=None, icon=0, padding=6, textCfg={}):
-        "Configure content as a menu item"
-        h = self.height - 2 * padding
-        w = self._icon(icon, padding).width if isinstance(icon, Graphic) else icon
-        if w is True: w = h
-        x = 2 * padding + w if w else padding
-        y = padding + h / 2
-        if type(text) is str: text = Text(text)
-        self += text.config(pos=(x,y), anchor=LEFT)
-        if isinstance(text, Text): text.config(**textCfg)
-        if right:
-            x = self.width - padding
-            if type(right) is str: right = Text(right)
-            if isinstance(right, Text): right.config(**textCfg)
-            self += right.config(pos=(x,y), anchor=RIGHT)
-        return self.config(weight=0)
 
     def draw(self, srf=None, mode=3):
         self._bg = self._options[self._status]
