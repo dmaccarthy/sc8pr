@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-version = 2, 0, "dev"
+version = 2, 0, "a1"
 
 import sys, os
 import pygame
@@ -220,6 +220,9 @@ class Graphic:
             p.append(g)
             g = g.canvas
         return p
+
+    @property
+    def dialog(self): return self.path[-2]
 
     def bubble(self, eventName, ev):
         "Pass an event to a different handler"
@@ -493,7 +496,7 @@ class Canvas(Graphic):
         "Calculate the clipping rect so as no to draw outside of the canvas"
         cv = self.canvas
         r = self.rect
-        return r.clip(cv.rect) if cv else r
+        return r.clip(cv.clipRect) if cv else r # cv.rect
 
     @property
     def angle(self): return 0
@@ -538,7 +541,6 @@ class Canvas(Graphic):
         if type(i) is int: return self._items[i]
         if i:
             for gr in self._items:
-    #            if hasattr(gr, "name") and gr.name == i: return gr
                 if getattr(gr, "name", None) == i: return gr
         raise KeyError("{} contains no items with name '{}'".format(self,   i))
 
@@ -567,17 +569,18 @@ class Canvas(Graphic):
             if recursive and isinstance(gr, Canvas): gr.purge()
             gr.remove()
 
-    def resize(self, size):
+    def resize(self, size, resizeContent=True):
         "Resize the canvas contents"
         size = max(1, round(size[0])), max(1, round(size[1]))
         fx, fy = size[0] / self._size[0], size[1] / self._size[1]
         self._size = size
 
-        # Resize objects
-        for g in self:
-            if g.autoPositionOnResize: g.scaleVectors(fx, fy)
-            w, h = g.size
-            g.resize((w * fx, h * fy))
+        # Resize content
+        if resizeContent:
+            for g in self:
+                if g.autoPositionOnResize: g.scaleVectors(fx, fy)
+                w, h = g.size
+                g.resize((w * fx, h * fy))
 
     def draw(self, srf=None, mode=3):
         "Draw the canvas to a surface"

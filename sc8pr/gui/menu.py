@@ -28,11 +28,6 @@ class Menu(Canvas):
     "Class for composing menus"
     _tri = None
 
-# Usage example...
-
-# items = [("Open", Image("open.png"), "Ctrl+O"), ("Save", None, "Ctrl+S"), "Exit"]
-# menu = Menu(items, txtConfig={"fontSize":14})
-
     def __init__(self, items, size=(192,24), weight=1, padding=6, options=2, txtConfig={}):
         w, h = size
         x = y = weight
@@ -63,7 +58,7 @@ class Menu(Canvas):
         if type(data) is str: data = data, None, None
         text, left, right = [Text(d) if type(d) is str else d for d in data]
         if text: btn += text.config(anchor=LEFT, pos=(x,y))
-        if left: btn += left.config(anchor=LEFT, pos=(padding,y), height=h)
+        if left: btn += left.config(pos=(y,y), height=h)
         x = btn.width - padding
         if right:
             if right == R_TRIANGLE: right = Menu.triangle()

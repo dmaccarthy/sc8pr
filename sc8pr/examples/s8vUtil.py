@@ -24,11 +24,10 @@ from time import time
 from os.path import split, exists
 from pygame.constants import K_LEFT, K_RIGHT, K_ESCAPE, K_HOME
 from sc8pr import Sketch, Image, TOPLEFT, BOTTOMRIGHT
-from sc8pr.util import fileExt
+from sc8pr.util import fileExt, nothing
 from sc8pr.text import Text, Font
 from sc8pr.misc.video import Video
-from sc8pr.gui.tkdialog import askopenfilename, askinteger,\
-    askfloat, askstring, askdirectory, asksaveasfilename, showinfo
+from sc8pr.gui.tkdialog import TkDialog, OPEN, SAVE, FOLDER
 try: from sc8pr.misc.grab import Grabber
 except: Grabber = None
 
@@ -36,8 +35,6 @@ FONT = Font.mono()
 EXTS = [("sc8pr Video", "*.s8v"), ("Image Files", "*.png;*.jpg")]
 NO_VID = "Type 'o' to Open a Video"
 FFMPEG = "ffmpeg -framerate {} -i frame%%05d.png -pix_fmt yuv420p video.mp4\npause"
-
-def noresize(gr, size): pass
 
 
 class ExportThread(Thread):
@@ -150,7 +147,7 @@ class Player(Sketch):
         w, h = self.size
         cfg = dict(anchor=BOTTOMRIGHT, pos=(w-4,h-4),
             font=FONT, color="#ff0000a0", name="status")
-        self += Text().bind(onclick=stopRecord, resize=noresize).config(**cfg)
+        self += Text().bind(onclick=stopRecord, resize=nothing).config(**cfg)
 
     def onkeydown(self, ev):
         "Detect keyboard actions when not recording"
@@ -168,7 +165,7 @@ class Player(Sketch):
             elif c == "s": self.saveVid()
             elif c == "g": self.grab()
             elif c == "h":
-                h = askinteger("Resize", "New height?")
+                h = TkDialog(int, "New height?", "Resize").run()
                 if h > 63: self.height = h
             elif c == " ":
                 vid.costumeTime = 1 - vid.costumeTime
@@ -177,8 +174,8 @@ class Player(Sketch):
             elif c == "]":
                 self.clip[1] = vid.costumeNumber + 1
             elif c == "f":
-                fps = askfloat("Frame Rate",
-                    "New frame rate in frames per second?")
+                fps = TkDialog(float, "New frame rate in frames per second?",
+                    "Frame Rate").run()
                 if fps and fps > 0: self.frameRate = fps
             else:
                 if k == K_ESCAPE: self.clip = [0, len(vid) + 1]
@@ -202,12 +199,12 @@ class Player(Sketch):
     def onquit(self, ev):
         "Check if program is busy before quitting"
         if active_count() > 1:
-            showinfo("Info", "Please wait until conversions are complete!")
+            TkDialog(None, "Please wait until conversions are complete!", "Info").run()
         elif self.rec is None: self.quit = True
 
     def open(self):
         "Open an s8v file or import a sequence of images and convert to s8v"
-        fn = askopenfilename(initialdir=".", filetypes=EXTS)
+        fn = TkDialog(OPEN, filetypes=EXTS).run()
         if fn:
             if fn.split(".")[-1].lower() == "s8v":
                 try: self.initVid(Video(fn))
@@ -219,13 +216,13 @@ class Player(Sketch):
     def record(self):
         "Begin screen grab recording"
         if self.recFolder is None:
-            fldr = askdirectory()
+            fldr = TkDialog(FOLDER).run()
             if fldr: self.recFolder = fldr
             else: return
         try:
-            param = askstring("Record", "Enter recording " +
+            param = TkDialog(str, "Enter recording " +
                 "parameters using one of these formats:\n" +
-                "fps\nfps w h\nfps x y w h", initialvalue="15")
+                "fps\nfps w h\nfps x y w h", "Record", initialvalue="15").run()
             param = [int(c) for c in param.split(" ") if c]
             self.frameRate = param[0]
             self.grab = Grabber(param[1:] if len(param) > 1 else None)
@@ -260,7 +257,7 @@ class Player(Sketch):
     def saveVid(self):
         "Save the current clip as an s8v file"
         if self.vid:
-            fn = asksaveasfilename(initialdir=".", filetypes=EXTS[:1])
+            fn = TkDialog(SAVE, filetypes=EXTS[:1]).run()
             if fn:
                 vid = self.vidClip
                 vid.meta["frameRate"] = self.frameRate
@@ -269,7 +266,7 @@ class Player(Sketch):
     def export(self):
         "Export the current clip as a sequence off images"
         if self.vid:
-            path = askdirectory()
+            path = TkDialog(FOLDER).run()
             if path:
                 with open(path + "/convert.bat", "w") as f:
                     f.write(FFMPEG.format(self.frameRate))
@@ -279,7 +276,7 @@ class Player(Sketch):
     def grab(self):
         "Save the current frame of the video as an image file"
         if self.vid:
-            fn = asksaveasfilename(initialdir=".", filetypes=EXTS[1:])
+            fn = TkDialog(SAVE, filetypes=EXTS[:1]).run()
             if fn:
                 try: self.vid.costume().save(fileExt(fn, ("png", "jpg")))
                 except: print("Unable to save '{}'".format(fn), file=stderr)
