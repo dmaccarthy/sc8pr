@@ -15,11 +15,14 @@ For more information, please see the [documentation](http://dmaccarthy.github.io
 
 # Installation
 
-Run the following commands as an administrator. Windows...
+Ensure that you have Python 3.4 or higher installed. Run the following commands as an administrator.
+
+Windows...
 ```
 py -3 -m pip install setuptools
 py -3 -m pip install https://github.com/dmaccarthy/sc8pr/archive/master.zip
 ```
+
 Most other systems...
 ```
 sudo pip3 install setuptools
