@@ -15,11 +15,15 @@ For more information, please see the [documentation](http://dmaccarthy.github.io
 
 # Installation
 
-Run the following commands as an administrator. Windows users may need to replace 'pip3' by 'py -3 -m pip' if 'pip3' is not in your system PATH.
-
+Run the following commands as an administrator. Windows...
 ```
-pip3 install setuptools
-pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
+py -3 -m pip install setuptools
+py -3 -m pip install https://github.com/dmaccarthy/sc8pr/archive/master.zip
+```
+Most other systems...
+```
+sudo pip3 install setuptools
+sudo pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
 ```
 
 If setuptools is unable to locate a Pygame wheel for your platform and Python version, you will need to install [pygame](http://www.pygame.org) separately.
