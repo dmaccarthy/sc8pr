@@ -21,7 +21,7 @@ pip3 install -U https://github.com/dmaccarthy/sc8pr/archive/master.zip
 
 If setuptools is unable to locate a Pygame wheel for your platform and Python version, you will need to install [pygame](http://www.pygame.org) separately.
 
-See the [documentation](http://dmaccarthy.github.io/sc8pr/inst.html) for more detailed instructions.
+See the documentation for more [detailed instructions](http://dmaccarthy.github.io/sc8pr/inst.html).
 
 # Try It First
 
