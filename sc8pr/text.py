@@ -109,6 +109,11 @@ class Text(Renderable):
 
     def __init__(self, data=""): self.data = data
 
+    def add(self, v):
+        self.data += v
+        self.stale = True
+        return self
+
     def config(self, **kwargs):
         keys = ("data", "color", "bg", "font", "fontSize", "fontStyle",
             "height", "width", "align", "padding", "spacing", "weight",
