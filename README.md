@@ -15,21 +15,13 @@ For more information, please see the [documentation](http://dmaccarthy.github.io
 
 # Installation
 
-Ensure that you have Python 3.4 or higher installed. Run the following commands as an administrator.
-
-Windows...
 ```
-py -3 -m pip install setuptools
-py -3 -m pip install https://github.com/dmaccarthy/sc8pr/archive/master.zip
-```
-
-Most other systems...
-```
-sudo pip3 install setuptools
-sudo pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
+pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
 ```
 
 If setuptools is unable to locate a Pygame wheel for your platform and Python version, you will need to install [pygame](http://www.pygame.org) separately.
+
+See the [documentation](http://dmaccarthy.github.io/sc8pr/inst.html) for more detailed instructions.
 
 # Try It First
 
