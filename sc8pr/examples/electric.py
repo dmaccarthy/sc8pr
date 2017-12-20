@@ -45,11 +45,11 @@ class Simulation(Sketch):
         y = h - 40
         x = w / 1.5
         pivot = x, y - 200
-        self += Line(pivot, (x, y)).config(name="string", weight=3)
+        self["string"] = Line(pivot, (x, y)).config(weight=3)
         self += Charge().config(pos=(x, y))
-        self += Circle(12).bind(ondrag).config(pos=(40,y), fill="blue", name="blue")
-        self += Text().config(pos=pivot, anchor=TOPRIGHT, font=MONO,
-            color="red", name="angle").config(height=24)
+        self["blue"] = Circle(12).bind(ondrag).config(pos=(40,y), fill="blue")
+        self["angle"] = Text().config(pos=pivot, anchor=TOPRIGHT,
+            font=MONO, color="red").config(height=24)
         self += Ruler(self.scale).config(pos=self.center)
 
 

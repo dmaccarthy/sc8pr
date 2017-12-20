@@ -146,8 +146,8 @@ class Player(Sketch):
         "Add status text to sketch"
         w, h = self.size
         cfg = dict(anchor=BOTTOMRIGHT, pos=(w-4,h-4),
-            font=FONT, color="#ff0000a0", name="status")
-        self += Text().bind(onclick=stopRecord, resize=nothing).config(**cfg)
+            font=FONT, color="#ff0000a0")
+        self["status"] = Text().bind(onclick=stopRecord, resize=nothing).config(**cfg)
 
     def onkeydown(self, ev):
         "Detect keyboard actions when not recording"
@@ -204,7 +204,7 @@ class Player(Sketch):
 
     def open(self):
         "Open an s8v file or import a sequence of images and convert to s8v"
-        fn = TkDialog(OPEN, filetypes=EXTS).run()
+        fn = TkDialog(OPEN, filetypes=EXTS, initialdir="./").run()
         if fn:
             if fn.split(".")[-1].lower() == "s8v":
                 try: self.initVid(Video(fn))
@@ -216,7 +216,7 @@ class Player(Sketch):
     def record(self):
         "Begin screen grab recording"
         if self.recFolder is None:
-            fldr = TkDialog(FOLDER).run()
+            fldr = TkDialog(FOLDER, initialdir="./").run()
             if fldr: self.recFolder = fldr
             else: return
         try:
@@ -257,7 +257,7 @@ class Player(Sketch):
     def saveVid(self):
         "Save the current clip as an s8v file"
         if self.vid:
-            fn = TkDialog(SAVE, filetypes=EXTS[:1]).run()
+            fn = TkDialog(SAVE, filetypes=EXTS[:1], initialdir="./").run()
             if fn:
                 vid = self.vidClip
                 vid.meta["frameRate"] = self.frameRate
@@ -266,7 +266,7 @@ class Player(Sketch):
     def export(self):
         "Export the current clip as a sequence off images"
         if self.vid:
-            path = TkDialog(FOLDER).run()
+            path = TkDialog(FOLDER, initialdir="./").run()
             if path:
                 with open(path + "/convert.bat", "w") as f:
                     f.write(FFMPEG.format(self.frameRate))
@@ -276,7 +276,7 @@ class Player(Sketch):
     def grab(self):
         "Save the current frame of the video as an image file"
         if self.vid:
-            fn = TkDialog(SAVE, filetypes=EXTS[:1]).run()
+            fn = TkDialog(SAVE, filetypes=EXTS[:1], initialdir="./").run()
             if fn:
                 try: self.vid.costume().save(fileExt(fn, ("png", "jpg")))
                 except: print("Unable to save '{}'".format(fn), file=stderr)

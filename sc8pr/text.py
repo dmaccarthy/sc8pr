@@ -109,7 +109,7 @@ class Text(Renderable):
 
     def __init__(self, data=""): self.data = data
 
-    def add(self, v):
+    def __iadd__(self, v):
         self.data += v
         self.stale = True
         return self

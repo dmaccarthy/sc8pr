@@ -51,8 +51,8 @@ class Arena(BrainSketch):
 
 	def setup(self):
 		self.bg = self.renderBG()
-		robo = Robot(["#ff5050", "#ffd428"]).config(name="Red")
-		self += self.bindBrain(robo).config(width=60,
+		robo = Robot(["#ff5050", "#ffd428"])
+		self["Red"] = self.bindBrain(robo).config(width=60,
 			pos=(100,400), angle=270, bounce=BOTH)
 		robo.gyro = robo.angle
 
@@ -82,8 +82,8 @@ class Trace(BrainSketch):
 		pl = Plot(self.size, [-4, 4, -1.5, 1.5]).config(bg="white")
 		pl.series(sin, param=[-pi, pi, 2 * self.width - 1], marker=("blue", 4))
 		self.bg = pl.snapshot()
-		robo = Robot(["#ff5050", "#ffd428"]).config(name="Traci")
-		self += self.bindBrain(robo).config(width=60, pos=self.center)
+		robo = Robot(["#ff5050", "#ffd428"])
+		self["Traci"] = self.bindBrain(robo).config(width=60, pos=self.center)
 
 	@staticmethod
 	def run(brain=None):
@@ -117,9 +117,8 @@ class ParkingLot(BrainSketch):
 		y = p.pixelCoords((0, uniform(1.5, 2)))[1]
 		attr = dict(height = h, mass = 1, wrap=0)
 		robot = Robot(["#ffd428", "#ff5050"]).config(
-			name = "Crash", pos = (x, y),
-			angle = randint(0, 359), **attr)
-		self += self.bindBrain(robot)
+			pos = (x, y), angle = randint(0, 359), **attr)
+		self["Crash"] = self.bindBrain(robot)
 		pos = lambda y: p.pixelCoords((0.5 + randint(0, 5), y))
 		c = False, False
 		a = 90, 270
@@ -145,8 +144,8 @@ class Party(BrainSketch):
 		for i in range(self.friends): self += PartyRobot(self)
 		RobotThread.log = True
 		robo = Robot(["#ff5050", "#ffd428"])
-		self += self.bindBrain(robo).config(width=2*RADIUS, pos=self.center,
-			mass=1, bounce=BOTH, greet=None, name="Red")
+		self["Red"] = self.bindBrain(robo).config(width=2*RADIUS,
+			pos=self.center, mass=1, bounce=BOTH, greet=None)
 		for r in self:
 			while min(dist(r.pos, s.pos) for s in self if s is not r) < 2 * r.radius:
 				r.pos = r.randPos(self)
@@ -156,7 +155,6 @@ class Party(BrainSketch):
 		robot = self[-1]
 		if robot in physics(self):
 			robot.greet = sorted(t.name for t in self.cd.involving(robot))[0]
-			
 
 	@staticmethod
 	def run(brain=None):
@@ -194,7 +192,7 @@ class PartyRobot(Robot):
 	def __init__(self, sk):
 		super().__init__([False, False])
 		self.config(width=2*RADIUS, pos=sk.center,
-			angle=uniform(0,360), name=self.names[len(sk)])
+			angle=uniform(0,360), _name=self.names[len(sk)])
 
 	def randPos(self, sk):
 		w, h = sk.size

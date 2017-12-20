@@ -40,9 +40,10 @@ def setup(sk):
 
     # Add text to the sketch
     font = {"font":Font.mono(), "fontStyle":BOLD}
-    sk += Text(0).config(name="Score", anchor=TOPLEFT, color="red", **font)
+    sk["Score"] = Text(0).config(anchor=TOPLEFT, color="red", **font)
     text = "Pummel the Chimp, and Win $$$"
-    sk += Text(text).config(pos=(sk.width-1,0), anchor=TOPRIGHT, **font)
+    sk += Text(text).config(pos=(sk.width-1,0),
+        anchor=TOPRIGHT, **font).config(width=0.75*sk.width)
 
     # Add fist
     folder = os.path.split(pygame.__file__)[0] + "/examples/data/"
@@ -51,7 +52,7 @@ def setup(sk):
 
     # Add chimp sprite
     img = loadImage(folder + "chimp.bmp")
-    sk += Sprite(img).config(name="Chimp", pos=(48,48),
+    sk["Chimp"] = Sprite(img).config(pos=(48,48),
         vel=(10,0), bounce=BOTH).bind(ondraw=chimpDraw)
 
     # Load audio files
@@ -68,7 +69,7 @@ def onclick(sk, ev):
     if chimp.contains(sk.mouse.pos):
         chimp.oldVel = chimp.vel
         chimp.config(spin=-8, vel=(0,0))
-        sk["Score"].add(1)
+        sk["Score"] += 1
         sound = 0
     else: sound = 1
     sk.sounds[sound].play()

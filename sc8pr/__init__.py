@@ -61,9 +61,18 @@ class Graphic:
     ondraw = None
     effects = None
 
+    @property
+    def name(self):
+        "The key used when adding the instance to a canvas"
+        return getattr(self, "_name", None)
+
+    def anon(self):
+        "Remove the instance's key (_name)"
+        if hasattr(self, "_name"): del self._name
+        return self
+
     def __str__(self):
-        name = getattr(self, "name", None)
-#        name = self.name if hasattr(self, "name") else id(self)
+        name = self.name
         return "<{} '{}'>".format(type(self).__name__, name if name else id(self))
 
     def config(self, **kwargs):
@@ -169,6 +178,9 @@ class Graphic:
 
     def setCanvas(self, cv):
         "Add the object to a canvas"
+        key = self.name
+        if key and key in cv and cv[key] is not self:
+            raise KeyError("Key '{}' is already in use".format(key))
         self.remove()
         self.canvas = cv
         cv._items.append(self)
@@ -179,6 +191,7 @@ class Graphic:
         cv = self.canvas
         if cv and self in cv._items:
             cv._items.remove(self)
+            self.anon()
             if deleteRect and hasattr(self, "rect"):
                 del self.rect
         return self
@@ -534,15 +547,19 @@ class Canvas(Graphic):
 
     def __contains__(self, i):
         for gr in self._items:
-            if gr is i or getattr(gr, "name", None) == i: return True
+            if gr is i or getattr(gr, "_name", None) == i: return True
         return False
 
     def __getitem__(self, i):
         if type(i) is int: return self._items[i]
         if i:
             for gr in self._items:
-                if getattr(gr, "name", None) == i: return gr
-        raise KeyError("{} contains no items with name '{}'".format(self,   i))
+                if getattr(gr, "_name", None) == i: return gr
+        raise KeyError("{} contains no items with key '{}'".format(self,   i))
+
+    def __setitem__(self, key, gr):
+        gr._name = key
+        if gr.canvas is not self: gr.setCanvas(self)
 
     def __iadd__(self, gr):
         "Add a Graphics instance(s) to the Canvas"

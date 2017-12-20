@@ -156,9 +156,9 @@ class SoccerBall(Sprite):
 class SoccerRobot(Robot):
     brains = [None, followBall, dumbBrain]
 
-    def __init__(self, color, name):
+    def __init__(self, color):
         super().__init__(color)
-        self.config(mass=20, bounce=BOTH, name=name)
+        self.config(mass=20, bounce=BOTH)
 
     def sensorObjects(self, sk):
         return list(sk.sprites()) + sk.nets
@@ -186,14 +186,14 @@ class SoccerGame(Sketch):
         else: robot.bind(brain=brain)
 
     def start(self):
-        yellow = SoccerRobot(["#ffd428", "#ff5050"], "Yellow")
-        red = SoccerRobot(["#ff5050", "#ffd428"], "Red")
+        yellow = SoccerRobot(["#ffd428", "#ff5050"])
+        red = SoccerRobot(["#ff5050", "#ffd428"])
         self.bindBrain(red, self.brains[0])
         self.bindBrain(yellow, self.brains[1])
         x, y = self.center
         x += (2 * randint(0, 1) - 1) * 16
-        self += yellow.config(pos=(1.5 * x, y), width=y/4, angle=90)
-        self += red.config(pos=(0.5 * x, y), width=y/4, angle=270)
+        self["Yellow"] = yellow.config(pos=(1.5 * x, y), width=y/4, angle=90)
+        self["Red"] = red.config(pos=(0.5 * x, y), width=y/4, angle=270)
 
     def ondraw(self): physics(self)
     
