@@ -30,6 +30,7 @@ class TextInput(Text):
     cursorTime = 1.0
     cursorOn = 0.35
     promptColor = rgba("#f0f0f0")
+    allowButton = 1,
 
     def __init__(self, data="", prompt=None):
         super().__init__(str(data).split("\n")[0])
@@ -119,13 +120,16 @@ class TextInput(Text):
         return (font.size(d[:i])[0] + font.size(d[:i+1])[0]) // 2
 
     def onclick(self, ev):
-        self.startCursor()
-        x = self.relXY(ev.pos)[0] - self.padding
-        n = len(self.data)
-        i = 0
-        while i < n and x > self._widthTo(i): i += 1
-        self.cursor = i
+        if ev.button in self.allowButton:
+            self.startCursor()
+            x = self.relXY(ev.pos)[0] - self.padding
+            n = len(self.data)
+            i = 0
+            while i < n and x > self._widthTo(i): i += 1
+            self.cursor = i
+        elif not hasattr(self, "cursorStart"): self.blur()
 
     def onblur(self, ev):
         if not self.data: self.stale = True
+        if hasattr(self, "cursorStart"): del self.cursorStart
         self.bubble("onaction", ev)

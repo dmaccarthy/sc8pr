@@ -31,6 +31,7 @@ class Button(Canvas):
     _radio = None
     _status = 0
     weight = 1
+    allowButton = 1,
 
     def __init__(self, size=None, options=None):
         self.options = options
@@ -145,5 +146,7 @@ class Button(Canvas):
             self._status &= 254
 
     def onclick(self, ev):
-        if self.selectable: self.selected = not self.selected
-        self.bubble("onaction", ev)
+        if ev.button in self.allowButton:
+            if self.selectable: self.selected = not self.selected
+            self.bubble("onaction", ev)
+#

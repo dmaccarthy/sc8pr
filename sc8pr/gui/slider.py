@@ -20,20 +20,27 @@ from pygame.constants import K_LEFT, K_RIGHT, K_UP, K_DOWN
 from sc8pr import Canvas, Image, Graphic
 from sc8pr.util import tall
 
+CLICK = 0
+SCROLL = 1
+DRAG = 2
+KEY = 3
 
 def ondrag(knob, ev):
     "Handle drag events on the slider's 'knob' object"
     slider = knob.canvas
-    x = slider.eventValue(ev)
-    setattr(ev, "target", slider)
-    if x != slider._val:
-        slider.value = x
-        slider.bubble("onchange", ev)
+    if slider._lastButton in slider.allowButton:
+        x = slider.eventValue(ev)
+        setattr(ev, "target", slider)
+        if x != slider._val:
+            slider.value = x
+            setattr(ev, "method", DRAG)
+            slider.bubble("onchange", ev)
 
 
 class Slider(Canvas):
     "A numerical slider GUI control"
     focusable = True
+    allowButton = 1, 4, 5
 
     def __init__(self, size=(128,16), knob="grey", lower=0, upper=1, steps=0):
         super().__init__(size)
@@ -84,15 +91,22 @@ class Slider(Canvas):
 
     def onclick(self, ev):
         "Handle click events on the slider canvas"
-        x = self.eventValue(ev)
-        s = self.steps
-        if not s: s = 100
-        s = (self.upper - self.lower) / s
-        v = self._val
-        if x != v:
-            if x < v: self.value -= s
-            else: self.value += s
-            if ev: self.bubble("onchange", ev)
+        self._lastButton = btn = ev.button
+        if btn in self.allowButton:
+            dim = tall(*self.size)
+            lims = [self.lower, self.upper]
+            if btn == 4: x = lims[dim]
+            elif btn == 5: x = lims[1-dim]
+            else: x = self.eventValue(ev)
+            s = self.steps
+            if not s: s = 100
+            s = (self.upper - self.lower) / s
+            v = self._val
+            if x != v:
+                if x < v: self.value -= s
+                else: self.value += s
+                setattr(ev, "method", SCROLL if btn in (4,5) else CLICK)
+                if ev: self.bubble("onchange", ev)
 
     def onkeydown(self, ev):
         "Handle arrow keys when the slider is focussed"
@@ -106,4 +120,6 @@ class Slider(Canvas):
             s = self.steps
             if not s: s = 100
             self.value = self._val + dx * (self.upper - self.lower) / s
-            if self._val != cur: self.bubble("onchange", ev)
+            if self._val != cur:
+                setattr(ev, "method", KEY)
+                self.bubble("onchange", ev)

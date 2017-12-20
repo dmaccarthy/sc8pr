@@ -551,13 +551,18 @@ class Canvas(Graphic):
         return False
 
     def __getitem__(self, i):
-        if type(i) is int: return self._items[i]
+        if type(i) in (int, slice): return self._items[i]
         if i:
             for gr in self._items:
-                if getattr(gr, "_name", None) == i: return gr
-        raise KeyError("{} contains no items with key '{}'".format(self,   i))
+                if getattr(gr, "_name", None) is i: return gr
+        raise KeyError("{} contains no items with key '{}'".format(self, i))
 
     def __setitem__(self, key, gr):
+        t = type(key)
+        if not key.__hash__:
+            raise KeyError("Type '{}' cannot be used as a key".format(t.__name__))
+        elif t in (int, slice):
+            raise KeyError("Assignment by layer is not supported")
         gr._name = key
         if gr.canvas is not self: gr.setCanvas(self)
 
