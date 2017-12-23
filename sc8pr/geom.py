@@ -36,12 +36,12 @@ def sprod(v1, v2):
     "2D scalar product"
     return v1[0] * v2[0] + v1[1] * v2[1]
 
-def delta(vf, vi=None, mag=None):
-    "vf - vi, rescaled to specified magnitude"
-    if vi:
-        x = vf[0] - vi[0]
-        y = vf[1] - vi[1]
-    else: x, y = vf
+def delta(v2, v1=None, mag=None):
+    "v2 - v1, rescaled to specified magnitude"
+    if v1:
+        x = v2[0] - v1[0]
+        y = v2[1] - v1[1]
+    else: x, y = v2
     if mag:
         r = hypot(x, y)
         if r:

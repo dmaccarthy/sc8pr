@@ -113,7 +113,10 @@ class Circle(Shape):
 
 class Line(Shape):
     resolution = 1e-10
-    snapshot = None
+    
+    def snapshot(self, **kwargs):
+        msg = "{} does not support snapshot"
+        raise NotImplementedError(msg.format(type(self)))
 
     def __init__(self, start, point=None, vector=None):
         "Create a line or line segment"
@@ -144,17 +147,17 @@ class Line(Shape):
     def midpoint(self):
         return self.point(self.length/2)
 
-    def parameters(self, point):
+    def parameters(self, pt):
         "Find parameters (s,d) of point q = p0 + s*u + d*n where n is perpendicular to u"
         pos = self.pos
-        dx = point[0] - pos[0]
-        dy = point[1] - pos[1]
+        dx = pt[0] - pos[0]
+        dy = pt[1] - pos[1]
         ux, uy = self.u
         return ux * dx + uy * dy, ux * dy - uy * dx
     
-    def closest(self, point):
+    def closest(self, pt):
         "Find the point on the line / segment closest to the specified point"
-        s = self.parameters(point)[0]
+        s = self.parameters(pt)[0]
         l = self.length
         if l:
             if s < 0: s = 0
@@ -193,6 +196,8 @@ class Line(Shape):
 # Drawing and canvas interaction
 
     def draw(self, srf, snapshot=False):
+        if self.length is None:
+            raise AttributeError("Unable to draw line; segment length not given")
         cv = self.canvas
         dx, dy = (0, 0) if snapshot else cv.rect.topleft
         x1, y1 = self.point(0)
