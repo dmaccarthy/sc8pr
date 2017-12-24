@@ -93,7 +93,7 @@ class Circle(Shape):
         "Determine if the point is within the circle; do not account for canvas offset"
         return dist(self.pos, pos) < self.radius
 
-    def intersectCircle(self, other):
+    def intersect(self, other):
         "Find the intersection(s) of two circles as list of points"
         R = self.radius
         r = other.radius
@@ -219,10 +219,10 @@ class Line(Shape):
 
 
 class Polygon(Shape):
-    autoPositionOnResize = False
+#    autoPositionOnResize = False
     _angle = 0
 
-    def setPoints(self, pts, pos=None):
+    def __init__(self, pts, pos=None):
         (x0, x1), (y0, y1) = tuple((min(x[i] for x in pts),
             max(x[i] for x in pts)) for i in (0,1))
         if pos is None: pos = (x0 + x1) / 2, (y0 + y1) / 2
@@ -231,9 +231,11 @@ class Polygon(Shape):
         size = abs(x1 - x0), abs(y1 - y0)
         self._rect = pygame.Rect((x0, y0), size)
         self.vertices = list(pts)
-        self.dumpCache()
+        self._dumpCache()
 
-    __init__ = setPoints
+    def setPoints(self, pts, pos=None):
+        self.__init__(pts, pos)
+        return self
 
     def config(self, **kwargs):
         keys = "fill", "stroke", "weight"
@@ -258,12 +260,14 @@ class Polygon(Shape):
     def angle(self): return self._angle
 
     @angle.setter
-    def angle(self, a): self.rotate(a - self._angle)
+    def angle(self, a):
+        self.transform(a - self._angle)
+        self._angle = a
 
-    def dumpCache(self):
+    def _dumpCache(self):
         self._srf = None
         self._segCache = None
-    
+
     @property
     def center(self): return self._rect.center
 
@@ -278,11 +282,11 @@ class Polygon(Shape):
 
     @property
     def image(self):
-        "Return the most recent endered Surface"
-        if self._srf is None: self._srf = self.render()
+        "Return the most recent rendered Surface"
+        if self._srf is None: self._srf = self._render()
         return self._srf
 
-    def render(self):
+    def _render(self):
         "Render the polygon onto a new Surface"
         w, f, s = round(self.weight), self._fill, self._stroke
         dx, dy = self._rect.topleft
@@ -307,7 +311,7 @@ class Polygon(Shape):
 
     @ property
     def segments(self):
-        if not self._segCache: self._segCache = tuple(self._segments())
+        if not self._segCache: self._segCache = list(self._segments())
         return self._segCache
 
     def intersect(self, other):
@@ -334,21 +338,29 @@ class Polygon(Shape):
         "Resize the polygon (e.g. when scaling the canvas)"
         w, h = self.size
         f = size[0] / w, size[1] / h
-        self.scaleVectors(*f, ("vel", "acc"))
-        pts = self.vertices
-        for i in range(len(pts)):
-            x, y = pts[i]
-            pts[i] = f[0] * x, f[1] * y
-        x, y = self._pos
-        self.setPoints(pts, (f[0] * x, f[1] * y))
+        self.transform(scale=f)
+#         self.scaleVectors(*f, ("vel", "acc"))
+#         pts = self.vertices
+#         for i in range(len(pts)):
+#             x, y = pts[i]
+#             pts[i] = f[0] * x, f[1] * y
+#         x, y = self._pos
+#         self.setPoints(pts, (f[0] * x, f[1] * y))
         return f
 
-    def rotate(self, angle=0):
-        "Rotate the Polygon around its anchor point"
+    def transform(self, rotate=0, scale=1):
+        "Rotate and scale the Polygon around its anchor point"
         shift = self._pos
-        pts = transform2dGen(self.vertices, rotate=angle, shift=shift, preShift=True)
-        self.setPoints(list(pts), self._pos)
-        self._angle += angle
+        pts = transform2dGen(self.vertices, shift=shift,
+            preShift=True, rotate=rotate, scale=scale)
+        return self.setPoints(list(pts), self._pos)
+
+#     def rotate(self, angle=0):
+#         "Rotate the Polygon around its anchor point"
+#         shift = self._pos
+#         pts = transform2dGen(self.vertices, rotate=angle, shift=shift, preShift=True)
+#         self.setPoints(list(pts), self._pos)
+#         self._angle += angle
 
 
 class Arrow(Polygon):
