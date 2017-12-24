@@ -41,7 +41,7 @@ class BrainSketch(Sketch):
 	def bindBrain(self, robot):
 		brain = self.brain
 		if brain is None:
-			self.bind(onkeydown=Robot.remote).config(remote=robot)
+			self.bind(onkeydown=Robot.remoteControl).config(remoteRobot=robot)
 			brain = self.sensorBrain
 		return robot.bind(brain=brain)
 

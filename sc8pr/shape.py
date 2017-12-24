@@ -219,23 +219,39 @@ class Line(Shape):
 
 
 class Polygon(Shape):
-#    autoPositionOnResize = False
     _angle = 0
 
     def __init__(self, pts, pos=None):
-        (x0, x1), (y0, y1) = tuple((min(x[i] for x in pts),
-            max(x[i] for x in pts)) for i in (0,1))
-        if pos is None: pos = (x0 + x1) / 2, (y0 + y1) / 2
+        self.vertices = pts = list(pts)
+        self._rect = self._metrics(pts)
+        if pos is None: pos = self.center
         elif type(pos) is int: pos = pts[pos]
         self._pos = pos
-        size = abs(x1 - x0), abs(y1 - y0)
-        self._rect = pygame.Rect((x0, y0), size)
-        self.vertices = list(pts)
         self._dumpCache()
 
     def setPoints(self, pts, pos=None):
         self.__init__(pts, pos)
         return self
+
+    def _metrics(self, pts):
+        (x0, x1), (y0, y1) = tuple((min(x[i] for x in pts),
+            max(x[i] for x in pts)) for i in (0,1))
+        size = abs(x1 - x0), abs(y1 - y0)
+        return (x0, y0), size
+
+    @property
+    def center(self):
+        corner, size = self._rect
+        return tuple(corner[i] + size[i] / 2 for i in (0,1))
+
+    @property
+    def size(self): return self._rect[1]
+
+    def blitPosition(self, offset, blitSize):
+        "Return the position (top left) to which the graphic is drawn"
+        x, y = self._rect[0]
+        w = self.weight
+        return x + offset[0] - w, y + offset[1] - w
 
     def config(self, **kwargs):
         keys = "fill", "stroke", "weight"
@@ -243,10 +259,10 @@ class Polygon(Shape):
         return super().config(**kwargs)
 
     @property
-    def pos(self): return self._pos
+    def anchor(self): return self._pos
 
     @property
-    def anchor(self): return self._pos
+    def pos(self): return self._pos
 
     @pos.setter
     def pos(self, pos):
@@ -264,21 +280,24 @@ class Polygon(Shape):
         self.transform(a - self._angle)
         self._angle = a
 
+    def transform(self, rotate=0, scale=1):
+        "Rotate and scale the Polygon around its anchor point"
+        shift = self._pos
+        pts = transform2dGen(self.vertices, shift=shift,
+            preShift=True, rotate=rotate, scale=scale)
+        return self.setPoints(list(pts), self._pos)
+
+    def resize(self, size):
+        "Resize the polygon (e.g. when scaling the canvas)"
+        w, h = self._rect[1]
+        f = size[0] / w, size[1] / h
+        print(w, h, size, f)
+        self.transform(scale=f)
+        return f
+
     def _dumpCache(self):
         self._srf = None
         self._segCache = None
-
-    @property
-    def center(self): return self._rect.center
-
-    @property
-    def size(self): return self._rect.size
-
-    def blitPosition(self, offset, blitSize):
-        "Return the position (top left) to which the graphic is drawn"
-        x, y = self._rect.topleft
-        w = self.weight
-        return x + offset[0] - w, y + offset[1] - w
 
     @property
     def image(self):
@@ -289,7 +308,7 @@ class Polygon(Shape):
     def _render(self):
         "Render the polygon onto a new Surface"
         w, f, s = round(self.weight), self._fill, self._stroke
-        dx, dy = self._rect.topleft
+        dx, dy = self._rect[0]
         dx = w - dx
         dy = w - dy
         size = self.size
@@ -327,40 +346,12 @@ class Polygon(Shape):
 
     def containsPoint(self, pos):
         "Determine if the point is within the polygon; do not account for canvas offset"
-        x, y = self._rect.bottomright
-        l = Line(pos, (x + 2 * self.weight, y + random()))
+        x, y = self._rect[0]
+        l = Line(pos, (x - 2 * self.weight, y - random()))
         n = 0
         for s in self._segments():
             if s.intersect(l): n += 1
         return n % 2 == 1
-
-    def resize(self, size):
-        "Resize the polygon (e.g. when scaling the canvas)"
-        w, h = self.size
-        f = size[0] / w, size[1] / h
-        self.transform(scale=f)
-#         self.scaleVectors(*f, ("vel", "acc"))
-#         pts = self.vertices
-#         for i in range(len(pts)):
-#             x, y = pts[i]
-#             pts[i] = f[0] * x, f[1] * y
-#         x, y = self._pos
-#         self.setPoints(pts, (f[0] * x, f[1] * y))
-        return f
-
-    def transform(self, rotate=0, scale=1):
-        "Rotate and scale the Polygon around its anchor point"
-        shift = self._pos
-        pts = transform2dGen(self.vertices, shift=shift,
-            preShift=True, rotate=rotate, scale=scale)
-        return self.setPoints(list(pts), self._pos)
-
-#     def rotate(self, angle=0):
-#         "Rotate the Polygon around its anchor point"
-#         shift = self._pos
-#         pts = transform2dGen(self.vertices, rotate=angle, shift=shift, preShift=True)
-#         self.setPoints(list(pts), self._pos)
-#         self._angle += angle
 
 
 class Arrow(Polygon):

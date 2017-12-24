@@ -44,10 +44,10 @@ class RobotThread(Thread):
         if self.log:
             print('{} is running in thread {}.'.format(*args), file=stderr)
         try:
-            while r.startup: r.sleep()
+            while r._startup: r.sleep()
             r._startTime = time()
             r.brain()
-            if r.shutdown: r.shutdown()
+            if hasattr(r, "shutdown"): r.shutdown()
         except: logError()
         if self.log:
             print('{} is shutting down in thread {}.'.format(*args), file=stderr)
@@ -57,14 +57,21 @@ class InactiveError(Exception):
     def __init__(self): super().__init__("Robot is no longer active")
 
 
+def _tempColor(px, color, *args):
+    "Replace "
+    c = color
+    while c in args: c = rgba(False)
+    if c != color: px.replace(color, c)
+    return c
+
+
 class Robot(Sprite):
     _motors = 0, 0
     _updateSensors = True
-    startup = True
+    _startup = True
     sensorNoise = 8
     collision = False
     maxSpeed = 1 / 512
-    shutdown = None
     sensorDown = None
     sensorFront = None
     sensorWidth = 10
@@ -72,11 +79,16 @@ class Robot(Sprite):
 
     def __init__(self, colors=None):
         img = Image.fromBytes(sc8prData("robot"))
-        if colors:
+        if colors:  # Replace body and nose  colors
             px = pygame.PixelArray(img.image)
-            for i in range(2):
-                c = 255 * (1 - i), 0, 255*i
-                px.replace(c, rgba(colors[i]))
+            body0, nose0, body, nose = rgba("red", "blue", *colors)
+            orig = body0, nose0
+            if body in orig or nose in orig:
+                colors = body0, nose0, body, nose
+                body0 = _tempColor(px, body0, *colors)
+                nose0 = _tempColor(px, nose0, *colors)
+            if nose != nose0: px.replace(nose0, nose)
+            if body != body0: px.replace(body0, body)
         img = img.tiles(2)
         super().__init__(img)
 
@@ -92,7 +104,8 @@ class Robot(Sprite):
         self._gyro = positiveAngle(g - self.angle)
 
     @property
-    def stopped(self): return self.vel == (0,0)
+    def stopped(self):
+        return self.vel == (0,0) and self.motors == (0,0)
 
     def setCanvas(self, sk):
         if not isinstance(sk, Sketch):
@@ -119,9 +132,10 @@ class Robot(Sprite):
 
     def sleep(self, t=None):
         "Sleep for the specified time"
+        if not self.active: raise InactiveError()
         if t: sleep(t)
         else:
-            if not self.active: raise InactiveError()
+#            if not self.active: raise InactiveError()
             sleep(1 / self.sketch.frameRate)
 
     @property
@@ -192,16 +206,16 @@ class Robot(Sprite):
         # Update sensors if requested...
         if self._updateSensors:
             try:
-                self.checkDown()
-                self.checkFront()
-                self.drawLEDs()
+                self._checkDown()
+                self._checkFront()
+                self._drawLEDs()
                 self._updateSensors = False
             except: logError()
-        self.startup = False
+        self._startup = False
 
     def sensorObjects(self, sk): return list(sk.sprites())
 
-    def checkFront(self):
+    def _checkFront(self):
         "Update the front color sensor"
 
         # Get sensor position
@@ -239,7 +253,7 @@ class Robot(Sprite):
         self.sensorFront = noise(divAlpha(c), self.sensorNoise, 255)
         self.proximity = None if prox is None else round(prox)
 
-    def checkDown(self):
+    def _checkDown(self):
         "Update the down color sensor"
         x, y = self.rect.center
         r = 0.8 * self.radius
@@ -255,7 +269,7 @@ class Robot(Sprite):
         else: c = 0, 0, 0
         self.sensorDown = noise(c, self.sensorNoise, 255)
 
-    def drawLEDs(self):
+    def _drawLEDs(self):
         "Draw LEDs on the robot to indicate color sensor data"
         for costume in self._costumes:
             srfs = costume._srf
@@ -270,9 +284,9 @@ class Robot(Sprite):
             srfs.dumpCache()
 
     @staticmethod
-    def remote(sk, ev):
+    def remoteControl(sk, ev):
         try:
-            r = sk.remote
+            r = sk.remoteRobot
             key = ev.key
             if key == K_SPACE: r.motors = 0
             else:

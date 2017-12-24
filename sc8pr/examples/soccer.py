@@ -182,7 +182,7 @@ class SoccerGame(Sketch):
 
     def bindBrain(self, robot, brain):
         if brain is None:
-            self.bind(onkeydown=Robot.remote).config(remote=robot)
+            self.bind(onkeydown=Robot.remoteControl).config(remoteRobot=robot)
         else: robot.bind(brain=brain)
 
     def start(self):
