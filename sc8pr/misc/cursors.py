@@ -18,7 +18,7 @@
 
 import pygame.cursors as pc
 from pygame.cursors import arrow, diamond, broken_x, tri_left, tri_right
- 
+
 sizer_x = ((24,16),(12,8)) + pc.compile(pc.sizer_x_strings)
 sizer_y = ((24,16),(12,8)) + pc.compile(pc.sizer_y_strings)
 sizer_xy = ((24,16),(12,8)) + pc.compile(pc.sizer_xy_strings)

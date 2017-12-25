@@ -25,7 +25,7 @@ SCROLL = 1
 DRAG = 2
 KEY = 3
 
-def ondrag(knob, ev):
+def _knobDrag(knob, ev):
     "Handle drag events on the slider's 'knob' object"
     slider = knob.canvas
     if slider._lastButton in slider.allowButton:
@@ -47,7 +47,7 @@ class Slider(Canvas):
         if not isinstance(knob, Graphic): knob = Image(bg=knob)
         w, h = size
         kwargs = {"width":w} if h > w else {"height":h}
-        self += knob.bind(ondrag).config(**kwargs)
+        self += knob.bind(ondrag=_knobDrag).config(**kwargs)
         self.knob = knob
         self.steps = steps
         if upper < lower:

@@ -35,13 +35,13 @@ class Video(Sprite):
     "A class for storing and retrieving sequences of compressed images"
     _current = None,
 
-    def __init__(self, data=None, alpha=True, notify=False):
+    def __init__(self, data=None, alpha=False, notify=None):
         self.alpha = alpha
         self.meta = {}
         self._costumes = []
         t = type(data)
         if t is str: self._load(data, notify)
-        elif t is tuple and type(data[0]) is int: self._size = data#[0]
+        elif t is tuple and type(data[0]) is int: self._size = data
         elif data:
             self._costumes = [surfaceData(img) for img in data]
         if len(self._costumes):
@@ -54,9 +54,10 @@ class Video(Sprite):
     def __iadd__(self, img):
         "Append a frame to the video"
         self._costumes.append(surfaceData(img))
+        if not hasattr(self, "_size"): self._size = img.size
         return self
 
-    append = __iadd__
+#    append = __iadd__
 
     def __getitem__(self, n):
         "Return a frame as an Image instance"
@@ -75,7 +76,7 @@ class Video(Sprite):
 
     def extend(self, imgs):
         "Append multiple frames to the video"
-        self._costumes.append([surfaceData(img) for img in imgs])
+        self._costumes.extend(surfaceData(img) for img in imgs)
         return self
 
     def _loadMeta(self, zf):
@@ -85,7 +86,7 @@ class Video(Sprite):
     def _saveMeta(self, zf):
         if self.meta: zf.writestr("metadata", jsonToBytes(self.meta))
 
-    def _load(self, fn, notify=False):
+    def _load(self, fn, notify=None):
         "Load the video from a ZIP file"
         with ZipFile(fn) as zf:
             self._loadMeta(zf)
@@ -118,9 +119,8 @@ class Video(Sprite):
         vid._costumes = [costumes[i] for i in start]
         return vid
 
-    def save(self, fn, notify=False):
-        "Save the video as a ZIP file"
-        self.meta["sc8pr.version"] = version
+    def save(self, fn, notify=None):
+        self.meta["Saved By"] = "sc8pr{}".format(version)
         with ZipFile(fn, "w") as zf:
             self._saveMeta(zf)
             costumes = self._costumes
@@ -129,21 +129,23 @@ class Video(Sprite):
                 data, mode = costumes[i]
                 zf.writestr(str(i), b'' if i and costumes[i] == costumes[i-1] else data + mode)
         if notify: notify(fn, None, self)
+        return self
 
-    def exportFrames(self, fn="save/frame{:05d}.png", notify=False):
+    def exportFrames(self, fn, notify=None):
         "Save the video as a sequence of individual frames"
         costumes = self._costumes
         for i in range(len(costumes)):
             if notify: notify(fn, i, self)
             Image(*costumes[i]).save(fn.format(i))
         if notify: notify(fn, None, self)
+        return self
 
     @staticmethod
-    def importFrames(fn, seq=0, alpha=True, notify=False):
+    def importFrames(fn, seq=1, notify=None):
         "Load the video from a sequence of individual frames"
         if type(seq) is int:
             seq = range(seq, _lastFile(fn, seq) + 1)
-        vid = Video(alpha=alpha)
+        vid = Video()#alpha=alpha
         n = 0
         for s in seq:
             if notify: notify(fn, n, vid)
@@ -151,7 +153,7 @@ class Video(Sprite):
             vid += img
             n += 1
         img = Image(*vid._costumes[0])
-        vid._size = img.size
+#        vid._size = img.size
         vid._current = 0, img
         if notify: notify(fn, None, vid)
         return vid
