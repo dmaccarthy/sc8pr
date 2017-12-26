@@ -49,7 +49,7 @@ class Radio(Options):
     buttons handle onclick; radio handles onaction and triggers onchange"""
 
     def __init__(self, text, size=None, space=4, imgs=None, **kwargs):
-        if imgs is None: imgs = Button.radioTiles()
+        if imgs is None: imgs = Button._radioTiles()
         super().__init__(text, size, space, imgs, **kwargs)
 
     @property

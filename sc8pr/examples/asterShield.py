@@ -219,8 +219,9 @@ class Game(Sketch):
             y += self[-1].height + 8
 
         icon = Sprite(Asteroid.original).config(spin=0.4)
-        self += Button((w/7, h/10)).bind(onclick=restart).textIcon("Okay",
-            icon, 10, {"font":MONO}).config(pos=(self.center[0], 0.9 * h),
+        okay = Text("Okay").config(font=MONO)
+        self += Button((w/7, h/10)).bind(onclick=restart).textIcon(okay,
+            icon, 10).config(pos=(self.center[0], 0.9 * h),
             anchor=BOTTOM, border="blue", weight=3)
 
 

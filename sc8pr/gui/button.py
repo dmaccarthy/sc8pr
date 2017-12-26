@@ -22,13 +22,12 @@ from sc8pr.util import rgba, sc8prData
 
 OPTIONS = "#e0e0e0", "#b0b0ff", "#8080ff", "#8080ff", "grey"
 
-def yesNo(): return Image.fromBytes(sc8prData("yesNo")).tiles(2)
-
 
 class Button(Canvas):
     _statusNames = "normal", "hover", "selected", "hoverselected", "disabled"
     _check = None
     _radio = None
+    _yesNo = None
     _status = 0
     weight = 1
     allowButton = 1,
@@ -51,13 +50,15 @@ class Button(Canvas):
         self._status = n
 
     @staticmethod
-    def checkTiles():
+    def _checkTiles():
+        "Images for creating check boxes"
         if Button._check is None:
             Button._check = Image.fromBytes(sc8prData("checkbox"))
         return Button._check.tiles(2, 2)
 
     @staticmethod
-    def radioTiles():
+    def _radioTiles():
+        "Images for creating radio check boxes"
         if Button._radio is None:
             Button._radio = Image.fromBytes(sc8prData("radio"))
         return Button._radio.tiles(2, 2)
@@ -65,12 +66,11 @@ class Button(Canvas):
     @staticmethod
     def checkbox(imgs=None):
         "Return a check box Button"
-        if imgs is None: imgs = Button.checkTiles()
-        return Button(imgs[0].size,
-            [Image(x) for x in imgs]).config(weight=0)
+        if imgs is None: imgs = Button._checkTiles()
+        return Button(None, (Image(x) for x in imgs)).config(weight=0)
 
     @staticmethod
-    def radio(): return Button.checkbox(Button.radioTiles())
+    def radio(): return Button.checkbox(Button._radioTiles())
 
     @property
     def selectable(self):
@@ -120,15 +120,22 @@ class Button(Canvas):
         icon.config(pos=(padding + w / 2, padding + h / 2))
         return icon
 
-    def textIcon(self, text, icon=None, padding=6, textCfg={}):
+    def textIcon(self, text, icon=None, padding=6):
         "Add text and icon to button"
         x, y = self.center
+        if type(icon) is bool: icon = self._yesNoImg(icon)
         if icon:
             w = self._icon(icon, padding).width
             x += (w + padding) / 2
         if type(text) is str: text = Text(text)
-        self += text.config(pos=(x,y)).config(**textCfg)
+        self += text.config(pos=(x,y))
         return self
+
+    @staticmethod
+    def _yesNoImg(n):
+        if Button._yesNo is None:
+            Button._yesNo = Image.fromBytes(sc8prData("yesNo")).tiles(2)
+        return Button._yesNo[0 if n else 1]
 
     def draw(self, srf=None, mode=3):
         self._bg = self._options[self._status]
@@ -149,4 +156,3 @@ class Button(Canvas):
         if ev.button in self.allowButton:
             if self.selectable: self.selected = not self.selected
             self.bubble("onaction", ev)
-#
