@@ -18,7 +18,7 @@
 
 import pygame
 from pygame.pixelarray import PixelArray
-from sc8pr import LEFT, RIGHT
+#from sc8pr import LEFT, RIGHT
 from sc8pr.util import rgba
 from random import uniform, random
 from math import sqrt
@@ -46,8 +46,8 @@ class ReplaceColor(Effect):
     "Replace one color by another"
 
     def __init__(self, color, replace=(0,0,0,0), dist=0):
-        self.color1 = color
-        self.color2 = replace
+        self.color1 = rgba(color)
+        self.color2 = rgba(replace)
         self.dist = dist
 
     def apply(self, img, n=0):
@@ -64,23 +64,24 @@ class Tint(Effect):
         self.color = rgba(color)
 
     def apply(self, img, n=0):
-        srf = self.srfSize(img)
-        color = [round(c + (255 - c) * n) for c in self.color]
-        srf.fill(color, None, pygame.BLEND_RGBA_MULT)
+        if n < 1:
+            srf = self.srfSize(img)
+            color = [round(c + (255 - c) * n) for c in self.color]
+            srf.fill(color, None, pygame.BLEND_RGBA_MULT)
         return img
 
 
 class Wipe(Effect):
 
-    def __init__(self, flags=1): self.flags = flags
+    def __init__(self, start=5): self.start = start
 
     @staticmethod
-    def _dim(n, flags, w0):
+    def _dim(n, start, w0):
         "Calculate 'wiped' position and size in one dimension"
-        if flags:
+        if start is not None:
             w = round(n * w0)
             dw = w0 - w
-            x = dw if flags == RIGHT else 0 if flags == LEFT else dw//2
+            x = dw//2 if start & 1 else dw if start & 2 else 0
             return x, w
         return 0, w0
 
@@ -90,13 +91,15 @@ class Wipe(Effect):
         img = pygame.Surface(origSize, pygame.SRCALPHA)
         img.blit(srf.subsurface(pos, size), pos)
         return img
-       
+
     def apply(self, img, n=0):
-        srf, size = self.srfSize(img, True)
-        flags = self.flags 
-        x, w = self._dim(n, flags & 3, size[0])
-        y, h = self._dim(n, flags >> 2, size[1])
-        return self._apply(srf, (x,y), (w,h), size)
+        srf, sz = self.srfSize(img, True)
+        s = self.start
+        wx = None if s in (1, 9) else (s & 3)
+        wy = None if s in (4, 6) else (s >> 2)
+        x, w = self._dim(n, wx, sz[0])
+        y, h = self._dim(n, wy, sz[1])
+        return self._apply(srf, (x,y), (w,h), sz)
 
 
 class Squish(Wipe):
@@ -113,7 +116,7 @@ class Squish(Wipe):
 class MathEffect(Effect):
     "Effect based on y < f(x) or y > f(x)"
 
-    def __init__(self, fill=(0,0,0,0), eqn=None):
+    def __init__(self, eqn=None, fill=(0,0,0,0)):
         self.fill = rgba(fill)
         if eqn: self.eqn = eqn.__get__(self, self.__class__)
 
@@ -141,6 +144,25 @@ class MathEffect(Effect):
                 pxCol[:y] = self.fill
             x += 1
         return srf
+
+
+class WipeSlope(MathEffect):
+
+    def __init__(self, slope=False, above=True, fill=(0,0,0,0)):
+        self.slope = slope
+        self.above = above
+        self.fill = rgba(fill)
+
+    def eqn(self, x, n, size):
+        w, h = size
+        k = self.slope
+        if type(k) is bool:
+            k = h / w * (1 if k else -1)
+        if not self.above: n = 1 - n
+        dy = k * w
+        if k < 0: b = n * (h - dy)
+        else: b = n * (h + dy) - dy
+        return k * x + b, self.above
 
 
 class PaintDrops(MathEffect):
@@ -185,7 +207,10 @@ class PaintDrops(MathEffect):
         return [uniform(0.1,1), min(t1, t2), max(t1, t2)]
 
 
-class PixelEffect(Effect):
+class Dissolve(Effect):
+
+    def __init__(self, fill=(0,0,0,0)):
+        self.fill = fill if type(fill) is bool else rgba(fill)
 
     def apply(self, img, n):
         "Apply pixel-by-pixel effect"
@@ -200,10 +225,6 @@ class PixelEffect(Effect):
             x += 1
         return srf
 
-
-class Dissolve(PixelEffect):
-
-    def __init__(self, fill=(0,0,0,0)): self.fill = rgba(fill)
-
     def pixel(self, n, x, y, c):
-        return self.fill if random() > n else c
+        f = self.fill
+        return c if random() <= n else (rgba(f) if type(f) is bool else f)

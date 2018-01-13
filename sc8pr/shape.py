@@ -21,7 +21,7 @@ from math import hypot, ceil, sqrt
 import pygame
 from sc8pr import Graphic, BaseSprite
 from sc8pr.util import rgba, hasAny
-from sc8pr.geom import transform2dGen, dist, delta
+from sc8pr.geom import transform2dGen, dist, delta, polar2d
 
 
 class Shape(Graphic):
@@ -221,17 +221,16 @@ class Line(Shape):
 class Polygon(Shape):
     _angle = 0
 
-    def __init__(self, pts, pos=None):
+    def setPoints(self, pts, pos=None):
         self.vertices = pts = list(pts)
         self._rect = self._metrics(pts)
         if pos is None: pos = self.center
         elif type(pos) is int: pos = pts[pos]
         self._pos = pos
         self._dumpCache()
-
-    def setPoints(self, pts, pos=None):
-        self.__init__(pts, pos)
         return self
+
+    __init__ = setPoints
 
     def _metrics(self, pts):
         (x0, x1), (y0, y1) = tuple((min(x[i] for x in pts),
@@ -364,6 +363,11 @@ class Arrow(Polygon):
         pts = [(0,0), (-head, y), (-head, width), (-length, width),
             (-length, -width), (-head, -width), (-head, -y)]
         super().__init__(pts, 0)
+
+    @staticmethod
+    def between(tail, tip, width=0.1, head=0.1, flatness=2):
+        r, a = polar2d(*delta(tip, tail))
+        return Arrow(r, width, head, flatness).config(pos=tip, angle=a)
 
 
 class CircleSprite(Circle, BaseSprite): pass
