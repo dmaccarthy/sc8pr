@@ -18,7 +18,6 @@
 
 import pygame
 from pygame.pixelarray import PixelArray
-#from sc8pr import LEFT, RIGHT
 from sc8pr.util import rgba
 from random import uniform, random
 from math import sqrt
@@ -102,7 +101,7 @@ class Wipe(Effect):
         return self._apply(srf, (x,y), (w,h), sz)
 
 
-class Squish(Wipe):
+class Squash(Wipe):
 
     @staticmethod
     def _apply(srf, pos, size, origSize):
