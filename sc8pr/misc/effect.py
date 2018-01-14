@@ -115,13 +115,14 @@ class Squash(Wipe):
 class MathEffect(Effect):
     "Effect based on y < f(x) or y > f(x)"
 
-    def __init__(self, eqn=None, fill=(0,0,0,0)):
+    def __init__(self, eqn=None, fill=(0,0,0,0), noise=0.15):
         self.fill = rgba(fill)
+        self.dh = noise
         if eqn: self.eqn = eqn.__get__(self, self.__class__)
 
     def eqn(self, x, n, size):
-        h = size[1]
-        return uniform(n * h, h)
+        dh = self.dh
+        return size[1] * ((1 + dh) * n - uniform(0, dh))
 
     def apply(self, img, n=0):
         "Modify image based on equation provided"
