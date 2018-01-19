@@ -16,24 +16,28 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
+from random import uniform, random
+from math import sqrt, tan, pi
 import pygame
 from pygame.pixelarray import PixelArray
-from sc8pr.util import rgba
-from random import uniform, random
-from math import sqrt
+from sc8pr.util import rgba, style
+
+pi2 = 2 * pi
 
 
 class Effect:
-    "Base class for all surface effects"
+    "Base class for all effects / transitions"
     _time = None
 
-    def time(self, zero, one):
-        self._time = zero, one
+    def time(self, fullEffect, noEffect):
+        self._time = fullEffect, noEffect
         return self
 
     def transition(self, img, n):
-        t0, t1 = self._time
-        n = (n - t0) / (t1 - t0)
+        if self._time is None: n = 0
+        else:
+            t0, t1 = self._time
+            n = (n - t0) / (t1 - t0)
         return self.apply(img, 0 if n <= 0 else 1 if n >= 1 else n)
 
     def srfSize(self, img, size=False):
@@ -42,7 +46,7 @@ class Effect:
 
 
 class ReplaceColor(Effect):
-    "Replace one color by another"
+    "Replace one color by another (non-animated)"
 
     def __init__(self, color, replace=(0,0,0,0), dist=0):
         self.color1 = rgba(color)
@@ -54,6 +58,18 @@ class ReplaceColor(Effect):
         d = self.dist * (1 - n)
         pygame.PixelArray(srf).replace(self.color1, self.color2, d)
         return img
+
+
+class Style(Effect):
+    "Add a border or background (non-animated)"
+    
+    def __init__(self, **kwargs):
+        if "padding" in kwargs: # Alters blit rect!
+            raise NotImplementedError("Keyword 'padding' is not permitted")
+        self.kwargs = kwargs
+    
+    def apply(self, img, n=0):
+        return style(img, **self.kwargs)
 
 
 class Tint(Effect):
@@ -71,6 +87,7 @@ class Tint(Effect):
 
 
 class Wipe(Effect):
+    "Wipe in or out from any corner, side, or center"
 
     def __init__(self, start=5): self.start = start
 
@@ -115,14 +132,14 @@ class Squash(Wipe):
 class MathEffect(Effect):
     "Effect based on y < f(x) or y > f(x)"
 
-    def __init__(self, eqn=None, fill=(0,0,0,0), noise=0.15):
+    def __init__(self, eqn=None, noise=0.15, fill=(0,0,0,0)):
         self.fill = rgba(fill)
         self.dh = noise
         if eqn: self.eqn = eqn.__get__(self, self.__class__)
 
     def eqn(self, x, n, size):
         dh = self.dh
-        return size[1] * ((1 + dh) * n - uniform(0, dh))
+        return size[1] * ((1 + dh) * n - uniform(0, dh)), True
 
     def apply(self, img, n=0):
         "Modify image based on equation provided"
@@ -147,6 +164,7 @@ class MathEffect(Effect):
 
 
 class WipeSlope(MathEffect):
+    "Wipe diagonally from any corner"
 
     def __init__(self, slope=False, above=True, fill=(0,0,0,0)):
         self.slope = slope
@@ -166,9 +184,8 @@ class WipeSlope(MathEffect):
 
 
 class PaintDrops(MathEffect):
-    "Paint drop effect"
 
-    def __init__(self, fill=(0,0,0,0), drops=64):
+    def __init__(self, drops=64, fill=(0,0,0,0)):
         self.fill = rgba(fill)
         self.side = drops > 0
         self.drops = [self.makeDrop() for i in range(abs(drops))]
@@ -204,27 +221,58 @@ class PaintDrops(MathEffect):
         "Create random diameter, start and end time"
         t1 = uniform(0, 0.8)
         t2 = uniform(t1 + 0.1, 1)
-        return [uniform(0.1,1), min(t1, t2), max(t1, t2)]
+        return [uniform(0.1, 1), min(t1, t2), max(t1, t2)]
 
 
 class Dissolve(Effect):
+    "Replace pixels randomly by a specified or random color"
 
-    def __init__(self, fill=(0,0,0,0)):
-        self.fill = fill if type(fill) is bool else rgba(fill)
+    def __init__(self, colors=(0,0,0,0), alpha=True, keepTransparent=True):
+        if not colors: self.colors = alpha
+        elif type(colors) is int:
+            self.colors = [rgba(alpha) for i in range(colors)]
+        else:
+            if type(colors) in (str, pygame.Color) or type(colors[0]) is int:
+                colors = colors,
+            self.colors = [rgba(i) for i in colors]
+        self.n = -1
+        self.keep = keepTransparent
 
     def apply(self, img, n):
         "Apply pixel-by-pixel effect"
         srf = self.srfSize(img)
+        self.alphaMask = srf.map_rgb((0,0,0,255))
         pxa = PixelArray(srf)
         x = 0
         for pxCol in pxa:
             for y in range(len(pxCol)):
-                c = pxCol[y]
-                px = self.pixel(n, x, y, c)
-                if px != c: pxCol[y] = px
+                pxCol[y] = self.pixel(n, x, y, pxCol[y])
             x += 1
         return srf
 
     def pixel(self, n, x, y, c):
-        f = self.fill
-        return c if random() <= n else (rgba(f) if type(f) is bool else f)
+        "Calculate pixel color"
+        if random() <= n or (self.keep and c & self.alphaMask == 0):
+            return c
+        c = self.colors
+        if type(c) is bool: return rgba(c)
+        self.n = (self.n + 1) % len(self.colors)
+        return c[self.n]
+
+
+class ClockHand(MathEffect):
+
+    def __init__(self, clockwise=True, fill=(0,0,0,0)):
+        self.fill = rgba(fill)
+        self.cw = clockwise
+
+    def eqn(self, x, n, size):
+        if n <= 0: return 0
+        h = size[1]
+        y = h / 2
+        x -= size[0] / 2
+        if not self.cw: x = -x
+        if x < 0:
+            return 0 if n <= 0.5 else (y + x * tan((n - 0.75) * pi2), False)
+        else:
+            return h if n >= 0.5 else (y + x * tan((n - 0.25) * pi2))
