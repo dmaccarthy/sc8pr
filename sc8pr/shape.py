@@ -230,7 +230,7 @@ class Polygon(Shape):
         self._dumpCache()
         return self
 
-    __init__ = setPoints
+    def __init__(self, pts, pos=None): self.setPoints(pts, pos)
 
     def _metrics(self, pts):
         (x0, x1), (y0, y1) = tuple((min(x[i] for x in pts),
