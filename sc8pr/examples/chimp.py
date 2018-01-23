@@ -66,7 +66,7 @@ def setup(sk):
 def onclick(sk, ev):
     "Event handler for mouse clicks"
     chimp = sk["Chimp"]
-    if chimp.contains(sk.mouse.pos):
+    if chimp.spin == 0 and chimp.contains(sk.mouse.pos):
         chimp.oldVel = chimp.vel
         chimp.config(spin=-8, vel=(0,0))
         sk["Score"] += 1

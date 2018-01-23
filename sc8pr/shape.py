@@ -260,6 +260,9 @@ class Polygon(Shape):
     @property
     def anchor(self): return self._pos
 
+    @anchor.setter
+    def anchor(self, pos): self.setPoints(self.vertices, pos)
+
     @property
     def pos(self): return self._pos
 
