@@ -1,4 +1,4 @@
-# Copyright 2015-2017 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-"Play, import, export, and screen grab to sc8pr Video (s8v) files"
+"Play, import, export, and screen grab sc8pr Video (s8v) files"
 
 if __name__ == "__main__": import depends
 from threading import Thread, active_count
@@ -40,7 +40,7 @@ FFMPEG = "ffmpeg -framerate {} -i frame%%05d.png -pix_fmt yuv420p video.mp4\npau
 class ExportThread(Thread):
     "Export Video as individual frames in a separate thread"
 
-    def __init__(self, vid, fn="save/frame{:05d}.png"):
+    def __init__(self, vid, fn):
         super().__init__()
         self.files = fn
         self.vid = vid

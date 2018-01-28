@@ -1,4 +1,4 @@
-# Copyright 2015-2017 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -58,7 +58,7 @@ class InactiveError(Exception):
 
 
 def _tempColor(px, color, *args):
-    "Replace "
+    "Replace one color with a random RGB color"
     c = color
     while c in args: c = rgba(False)
     if c != color: px.replace(color, c)
@@ -79,7 +79,7 @@ class Robot(Sprite):
 
     def __init__(self, colors=None):
         img = Image.fromBytes(sc8prData("robot"))
-        if colors:  # Replace body and nose  colors
+        if colors:  # Replace body and nose colors
             px = pygame.PixelArray(img.image)
             body0, nose0, body, nose = rgba("red", "blue", *colors)
             orig = body0, nose0
@@ -108,6 +108,7 @@ class Robot(Sprite):
         return self.vel == (0,0) and self.motors == (0,0)
 
     def setCanvas(self, sk):
+        "Add Robot instance to the sketch"
         if not isinstance(sk, Sketch):
             raise Exception("Robot cannot be added to {}".format(type(sk).__name__))
         b = hasattr(self, "brain")
@@ -213,7 +214,9 @@ class Robot(Sprite):
             except: logError()
         self._startup = False
 
-    def sensorObjects(self, sk): return list(sk.sprites())
+    def sensorObjects(self, sk):
+        "Defines the list of objects detectable by sensorFront and proximity"
+        return list(sk.sprites())
 
     def _checkFront(self):
         "Update the front color sensor"
@@ -285,6 +288,7 @@ class Robot(Sprite):
 
     @staticmethod
     def remoteControl(sk, ev):
+        "ONKEYDOWN handler to operate robot by space and arrow keys"
         try:
             r = sk.remoteRobot
             key = ev.key
