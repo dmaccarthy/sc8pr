@@ -1,4 +1,4 @@
-# Copyright 2015-2017 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -88,3 +88,10 @@ def transform2dGen(pts, mx=None, shift=(0,0), preShift=None, **kwargs):
 def transform2d(pt, **kwargs):
     "Perform a linear transformation and shift on a single point"
     return tuple(transform2dGen((pt,), **kwargs))[0]
+
+def rotatedSize(w, h, angle):
+    pts = (w,h), (w,-h), (-w,h), (-w,-h)
+    pts = list(transform2dGen(pts, rotate=angle))
+    w = max(abs(pt[0]) for pt in pts)
+    h = max(abs(pt[1]) for pt in pts)
+    return w, h

@@ -1,4 +1,4 @@
-# Copyright 2015-2017 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -79,6 +79,12 @@ def hasAny(data, keys):
     for k in keys:
         if k in data: return True
     return False
+
+def rangef(x, xEnd, dx):
+    "Float version of built-in range function"
+    while (dx > 0 and x < xEnd) or (dx < 0 and x > xEnd):
+        yield x
+        x += dx
 
 def zipData(archive, *args):
     "Generator for reading zipfile data"

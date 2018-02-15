@@ -316,7 +316,8 @@ class Polygon(Shape):
         size = self.size
         size = 2 * w + size[0], 2 * w + size[1] 
         srf = pygame.Surface(size, pygame.SRCALPHA)
-        pts = list((x+dx,y+dy) for (x,y) in self.vertices)
+#        pts = list((x+dx,y+dy) for (x,y) in self.vertices)
+        pts = [(round(x+dx), round(y+dy)) for (x,y) in self.vertices]
         if f: pygame.draw.polygon(srf, f, pts)
         if w and s: pygame.draw.polygon(srf, s, pts, w)
         return srf
