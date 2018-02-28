@@ -1,4 +1,4 @@
-# Copyright 2017 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2017-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -27,7 +27,7 @@ from sc8pr.shape import Circle
 from sc8pr.util import rgba, randPixel
 from sc8pr.robot import Robot, RobotThread
 from sc8pr.sprite import physics, Collisions
-from sc8pr.misc.plot import Plot
+from sc8pr.misc.plot import Plot, Series
 
 
 class BrainSketch(Sketch):
@@ -80,7 +80,8 @@ class Trace(BrainSketch):
 
 	def setup(self):
 		pl = Plot(self.size, [-4, 4, -1.5, 1.5]).config(bg="white")
-		pl.series(sin, param=[-pi, pi, 2 * self.width - 1], marker=("blue", 4))
+		marker = Image((6, 6), "blue")
+		pl["Curve"] = Series(sin, param=[-pi, pi, 2 * self.width - 1], marker=marker)
 		self.bg = pl.snapshot()
 		robo = Robot(["#ff5050", "#ffd428"])
 		self["Traci"] = self.bindBrain(robo).config(width=60, pos=self.center)
@@ -102,11 +103,13 @@ class ParkingLot(BrainSketch):
 		p = Plot(self.size, [0,6,0,n]).config(bg="#f0f0f0")
 		attr = dict(stroke="orange", weight=4)
 		for x in range(1,6):
-			p.series([(x, 0), (x, 1)], **attr)
-			p.series([(x, n), (x, n-1)], **attr)
+			key = "Line{}".format(x)
+			p[key + "a"] = Series([(x, 0), (x, 1)], **attr)
+			p[key + "b"] = Series([(x, n), (x, n-1)], **attr)
 		attr.update(stroke="blue")
-		p.series([(0.5, n/2), (5.5, n/2)], **attr)
-		p.series([(x + 0.5, n/2) for x in range(6)], marker=("red", 8))
+		p["Blue"] = Series([(0.5, n/2), (5.5, n/2)], **attr)
+		redDot = Circle(64).config(fill="red").snapshot().config(width=16)
+		p["Red"] = Series([(x + 0.5, n/2) for x in range(6)], marker=redDot)
 		return p
 
 	def setup(self):

@@ -22,11 +22,18 @@ def check():
 	try: import pygame
 	except: depend = 1
 	try: import sc8pr
-	except: depend = 2
+	except:
+		try:
+			from pathlib import Path
+			from sys import path
+			fldr = Path(__file__).resolve().parent.parent.parent
+			path.append(str(fldr))
+			import sc8pr
+		except: depend = 2
 	if depend:
 		print("Missing dependencies! Run the following to correct...\n")
 		if depend == 1: url = "pygame"
-		if depend == 2: url = "https://github.com/dmaccarthy/sc8pr/archive/master.zip"
+		else: url = "https://github.com/dmaccarthy/sc8pr/archive/master.zip"
 		input("  pip3 install {}\n\nPress ENTER to exit...".format(url))
 		exit()
 

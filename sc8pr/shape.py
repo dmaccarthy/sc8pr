@@ -113,10 +113,11 @@ class Circle(Shape):
 
 class Line(Shape):
     resolution = 1e-10
-    
-    def snapshot(self, **kwargs):
-        msg = "{} does not support snapshot"
-        raise NotImplementedError(msg.format(type(self)))
+    snapshot = None
+
+#     def snapshot(self, **kwargs):
+#         msg = "{} does not support snapshot"
+#         raise NotImplementedError(msg.format(type(self)))
 
     def __init__(self, start, point=None, vector=None):
         "Create a line or line segment"

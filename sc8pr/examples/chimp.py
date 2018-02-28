@@ -22,6 +22,7 @@ sc8pr rather than using pygame directly (except for sound). This version
 loads image and sound files directly from the [pygame]/examples/data folder.
 """
 
+if __name__ == "__main__": import depends
 from random import randint
 import os.path, pygame
 from sc8pr import Sketch, Image, BOTH, TOP, TOPLEFT, TOPRIGHT

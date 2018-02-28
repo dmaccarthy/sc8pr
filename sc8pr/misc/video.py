@@ -1,4 +1,4 @@
-# Copyright 2015-2017 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -16,12 +16,14 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
+import os, struct, zlib, pygame
 from zipfile import ZipFile
 from json import loads, dumps
-from os.path import isfile
 from sc8pr import Image, version
 from sc8pr.sprite import Sprite
-from sc8pr.util import hasAlpha, surfaceData
+from sc8pr.util import hasAlpha
+try: from PIL import Image as PImage
+except: PImage = None
 
 
 def jsonToBytes(obj):
@@ -29,6 +31,49 @@ def jsonToBytes(obj):
 
 def jsonFromBytes(b):
     return loads(str(b, encoding="utf8"))
+
+def convert(img, frmt=1):
+    """Convert between pygame.Surface, PIL.Image, and binary data;
+    only RGB and RGBA modes are supported"""
+    # 0 = Uncompressed bytes
+    # 1 = Compressed bytes
+    # 2 = pygame.Surface
+    # 3 = PIL.Image
+    if type(img) is tuple:
+        data = img[0]
+        mode, w, h = struct.unpack("!3I", img[1])
+        if mode & 2: data = zlib.decompress(data)
+        mode = ["RGB", "RGBA"][mode & 1]
+        size = w, h
+        if frmt == 2: return pygame.image.fromstring(data, size, mode)
+        if frmt == 3: return PImage.frombytes(mode, size, data)
+        _formatError()
+    try: isPIL = isinstance(img, PImage.Image)
+    except: isPIL = False
+    if isPIL:
+        _formatError(frmt, 0, 1, 2)
+        data = img.tobytes()
+        if frmt == 2: return pygame.image.fromstring(data, img.size, img.mode)
+        return _image_bin(data, img.mode, img.size, frmt)
+    if not isinstance(img, pygame.Surface): img = img.image
+    _formatError(frmt, 0, 1, 3)
+    size = img.get_size()
+    mode = "RGBA" if hasAlpha(img) else "RGB"
+    data = pygame.image.tostring(img, mode)
+    if frmt == 3: return PImage.frombytes(mode, size, data)
+    return _image_bin(data, mode, size, frmt)
+
+def _image_bin(data, mode, size, compress=1):
+    "Return a 2-tuple of binary (data, (mode,size))"
+    mode = ["RGB", "RGBA"].index(mode)
+    if compress:
+        mode += 2
+        data = zlib.compress(data)
+    mode = struct.pack("!3I", mode, *size)
+    return data, mode
+
+def _formatError(n=None, *args):
+    if n not in args: raise ValueError("Invalid format")
 
 
 class Video(Sprite):
@@ -43,7 +88,7 @@ class Video(Sprite):
         if t is str: self._load(data, notify)
         elif t is tuple and type(data[0]) is int: self._size = data
         elif data:
-            self._costumes = [surfaceData(img) for img in data]
+            self._costumes = [convert(img) for img in data]
         if len(self._costumes):
             img = Image(*self._costumes[0])
             self._size = img.size
@@ -53,18 +98,16 @@ class Video(Sprite):
 
     def __iadd__(self, img):
         "Append a frame to the video"
-        self._costumes.append(surfaceData(img))
+        self._costumes.append(convert(img))
         if not hasattr(self, "_size"): self._size = img.size
         return self
-
-#    append = __iadd__
 
     def __getitem__(self, n):
         "Return a frame as an Image instance"
         if n != self._current[0]:
             self._current = n, Image(*self._costumes[n])
         img = self._current[1]
-        srf = img.original #img.image
+        srf = img.original
         if self.alpha and not hasAlpha(srf):
             img = Image(srf.convert_alpha())
             self._current = n, img
@@ -76,7 +119,7 @@ class Video(Sprite):
 
     def extend(self, imgs):
         "Append multiple frames to the video"
-        self._costumes.extend(surfaceData(img) for img in imgs)
+        self._costumes.extend(convert(img) for img in imgs)
         return self
 
     def _loadMeta(self, zf):
@@ -120,6 +163,7 @@ class Video(Sprite):
         return vid
 
     def save(self, fn, notify=None):
+        "Save the Video as a zip archive of zlib-compressed images"
         self.meta["Saved By"] = "sc8pr{}".format(version)
         with ZipFile(fn, "w") as zf:
             self._saveMeta(zf)
@@ -131,33 +175,6 @@ class Video(Sprite):
         if notify: notify(fn, None, self)
         return self
 
-    def exportFrames(self, fn, notify=None):
-        "Save the video as a sequence of individual frames"
-        costumes = self._costumes
-        for i in range(len(costumes)):
-            if notify: notify(fn, i, self)
-            Image(*costumes[i]).save(fn.format(i))
-        if notify: notify(fn, None, self)
-        return self
-
-    @staticmethod
-    def importFrames(fn, seq=1, notify=None):
-        "Load the video from a sequence of individual frames"
-        if type(seq) is int:
-            seq = range(seq, _lastFile(fn, seq) + 1)
-        vid = Video()#alpha=alpha
-        n = 0
-        for s in seq:
-            if notify: notify(fn, n, vid)
-            img = Image(fn.format(s))
-            vid += img
-            n += 1
-        img = Image(*vid._costumes[0])
-#        vid._size = img.size
-        vid._current = 0, img
-        if notify: notify(fn, None, vid)
-        return vid
-
     def capture(self, sk):
         "Capture the current frame of the sketch"
         try: n = self.interval
@@ -165,14 +182,64 @@ class Video(Sprite):
         if sk.frameCount % n == 0: self += sk
 
 
-def _lastFile(fn, start=0, jump=512):
-    "Determine the last file in a numbered sequence"
-    end = jump
-    while isfile(fn.format(end)): end += jump
-    start = end - jump
-    while end > start + 1:
-        n = (end + start) // 2
-        if isfile(fn.format(n)): start = n
-        else: end = n
-    if end > start: return end if isfile(fn.format(end)) else start 
-    else: return start
+try:
+    import imageio as im
+    import numpy
+
+    class ImageIO:
+        "Use imageio and ffmpeg to decode and encode video"
+
+        @staticmethod
+        def ffmpeg(p): os.environ["IMAGEIO_FFMPEG_EXE"] = p
+
+        @staticmethod
+        def decode(src, progress=None):
+            "Load a movie file as a Video instance"
+            vid = Video()
+            with im.get_reader(src) as reader:
+                meta = reader.get_meta_data()
+                i, n = 1, meta.get("nframes")
+                vid.size = meta["size"]
+                vid.meta["frameRate"] = meta["fps"]
+                try: # Extra frames/bad metadata in MKV?
+                    for f in reader:
+                        vid._costumes.append((zlib.compress(bytes(f)),
+                            struct.pack("!3I", 2, *vid.size)))
+                        if progress:
+                            progress(i, n, False)
+                            i += 1
+                except: pass
+            return vid
+
+        @staticmethod
+        def pilFrame(img):
+            "Format frame image data using PIL"
+            if not isinstance(img, PImage.Image):
+                img = convert(img, 3)
+            return numpy.array(img)
+
+        @staticmethod
+        def srfFrame(img):
+            "Format frame image data using pygame.surfarray"
+            if isinstance(img, Image): img = img.image
+            if not isinstance(img, pygame.Surface):
+                img = convert(img, 2)
+            img = pygame.surfarray.array3d(img)
+            return numpy.swapaxes(img, 0, 1)
+
+        @staticmethod
+        def encode(vid, dest, fps=None, progress=None):
+            "Save Video or image sequence as a movie"
+            i, n = 1, len(vid)
+            if fps is None: fps = vid.meta.get("frameRate")
+            if fps is None: fps = 30
+            if isinstance(vid, Video): vid = vid._costumes
+            frame = ImageIO.pilFrame if PImage else ImageIO.srfFrame
+            with im.get_writer(dest, fps=fps) as writer:
+                for img in vid:
+                    writer.append_data(frame(img))
+                    if progress:
+                        progress(i, n, True)
+                        i += 1
+
+except: ImageIO = None

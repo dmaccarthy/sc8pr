@@ -36,8 +36,10 @@ class CodeCogs(Thread):
 
     def run(self):
         data = BytesIO(urlopen(self.url).read())
-        srf = pygame.image.load(data, "x.png")
-        self.data = self.onload(srf) if self.onload else srf
+        onload = self.onload
+        if onload is not False:
+            data = pygame.image.load(data, "x.png")
+        self.data = onload(data) if onload else data
 
 
 def _waiting(imgs):
