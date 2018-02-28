@@ -181,6 +181,20 @@ class Video(Sprite):
         except: self.interval = n = 1
         if sk.frameCount % n == 0: self += sk
 
+    def scaleFrames(self, size=None, inPlace=False):
+        "Ensure all frame images have the same size"
+        if not size: size = self.size
+        vid = self if inPlace else Video().config(size=size)
+        for i in range(len(self)):
+            img, mode = self._costumes[i]
+            mode, w, h = struct.unpack("!3I", mode)
+            if (w, h) != size:
+                img = self[i].config(size=size).snapshot()
+                if inPlace: self._costumes[i] = convert(img)
+                else: vid += img
+            elif not inPlace: vid._costumes.append(self._costumes[i])
+        return vid
+
 
 try:
     import imageio as im
@@ -230,6 +244,7 @@ try:
         @staticmethod
         def encode(vid, dest, fps=None, progress=None):
             "Save Video or image sequence as a movie"
+            vid = vid.scaleFrames()
             i, n = 1, len(vid)
             if fps is None: fps = vid.meta.get("frameRate")
             if fps is None: fps = 30
