@@ -148,15 +148,15 @@ def tile(srf, tile=0, cols=1, rows=1, padding=0):
     padding *= 2
     return srf.subsurface(x, y, w - padding, h - padding)
 
-def surfaceData(srf, compress=zlib.compress):
-    "Convert surface to bytes data with optional compression"
-    if not isinstance(srf, pygame.Surface): srf = srf.image
-    w, h = srf.get_size()
-    a = hasAlpha(srf)
-    mode = (1 if a else 0) + (2 if compress else 0)
-    mode = struct.pack("!3I", mode, w, h)
-    data = pygame.image.tostring(srf, "RGBA" if a else "RGB")
-    return (compress(data) if compress else data), mode
+# def surfaceData(srf, compress=zlib.compress):
+#     "Convert surface to bytes data with optional compression"
+#     if not isinstance(srf, pygame.Surface): srf = srf.image
+#     w, h = srf.get_size()
+#     a = hasAlpha(srf)
+#     mode = (1 if a else 0) + (2 if compress else 0)
+#     mode = struct.pack("!3I", mode, w, h)
+#     data = pygame.image.tostring(srf, "RGBA" if a else "RGB")
+#     return (compress(data) if compress else data), mode
 
 def ondrag(gr, ev):
     "Move a Graphic instance while dragging"
@@ -175,7 +175,7 @@ def fileExt(fn, ext):
 class CachedSurface:
     "A class for caching scaled and rotated surfaces"
 
-    def __init__(self, srf, bg=None, decompress=zlib.decompress):
+    def __init__(self, srf, bg=None):
         if hasattr(srf, "image"): srf = srf.image
         t = type(srf)
         if t is str:
@@ -184,12 +184,13 @@ class CachedSurface:
             elif not hasAlpha(srf): srf = srf.convert_alpha()
         elif t is bytes:
             mode, w, h = struct.unpack("!3I", bg)
-            if mode & 2: srf = decompress(srf)
+            if mode & 2: srf = zlib.decompress(srf)
             mode = "RGBA" if mode & 1 else "RGB"
             srf = pygame.image.fromstring(srf, (w,h), mode)
         elif t in (list, tuple):
             srf = pygame.Surface(srf, pygame.SRCALPHA)
-            if bg: srf.fill(bg if type(bg) is pygame.Color else rgba(bg))
+            if bg is not None:
+                srf.fill(bg if type(bg) is pygame.Color else rgba(bg))
         self.original = srf
         self.dumpCache()
 
