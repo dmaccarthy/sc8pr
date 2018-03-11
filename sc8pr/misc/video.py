@@ -244,7 +244,7 @@ try:
         @staticmethod
         def encode(vid, dest, fps=None, progress=None):
             "Save Video or image sequence as a movie"
-            vid = vid.scaleFrames()
+            if isinstance(vid, Video): vid = vid.scaleFrames()
             i, n = 1, len(vid)
             if fps is None: fps = vid.meta.get("frameRate")
             if fps is None: fps = 30
