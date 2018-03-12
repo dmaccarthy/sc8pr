@@ -80,12 +80,12 @@ class Video(Sprite):
     "A class for storing and retrieving sequences of compressed images"
     _current = None,
 
-    def __init__(self, data=None, alpha=False, notify=None):
+    def __init__(self, data=None, alpha=False, progress=None):
         self.alpha = alpha
         self.meta = {}
         self._costumes = []
         t = type(data)
-        if t is str: self._load(data, notify)
+        if t is str: self._load(data, progress)
         elif t is tuple and type(data[0]) is int: self._size = data
         elif data:
             self._costumes = [convert(img) for img in data]
@@ -129,7 +129,7 @@ class Video(Sprite):
     def _saveMeta(self, zf):
         if self.meta: zf.writestr("metadata", jsonToBytes(self.meta))
 
-    def _load(self, fn, notify=None):
+    def _load(self, fn, progress=None):
         "Load the video from a ZIP file"
         with ZipFile(fn) as zf:
             self._loadMeta(zf)
@@ -137,15 +137,15 @@ class Video(Sprite):
             i = 0
             while i >= 0:
                 try:
-                    if notify: notify(fn, i, self)
                     data = zf.read(str(i))
                     if data: data = data[:-12], data[-12:]
                     else: data = self._costumes[i-1]
-                    i += 1
                     self._costumes.append(data)
+                    i += 1
+                    if progress: progress(i, None, False)
                 except:
-                    if notify: notify(fn, None, self)
                     i = -1
+                    if progress: progress(None, None, False)
 
     def costumeSequence(self, seq):
         msg = "In-place costume sequencing is not supported; use the clip method instead"
@@ -162,17 +162,17 @@ class Video(Sprite):
         vid._costumes = [costumes[i] for i in start]
         return vid
 
-    def save(self, fn, notify=None):
+    def save(self, fn, progress=None):
         "Save the Video as a zip archive of zlib-compressed images"
         self.meta["Saved By"] = "sc8pr{}".format(version)
         with ZipFile(fn, "w") as zf:
             self._saveMeta(zf)
             costumes = self._costumes
-            for i in range(len(costumes)):
-                if notify: notify(fn, i, self)
+            n = len(costumes)
+            for i in range(n):
+                if progress: progress(i + 1, n, True)
                 data, mode = costumes[i]
                 zf.writestr(str(i), b'' if i and costumes[i] == costumes[i-1] else data + mode)
-        if notify: notify(fn, None, self)
         return self
 
     def capture(self, sk):
