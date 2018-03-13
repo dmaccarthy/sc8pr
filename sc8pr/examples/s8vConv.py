@@ -20,14 +20,14 @@
 
 if __name__ == "__main__": import depends
 from sys import argv
-from pygame import K_LEFT, K_RIGHT
+from pygame import K_LEFT, K_RIGHT, K_HOME
 from sc8pr import Sketch, TOPLEFT, BOTTOMRIGHT
 from sc8pr.misc.video import ImageIO, Video
 from sc8pr.gui.tkdialog import TkDialog, OPEN, SAVE
 from sc8pr.text import Text, Font
 from sc8pr.util import rgba
 
-VIDEOTYPES = [("sc8pr Video", "*.s8v"), ("Movies", "*.mp4;*.mkv;*.wmv;*.avi;*.mov")]
+VIDEOTYPES = [("Video", "*.s8v;*.mp4;*.mkv;*.wmv;*.avi;*.mov")]
 IMAGETYPES = [("Images", "*.png;*.jpg")]
 
 
@@ -84,13 +84,12 @@ class VideoPlayer(Sketch):
         if txt.data != msg: txt.config(data=msg)
 
     def onkeydown(self, ev):
-        try: vid = self["Video"]
-        except: vid = None
         u = ev.unicode.upper()
         if u == '?': self.menu()
         elif u == 'O': self.open()
         elif u == '\t': self["Text"].config(color=rgba(False))
-        elif vid:
+        elif "Video" in self:
+            vid = self["Video"]
             if u == 'S': self.saveAs()
             elif u == 'G':
                 fn = TkDialog(SAVE, filetypes=IMAGETYPES).run()
@@ -100,6 +99,8 @@ class VideoPlayer(Sketch):
                 if fps: self.frameRate = max(1.0, fps)
             elif u == ' ':
                 vid.costumeTime = 1 - vid.costumeTime 
+            elif ev.key == K_HOME:
+                vid.costumeTime = vid.costumeNumber = 0
             elif ev.key in (K_LEFT, K_RIGHT):
                 vid.costumeTime = 0
                 n = vid.costumeNumber + (1 if ev.key == K_RIGHT else -1)
@@ -107,14 +108,16 @@ class VideoPlayer(Sketch):
                 elif n >= len(vid): n = 0
                 vid.costumeNumber = n
             elif u in "[]":
-                self.clip[0 if u == '[' else 1] = vid.costumeNumber
+                self.clip["[]".index(u)] = vid.costumeNumber
 
     @staticmethod
     def menu():
-        m = {'O': "Open Video", 'S': "Save Clip", 'G': "Grab Frame", "SPACE":"Pause/Resume",
-            '←': "Previous Frame", '→': "Next Frame", '[': "Clip Start", ']': "Clip End",
-            'F': "Frame Rate", "TAB": "Display Color", '?': "Show Menu"}
-        print()
+        m = {'O': "Open Video", 'S': "Save Clip", 'G': "Grab Frame",
+            "SPACE":"Pause/Resume", 'LEFT': "Previous Frame",
+            'RIGHT': "Next Frame", "HOME": "Rewind", '[': "Clip Start",
+            ']': "Clip End", 'F': "Frame Rate", "TAB": "Display Color",
+            '?': "Show Menu"}
+        print("\nKeyboard Commands:")
         for i in m:
             print("{:^5s} = {}".format(i, m[i]))
 

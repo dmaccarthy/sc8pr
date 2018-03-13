@@ -122,7 +122,7 @@ def style(srf, bg=None, border=(0,0,0), weight=0, padding=0):
 
     return img
  
-def drawBorder(srf, color=(0,0,0), weight=1):#, r=None):
+def drawBorder(srf, color=(0,0,0), weight=1):
     "Draw a border around the edges of the surface"
     r0 = srf.get_clip()
     w, h = r0.size
@@ -148,16 +148,6 @@ def tile(srf, tile=0, cols=1, rows=1, padding=0):
     padding *= 2
     return srf.subsurface(x, y, w - padding, h - padding)
 
-# def surfaceData(srf, compress=zlib.compress):
-#     "Convert surface to bytes data with optional compression"
-#     if not isinstance(srf, pygame.Surface): srf = srf.image
-#     w, h = srf.get_size()
-#     a = hasAlpha(srf)
-#     mode = (1 if a else 0) + (2 if compress else 0)
-#     mode = struct.pack("!3I", mode, w, h)
-#     data = pygame.image.tostring(srf, "RGBA" if a else "RGB")
-#     return (compress(data) if compress else data), mode
-
 def ondrag(gr, ev):
     "Move a Graphic instance while dragging"
     pos = gr.pos
@@ -181,7 +171,8 @@ class CachedSurface:
         if t is str:
             srf = pygame.image.load(srf)
             if bg: srf = style(srf, bg)
-            elif not hasAlpha(srf): srf = srf.convert_alpha()
+            elif srf.get_bitsize() < 32: #or not hasAlpha(srf):
+                srf = srf.convert_alpha()
         elif t is bytes:
             mode, w, h = struct.unpack("!3I", bg)
             if mode & 2: srf = zlib.decompress(srf)
