@@ -16,10 +16,10 @@ For more information, please see the [documentation](http://dmaccarthy.github.io
 # Installation
 
 ```
-pip3 install -U https://github.com/dmaccarthy/sc8pr/archive/master.zip
+pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
 ```
 
-If setuptools is unable to locate a Pygame wheel for your platform and Python version, you will need to install [pygame](http://www.pygame.org) separately.
+If setuptools is unable to locate a pygame wheel for your platform and Python version, you will need to install [pygame](http://www.pygame.org) separately.
 
 See the documentation for more [detailed instructions](https://dmaccarthy.github.io/sc8pr/?inst).
 
