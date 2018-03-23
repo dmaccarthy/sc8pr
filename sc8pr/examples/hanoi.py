@@ -43,14 +43,14 @@ class Hanoi(Sketch):
     "Animation of the Towers of Hanoi problem"
 
     def __init__(self, towers, speed):
-        super().__init__((600,256))
+        self.towers = towers
+        self.disks = len(towers[0])
+        self.hanoi = iter(moveDisks(towers, self.disks))
+        self.moves = 0
         self.paused = False
         self.interval = max(1, round(self.frameRate / speed))
         self.update = self.interval
-        self.disks = len(towers[0])
-        self.moves = 0
-        self.towers = towers
-        self.hanoi = iter(moveDisks(towers, self.disks))
+        super().__init__((600,256))
 
     def setup(self):
         "Add random-color rectangles to the sketch to represent the disks"
@@ -96,17 +96,18 @@ def printState(towers, i):
     "Print the current state of the towers"
     print("{:8d}: {} {} {}".format(i, *towers))
 
-def main():
-    n = len(argv)
-    disks = int(argv[1]) if n > 1 else 6
-    speed = float(argv[2]) if n > 2 else 1
+def main(disks=6, speed=1):
+    disks = int(disks)
     towers = list(range(disks, 0, -1)), [], []
     printState(towers, 0)
-    if speed: Hanoi(towers, speed).play("Towers of Hanoi")
-    else: # Console only; no animation
+    if speed: # Play animation
+        Hanoi(towers, speed).play("Towers of Hanoi")
+    else:     # Console only; no animation
         i = 1
         for t in moveDisks(towers, disks):
             printState(t, i)
             i += 1
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    args = [float(x) for x in argv[1:]]
+    main(*args)

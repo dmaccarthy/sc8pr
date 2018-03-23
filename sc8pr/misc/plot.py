@@ -247,10 +247,6 @@ class Plot(Renderable):
 #         if noDraw: del self.rect
         return srf
 
-    def resize(self, size):
-        self._size = size
-        self.stale = True
-
     contains = Image.contains
 
     def pixelCoords(self, xy):

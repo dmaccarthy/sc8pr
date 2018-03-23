@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
+"""This module is used by the examples to check if pygame and sc8pr
+are installed. It will attempt to add sc8pr to the system path. This
+allows running examples from source code without installing sc8pr."""
 
 def check():
 	"Check if pygame and sc8pr are available."
