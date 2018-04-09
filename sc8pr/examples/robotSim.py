@@ -51,6 +51,7 @@ class Arena(BrainSketch):
 
 	def setup(self):
 		self.bg = self.renderBG()
+		self.weight = 1
 		robo = Robot(["#ff5050", "#ffd428"])
 		self["Red"] = self.bindBrain(robo).config(width=60,
 			pos=(100,400), angle=270, bounce=BOTH)
