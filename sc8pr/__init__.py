@@ -272,8 +272,21 @@ class Graphic:
         return Image(srf)
 
     def save(self, fn, **kwargs):
+        "Save a snapshot of the graphic"
         self.snapshot(**kwargs).save(fn)
         return self
+
+    def at(self, pos, r=None):
+        "Get the pixel color at the specified coordinates"
+        srf = self.image
+        if r is None:
+            try: r = self.rect
+            except: r = pygame.Rect((0,0), srf.get_size())
+        if r.collidepoint(pos):
+            x, y = r.topleft
+            x, y = transform2d(pos, shift=(-x,-y))
+            try: return srf.get_at((round(x), round(y)))
+            except: pass
 
 
 class Renderable(Graphic):
@@ -323,6 +336,7 @@ class Renderable(Graphic):
 
     @size.setter
     def size(self, size): self.resize(size)
+
 
 class BaseSprite(Graphic):
     "Base class for sprite animations"
@@ -484,13 +498,15 @@ class Image(Graphic):
 
     def contains(self, pos):
         "Determine if the position is contained in the rect and not transparent"
-        br = self.rect
-        if br.collidepoint(pos):
-            x, y = br.topleft
-            x, y = transform2d(pos, shift=(-x,-y))
-            try: return bool(self.image.get_at((round(x), round(y))).a)
-            except: pass
-        return False
+        try: return bool(self.at(pos, self.rect).a)
+        except: return False
+#         br = self.rect
+#         if br.collidepoint(pos):
+#             x, y = br.topleft
+#             x, y = transform2d(pos, shift=(-x,-y))
+#             try: return bool(self.image.get_at((round(x), round(y))).a)
+#             except: pass
+#         return False
 
     def save(self, fn):
         pygame.image.save(self._srf.original, fn)
@@ -517,7 +533,7 @@ class Canvas(Graphic):
 
     @property
     def clipRect(self):
-        "Calculate the clipping rect so as no to draw outside of the canvas"
+        "Calculate the clipping rect so as not to draw outside of the canvas"
         cv = self.canvas
         r = self.rect
         return r.clip(cv.clipRect) if cv else r # cv.rect
@@ -535,7 +551,6 @@ class Canvas(Graphic):
         t = type(bg)
         if t is str: bg = pygame.Color(bg)
         elif t in (tuple, list): bg = pygame.Color(*bg)
-#        elif bg and t is not pygame.Color: bg = Image(bg)
         self._bg = bg
 
     @property
@@ -646,9 +661,7 @@ class Canvas(Graphic):
 
         # Draw border
         if mode & 1 and self.weight:
-            try:
-                drawBorder(srf.subsurface(self.clipRect), self.border, self.weight)
-            except: pass
+            drawBorder(srf, self.border, self.weight, r)
 
         srf.set_clip(None)
         return r

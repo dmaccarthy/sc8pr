@@ -115,19 +115,22 @@ def style(srf, bg=None, border=(0,0,0), weight=0, padding=0):
     if weight: drawBorder(img, border, weight)
 
     return img
- 
-def drawBorder(srf, color=(0,0,0), weight=1):
-    "Draw a border around the edges of the surface"
-    r0 = srf.get_clip()
-    w, h = r0.size
-    x, y = r0.topleft
-    hor = w, weight
-    ver = weight, h - 2 * weight
+
+def drawBorder(srf, color=(0,0,0), weight=1, r=None):
+    "Draw a border around the edges of the surface or specified rectangle"
     color = rgba(color)
-    for r in ((x, y) + hor, (x, y + h - weight) + hor,
-            (x, y + weight) + ver, (x + w - weight, y + weight) + ver):
-        r = pygame.Rect(r).clip(r0)
-        if max(r.size): srf.subsurface(r).fill(color)
+    if r is None:
+        x = y = 0
+        w, h = srf.get_size()
+    else: x, y, w, h = r
+    ver = (x, y, weight, h), (x + w - weight, y, weight, h)
+    w -= 2 * weight
+    x += weight
+    hor = (x, y, w, weight), (x, y + h - weight, w, weight)
+    clip = srf.get_clip()
+    sides = [pygame.Rect(s).clip(clip) for s in (ver + hor)]
+    for s in sides:
+        if s: srf.subsurface(s).fill(color)
 
 def tile(srf, tile=0, cols=1, rows=1, padding=0):
     "Return a tile subsurface"
