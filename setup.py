@@ -26,7 +26,7 @@ setup(
     download_url = "https://github.com/dmaccarthy/sc8pr/archive/{}.zip".format(archive),
 
     # Details
-    description = "Create interactive animations with features inspired by Scratch, Processing, and robotics",
+    description = "A simple framework for new and experienced Python programmers to create animations, games, robotics simulations, and other graphics-based programs",
     long_description = readme,
 
     # Additional data
