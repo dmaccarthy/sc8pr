@@ -194,6 +194,11 @@ class Line(Shape):
                 s1 = min(self.length, s1)
                 if s1 >= s0: return self.point((s0 + s1) / 2)
 
+    @property
+    def normal(self):
+        ux, uy = self.u
+        return -uy, ux
+
 # Drawing and canvas interaction
 
     def draw(self, srf, snapshot=False):

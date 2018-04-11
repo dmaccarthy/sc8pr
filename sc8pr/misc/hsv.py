@@ -18,7 +18,7 @@
 
 from math import hypot, atan2, pi
 import pygame
-from sc8pr import Renderable
+from sc8pr import Renderable, Image
 
 DEG = pi / 180
 
@@ -62,15 +62,4 @@ class HSV(Renderable):
         size = [round(x) for x in self._size]
         return hs_surface(size, self.val, self.wheel)
 
-    def at(self, x, y):
-        if self.wheel:
-            xc, yc = self.center
-            x = (x - xc) / xc
-            y = (y - yc) / yc
-            s = 100 * hypot(x, y)
-            if s < 100.5:
-                h = atan2(y, x) / DEG
-                return h + 360 if h < 0 else h, min(100, s), self.val
-        else:
-            w, h = self.size
-            return 360 * x / (w - 1), 100 * y / (h - 1), self.val 
+    contains = Image.contains
