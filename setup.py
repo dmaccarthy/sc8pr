@@ -38,7 +38,7 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Programming Language :: Python :: 3",
         "Topic :: Multimedia :: Graphics",
-        "Topic :: Education"
+        "Topic :: Education",
         "Framework :: Robot Framework :: Library"
     ]
 )
