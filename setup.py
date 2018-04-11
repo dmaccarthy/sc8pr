@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = 2, 0, 0
+version = 2, 0, "dev"
 ver = "{}.{}.{}".format(*version)
 archive = "master" if version[-1] == "dev" else "v" + ver
 with open("README.txt") as f: readme = f.read()
@@ -18,6 +18,7 @@ setup(
     author_email = "sc8pr.py@gmail.com",
 
     # Dependencies
+    python_requires = ">=3.4, <4",
     install_requires = ["pygame(>=1.9.1)"],
     
     # URLs
