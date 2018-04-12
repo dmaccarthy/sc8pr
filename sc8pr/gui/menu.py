@@ -1,4 +1,4 @@
-# Copyright 2015-2017 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -31,6 +31,10 @@ class Menu(Canvas):
     def __init__(self, items, size=(192,24), weight=1, padding=6, options=2, txtConfig={}):
         w, h = size
         x = y = weight
+        if "fontSize" not in txtConfig:
+            tmp = dict(fontSize=h-padding)
+            tmp.update(txtConfig)
+            txtConfig = tmp
         if type(items) is int:
             n = items
             items = None
@@ -41,7 +45,7 @@ class Menu(Canvas):
             buttons.append(b)
             y += h
             if items:
-                self.item(b, items[i], padding)
+                self._item(b, items[i], padding)
                 for gr in b:
                     if isinstance(gr, Text): gr.config(**txtConfig)
         w += 2 * weight
@@ -51,7 +55,7 @@ class Menu(Canvas):
         self += buttons
 
     @staticmethod
-    def item(btn, data, padding):
+    def _item(btn, data, padding):
         h = btn.height - 2 * padding
         y = padding + h / 2
         x = h + padding * (2 if h else 1)

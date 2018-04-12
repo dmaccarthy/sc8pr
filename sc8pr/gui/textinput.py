@@ -1,4 +1,4 @@
-# Copyright 2015-2017 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -30,6 +30,7 @@ class TextInput(Text):
     cursorTime = 1.0
     cursorOn = 0.35
     promptColor = rgba("#f0f0f0")
+    padding = 4
     allowButton = 1,
 
     def __init__(self, data="", prompt=None):
@@ -38,7 +39,7 @@ class TextInput(Text):
         self.cursorStatus = False
         self.prompt = prompt
 
-    def startCursor(self):
+    def _startCursor(self):
         self.stale = True
         self.cursorStatus = True
         self.cursorStart = self.sketch.frameCount
@@ -47,7 +48,7 @@ class TextInput(Text):
         if self.focussed:
             sk = self.sketch 
             n = (sk.frameCount - self.cursorStart) / sk.frameRate
-            if n > self.cursorTime: self.startCursor()
+            if n > self.cursorTime: self._startCursor()
             else:
                 c =  n < self.cursorOn
                 if c is not self.cursorStatus:
@@ -81,7 +82,7 @@ class TextInput(Text):
 
     def onkeydown(self, ev):
         if ev.mod & (KMOD_CTRL | KMOD_ALT): return
-        self.startCursor()
+        self._startCursor()
         u = ev.unicode
         if u in ("\n", "\r", "\t"):
             self.blur()
@@ -121,7 +122,7 @@ class TextInput(Text):
 
     def onclick(self, ev):
         if ev.button in self.allowButton:
-            self.startCursor()
+            self._startCursor()
             x = self.relXY(ev.pos)[0] - self.padding
             n = len(self.data)
             i = 0
