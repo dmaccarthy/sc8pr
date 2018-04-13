@@ -29,16 +29,15 @@ class CodeCogs(Thread):
     data = None
     _url = "https://latex.codecogs.com/png.latex?"
 
-    def __init__(self, latex, onload=None):
+    def __init__(self, latex, raw, onload):
         self.url = self._url + quote(latex)
-        self.onload = onload
+        self.onload = raw, onload
         super().__init__()
 
     def run(self):
-        data = BytesIO(urlopen(self.url).read())
-        onload = self.onload
-        if onload is not False:
-            data = pygame.image.load(data, "x.png")
+        data = urlopen(self.url).read()
+        raw, onload = self.onload
+        if not raw: data = pygame.image.load(BytesIO(data), "x.png")
         self.data = onload(data) if onload else data
 
 
@@ -48,10 +47,11 @@ def _waiting(imgs):
         if img.data is None: return True
     return False
 
-def render(*args, dpi=128, onload=None, renderer=CodeCogs, wait=0.2):
-    dpi = "\\dpi{" + str(dpi) + "}"
-    imgs = [renderer(dpi + latex, onload) for latex in args]
+def render(*args, **kwargs):
+    dpi = "\\dpi{" + str(kwargs.get("dpi", 128)) + "}"
+    imgs = [CodeCogs(dpi + latex, kwargs.get("raw"), kwargs.get("onload"))
+        for latex in args]
     for img in imgs: img.start()
-    while _waiting(imgs): sleep(wait)
+    while _waiting(imgs): sleep(0.002)
     imgs = [img.data for img in imgs]
-    return imgs if len(imgs) > 1 else imgs[0]
+    return imgs[0] if len(imgs) == 1 else imgs
