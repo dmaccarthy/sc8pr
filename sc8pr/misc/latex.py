@@ -25,17 +25,28 @@ from urllib.parse import quote
 from os.path import abspath, isdir, isfile
 from random import choice
 import json
-import pygame
+try:
+    import pygame
+    usePygame = True
+except:
+    usePygame = False
 
 CHARS = "abcdefghijklmnopqrstuvwxyz"
 
 
 def _loadImage(data):
-    "Create a pygame.Surface from a filename or PNG bytes/BytesIO data"
+    """Create a pygame.Surface from a filename or PNG bytes data;
+    if pygame is not available, the image will be returned as a
+    PNG-encoded bytes object."""
     t = type(data)
-    if t is bytes: data = BytesIO(data)
-    return (pygame.image.load(data) if t is str
-        else pygame.image.load(data, "x.png"))
+    if usePygame:
+        if t is bytes: data = BytesIO(data)
+        data = (pygame.image.load(data) if t is str
+            else pygame.image.load(data, "x.png"))
+    else:
+        if t is str:
+            with open(data, "rb") as f: data = f.read()
+    return data
 
 
 class CodeCogs(Thread):
