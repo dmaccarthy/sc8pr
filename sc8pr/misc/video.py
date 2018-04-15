@@ -27,10 +27,10 @@ except: PImage = None
 
 
 def jsonToBytes(obj):
-    return bytes(dumps(obj, ensure_ascii=False), encoding="utf8")
+    return bytes(dumps(obj, ensure_ascii=False), encoding="utf-8")
 
 def jsonFromBytes(b):
-    return loads(str(b, encoding="utf8"))
+    return loads(str(b, encoding="utf-8"))
 
 def convert(img, frmt=1):
     """Convert between pygame.Surface, PIL.Image, and binary data;
