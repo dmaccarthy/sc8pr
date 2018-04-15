@@ -69,9 +69,13 @@ class CodeCogs(Thread):
     @staticmethod
     def request(*args, **kwargs):
         "Create a CodeCogs instance for each request"
-        dpi = "\\dpi{" + str(kwargs.get("dpi", 128)) + "}"
-        imgs = [CodeCogs(dpi + latex, kwargs.get("raw"), kwargs.get("onload"))
-            for latex in args]
+        dpi = kwargs.get("dpi", 128)
+        if dpi:
+            dpi = dpi = "\\dpi{" + str(dpi) + "}"
+            latex = lambda x: dpi + x
+        else: latex = lambda x: x
+        imgs = [CodeCogs(latex(x), kwargs.get("raw"),
+            kwargs.get("onload")) for x in args]
         for img in imgs: img.start()
         return imgs
 
@@ -103,7 +107,7 @@ class LatexCache:
     @property
     def indexFile(self): return self.file("index.json")
 
-    def png(self, alias, dpi):
+    def png(self, alias, dpi=128):
         return self.file("l8x{}_{}.png".format(dpi, alias))
 
     def cached(self, alias, dpi=128):
