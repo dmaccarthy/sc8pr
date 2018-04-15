@@ -27,10 +27,10 @@ from random import choice
 import json
 import pygame
 
-CHARS = "abcdefghijklmnopqrstuvwxyz0123456789"
+CHARS = "abcdefghijklmnopqrstuvwxyz"
 
 
-def loadImage(data):
+def _loadImage(data):
     "Create a pygame.Surface from a filename or PNG bytes/BytesIO data"
     t = type(data)
     if t is bytes: data = BytesIO(data)
@@ -51,7 +51,7 @@ class CodeCogs(Thread):
     def run(self):
         data = urlopen(self.url).read()
         raw, onload = self.onload
-        if not raw: data = loadImage(data)
+        if not raw: data = _loadImage(data)
         self.data = onload(data) if onload else data
 
     @staticmethod
@@ -84,26 +84,27 @@ class LatexCache:
         if not isdir(folder): raise NotADirectoryError()
         self.path = folder
         try:
-            with open(self.indexFile(), encoding="utf-8") as f:
+            with open(self.indexFile, encoding="utf-8") as f:
                 self.index = json.load(f)
         except: self.index = {}
 
-    def makeAlias(self, n=12):
+    def _alias(self, n=8):
         "Generate random alias"
         return "".join(choice(CHARS) for i in range(n))
 
     def update(self):
         "Save index as JSON file"
-        with open(self.indexFile(), "w", encoding="utf-8") as f: 
+        with open(self.indexFile, "w", encoding="utf-8") as f: 
             json.dump(self.index, f, ensure_ascii=False)
 
     def file(self, name):
         return abspath(self.path + "/" + name)
 
+    @property
     def indexFile(self): return self.file("index.json")
 
     def png(self, alias, dpi):
-        return self.file("{}_{}.png".format(alias, dpi))
+        return self.file("l8x{}_{}.png".format(dpi, alias))
 
     def cached(self, alias, dpi=128):
         "Check if file exists in cache"
@@ -129,7 +130,7 @@ class LatexCache:
         # Load images from cache
         for i in range(len(imgs)):
             fn = imgs[i]
-            if fn: imgs[i] = loadImage(fn)
+            if fn: imgs[i] = _loadImage(fn)
 
         # Process cogecogs.com responses
         if cogs:
@@ -140,12 +141,12 @@ class LatexCache:
                 alias = self.index.get(latex)
                 if alias is None:
                     while alias is None or alias in allCodes:
-                        alias = self.makeAlias()
+                        alias = self._alias()
                 self.index[latex] = alias
                 fn = self.png(alias, dpi)
                 data = cogs_img[i].data
                 with open(fn, "wb") as png: png.write(data)
-                imgs[imgs.index(None)] = loadImage(data)
+                imgs[imgs.index(None)] = _loadImage(data)
             if update: self.update()
 
         if onload: imgs = [onload(f) for f in imgs]
