@@ -107,6 +107,11 @@ class LatexCache:
         "Generate random alias"
         return "".join(choice(CHARS) for i in range(n))
 
+    def latex(self, alias):
+        "Look up LaTeX markup for the given alias"
+        for k, v in self.index.items():
+            if v == alias: return k
+
     def update(self):
         "Save index as JSON file"
         with open(self.indexFile, "w", encoding="utf-8") as f: 
