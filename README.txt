@@ -7,4 +7,5 @@ Features include:
 * video effects / transitions
 * a selection of GUI controls
 * curve plotting
-* robotics simulator 
+* robotics simulator
+* LaTeX rendering (using codecogs.com)
