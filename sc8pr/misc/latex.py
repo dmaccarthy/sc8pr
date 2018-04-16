@@ -36,7 +36,7 @@ CHARS = "abcdefghijklmnopqrstuvwxyz"
 
 def _loadImage(data):
     """Create a pygame.Surface from a filename or PNG bytes data;
-    if pygame is not available, the image will be returned as a
+    if usePygame is False, the image will be returned as a
     PNG-encoded bytes object."""
     t = type(data)
     if usePygame:
