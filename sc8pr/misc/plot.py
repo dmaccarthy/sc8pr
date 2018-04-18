@@ -24,28 +24,32 @@ from sc8pr.geom import rotatedSize, transform2dGen
 from sc8pr.text import Text
 
 
+def _lrbt(lrbt, w, h):
+    "Calculate coordinate system limits"
+    n = len(lrbt)
+    if n < 4:
+        dy = h * (lrbt[1] - lrbt[0]) / w
+        if n == 2:
+            dy /= 2
+            lrbt = lrbt + [-dy, dy]
+        else: lrbt = lrbt + [lrbt[2] + dy]
+    else: lrbt = lrbt[:4]
+    return lrbt
+
 def coordTr(lrbt, size):
     "Create a transformation for the given coordinate system"
     l, r = lrbt[:2]
     sx = size[0] / (r - l)
     dx = sx * l
-    if len(lrbt) < 4: # Use same x and y scale
-        sy = -abs(sx)
-        if len(lrbt) == 3:
-            t = lrbt[2]
-            if t is True: # Axis in middle of plot
-                t = (r - l) * size[1] / (2 * size[0])
-        else: # Axis along bottom of plot
-            t = (r - l) * size[1] / size[0]
-    else:
-        b, t = lrbt[2:]
-        sy = size[1] / (b - t)
+    b, t = lrbt[2:]
+    sy = size[1] / (b - t)
     dy = sy * t
     return lambda p: (sx * p[0] - dx, sy * p[1] - dy)
 
-def locus(func, **kwargs):
+def locus(func, param, **kwargs):
     "Generate a parameterized sequence of 2D points"
-    t0, t1, steps = kwargs["param"]
+    print(param)
+    t0, t1, steps = param
     for i in range(steps + 1):     
         try:
             x = t0 + i * (t1 - t0) / steps
@@ -73,26 +77,39 @@ def _isZero(x, fmt):
 
 class Series:
     "Represents a single data series within the plot"
+    _stroke = rgba((0, 0, 0))
+    weight = 0
+    marker = None
 
-    def __init__(self, x, y=None, **kwargs):
+    @property
+    def stroke(self): return self._stroke
+
+    @stroke.setter
+    def stroke(self, s): self._stroke = rgba(s) if s else None
+
+    def __init__(self, x, y=None, param=None, **kwargs):
         self._data = x if y is None else list(zip(x, y))
-        self._opt = kwargs
+        self.param = param
+        self.vars = kwargs
 
     def __getitem__(self, i): return self._data[i]
     def __setitem__(self, i, v): self._data[i] = v
 
-    def _dataPoints(self):
+    config = Graphic.config
+
+    def pointGen(self):
         "Iterable sequence of points"
         data = self._data
-        return data if type(data) in (list, tuple) else locus(data, **self._opt) 
+        return data if type(data) in (list, tuple) else locus(data, self.param, **self.vars)
 
     @property
-    def dataPoints(self):
+    def pointList(self):
         "Return data as a new list"
-        return list(self._dataPoints())
+        return list(self.pointGen())
 
     def data(self, n):
-        for pt in self._dataPoints(): yield pt[n]
+        "Generate values from x or y column of data table"
+        for pt in self.pointGen(): yield pt[n]
 
     @property
     def x(self): return list(self.data(0))
@@ -113,13 +130,12 @@ class Series:
         "Plot one data series onto a surface"
 
         # Plot stroke
-        options = self._opt
-        pts = [transform(p) for p in self._dataPoints()]
-        s, w = options.get("stroke"), options.get("weight")
+        pts = [transform(p) for p in self.pointGen()]
+        s, w = self.stroke, self.weight
         if s and w: pygame.draw.lines(srf, rgba(s), False, pts, w)
- 
+
         # Plot markers
-        marker = options.get("marker")
+        marker = self.marker
         if marker:
             i = 0
             for p in pts:
@@ -144,13 +160,13 @@ class Series:
             for j in y: yield i, j
 
     @staticmethod
-    def xtick(x0, x1, dx, marker=None, y=False, **kwargs):
-        if marker is None: marker = ((9,1) if y else (1,9), "black")
+    def _tick(param, marker=9, y=False, **kwargs):
+#        if marker is None: marker = 9
+        if type(marker) is int: marker = ((9,1) if y else (1,9), "black")
         label = type(marker) is str
         if not (label or isinstance(marker, Graphic)):
             marker = Image(*marker)
-        s = list(Series.lattice(0, [x0, x1, dx]) if y
-            else Series.lattice([x0, x1, dx], 0))
+        s = list(Series.lattice(0, param) if y else Series.lattice(param, 0))
         if label:
             isZero = (lambda x: _isZero(x, marker)) if kwargs.get("omitZero")\
                 else (lambda x: False)
@@ -158,23 +174,24 @@ class Series:
             text = list(marker.format(x[i]) for x in s)
             marker = [Text("" if isZero(x) else x).config(**kwargs)
                 for x in text]
-        return Series(s, marker=marker)
+        return Series(s).config(marker=marker)
 
-    @staticmethod
-    def ytick(x0, x1, dx, marker=None, **kwargs):
-        return Series.xtick(x0, x1, dx, marker, True, **kwargs)
+    def scaleMarkers(self, s):
+        marker = self.marker
+        if isinstance(marker, Graphic): marker = [marker]
+        if marker:
+            for gr in marker:
+                gr.height *= s
 
 
 class Plot(Renderable):
     "Class for plotting multiple data series with lines and markers"
     bg = None
-    _text = []
-    _xaxis = None
-    _yaxis = None
+    contains = Image.contains
 
     def __init__(self, size, lrbt):
         self._size = size
-        self.coords = lrbt
+        self.coords = _lrbt(lrbt, *size)
         self._keys = []
         self._series = {}
 
@@ -184,30 +201,41 @@ class Plot(Renderable):
     @size.setter
     def size(self, size): self.resize(size)
 
+    def resize(self, size):
+        s = size[1] / self._size[1]
+        for k in self: self[k].scaleMarkers(s)
+        super().resize(size)
+
     @property
     def coords(self): return self._coords
 
     @coords.setter
     def coords(self, lrbt):
-        self._coords = lrbt
+        self._coords = _lrbt(lrbt, *self._size)
         self.stale = True
 
-    def __setitem__(self, k, v):
-        if k in self._keys:
-            self._keys.remove(k)
-#            raise KeyError("Key '{}' is already in use".format(k))
-        self._series[k] = v
+    def __len__(self): return len(self._keys)
+
+    def __setitem__(self, k, s):
+        if type(k) is int: raise TypeError("Key cannot be an integer")
+        if k in self._keys: self._keys.remove(k)
+        self._series[k] = s
         self._keys.append(k)
         self.stale = True
 
     def __delitem__(self, k):
+        if type(k) is int: k = self._keys[k]
         del self._series[k]
         self._keys.remove(k)
         self.stale = True
 
     def __getitem__(self, k):
-        if type(k) is int: k = self._keys[i]
+        if type(k) is int: k = self._keys[k]
         return self._series[k]
+
+    def __iter__(self):
+        "Generate the Series keys"
+        for k in self._keys: yield k
 
     def axis(self, n=None, ends=None, stroke="black", weight=2):
         "Configure the x- and/or y-axis"
@@ -220,34 +248,34 @@ class Plot(Renderable):
         self.stale = True
         return self
 
-    def drawAxis(self, srf, n, transform, x, stroke, weight):
+    @staticmethod
+    def labels(text, pos, **kwargs):
+        "Create a Series of Text labels"
+        text = [Text(t).config(**kwargs) for t in text]
+        return Series(pos, marker=text)
+
+    @staticmethod
+    def xtick(param, marker=9, **kwargs):
+        return Series._tick(param, marker, **kwargs)
+
+    @staticmethod
+    def ytick(param, marker=9, **kwargs):
+        return Series._tick(param, marker, True, **kwargs)
+
+    def _drawAxis(self, srf, n, transform, x, stroke, weight):
         "Draw the axes onto the plot surface"
         x0, x1 = x
         x0, x1 = [(0,x0), (0,x1)] if n else [(x0,0), (x1,0)]
         pygame.draw.line(srf, stroke, transform(x0), transform(x1), weight)
 
-#     def label(self, text, pos, **kwargs):
-#         attr = {"marker":Text(text).config(**kwargs)}
-#         self._text.append(([pos], attr))
-#         self.stale = True
-#         return self
-
-
     def render(self):
-#         noDraw = not hasattr(self, "rect")
-#         if noDraw: self.rect = pygame.Rect((0,0), self.size)
+        "Render the plot as a surface"
         srf = Image(self._size, self.bg).image
         transform = coordTr(self._coords, self._size)
-        if self._xaxis: self.drawAxis(srf, 0, transform, *self._xaxis)
-        if self._yaxis: self.drawAxis(srf, 1, transform, *self._yaxis)
-        for k in self._keys:
-            self._series[k].draw(srf, transform)
-#         for d, k in (self._data + self._text):
-#             self.plot(srf, d, transform, **k)
-#         if noDraw: del self.rect
+        if self._xaxis: self._drawAxis(srf, 0, transform, *self._xaxis)
+        if self._yaxis: self._drawAxis(srf, 1, transform, *self._yaxis)
+        for k in self._keys: self._series[k].draw(srf, transform)
         return srf
-
-    contains = Image.contains
 
     def pixelCoords(self, xy):
         return coordTr(self._coords, self._size)(xy)
@@ -260,10 +288,15 @@ class Locus(Shape):
     "Class for drawing point sequences directly to the canvas"
     snapshot = None
 
-    def __init__(self, data, lrbt, **kwargs):
+    def __init__(self, data, lrbt, param, **kwargs):
         self.data = data
         self.lrbt = lrbt
+        self.param = param
         self.kwargs = kwargs
+
+    def _getCoordTr(self):
+        sz = self.canvas.size
+        return coordTr(_lrbt(self.lrbt, *sz), sz) 
 
     def contains(self, pos): return False
 
@@ -272,24 +305,23 @@ class Locus(Shape):
         return self.rect.size if hasattr(self, "rect") else (0,0)
 
     def draw(self, srf, snapshot=False):
-        offset = 0, 0
-        try:
-            if not snapshot: offset = self.canvas.rect.topleft
-        except: pass 
-        s, w = self.stroke, self.weight
-        transform = coordTr(self.lrbt, self.canvas.size)
+        "Draw the locus to the sketch or canvas snapshot"
+        if snapshot: x0, y0 = 0, 0
+        else: x0, y0 = self.canvas.rect.topleft
+        tr = self._getCoordTr()
         d = self.data
-        pts = d if type(d) in (list, tuple) else locus(d, **self.kwargs)
-        pts = [transform(p) for p in pts]
-        if offset != (0, 0):
-            pts = [(x + offset[0], y + offset[1]) for (x, y) in pts]
-        return pygame.draw.lines(srf, s, False, pts, w)
+        pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.kwargs)
+        pts = [tr(p) for p in pts]
+        pts = [(x + x0, y + y0) for (x, y) in pts]
+        return pygame.draw.lines(srf, self.stroke, False, pts, self.weight)
 
-    def pointGen(self, size=None):
+    def pointGen(self):
         "Generate a sequence of points using canvas pixel coordinates"
         d = self.data
-        pts = d if type(d) in (list, tuple) else locus(d, **self.kwargs)
-        tr = coordTr(self.lrbt, self.canvas.size if size is None else size)
+        pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.kwargs)
+        tr = self._getCoordTr()
         for p in pts: yield tr(p)
 
-    def pointList(self, size=None): return list(self.pointGen(size))
+    @property
+    def pointList(self):
+        return list(self.pointGen())

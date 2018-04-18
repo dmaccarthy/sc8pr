@@ -33,6 +33,13 @@ except:
 
 CHARS = "abcdefghijklmnopqrstuvwxyz"
 
+def vec(latex):
+    "Compose LaTeX markup for a vector"
+    return "{\\vec{\\mathbf " + latex + "}}"
+
+def latexColor(latex, color):
+    "Compose LaTeX for colored rendering"
+    return "{\\color{" + color + "}" + latex + "}"
 
 def _loadImage(data):
     """Create a pygame.Surface from a filename or PNG bytes data;
@@ -49,7 +56,7 @@ def _loadImage(data):
     return data
 
 
-class CodeCogs(Thread):
+class CodeCogsRequest(Thread):
     "Send request to codecogs.com in a separate thread"
     data = None
     _url = "https://latex.codecogs.com/png.latex?"
@@ -60,7 +67,8 @@ class CodeCogs(Thread):
         self.onload = raw, onload
 
     def run(self):
-        data = urlopen(self.url).read()
+        try: data = urlopen(self.url).read()
+        except Exception as e: data = e
         raw, onload = self.onload
         if not raw: data = _loadImage(data)
         self.data = onload(data) if onload else data
@@ -68,24 +76,27 @@ class CodeCogs(Thread):
     @staticmethod
     def waiting(imgs):
         "Check whether there are responses pending"
+        w = False
         for img in imgs:
-            if img.data is None: return True
-        return False
+            data = img.data
+            if isinstance(data, Exception): raise(data)
+            if data is None: w = True
+        return w
 
     @staticmethod
     def wait(imgs):
         "Wait until all image responses are received"
-        while CodeCogs.waiting(imgs): sleep(0.002)
+        while CodeCogsRequest.waiting(imgs): sleep(0.002)
 
     @staticmethod
     def request(*args, **kwargs):
-        "Create a CodeCogs instance for each request"
+        "Create a CodeCogsRequest instance for each request"
         dpi = kwargs.get("dpi", 128)
         if dpi:
             dpi = dpi = "\\dpi{" + str(dpi) + "}"
             latex = lambda x: dpi + x
         else: latex = lambda x: x
-        imgs = [CodeCogs(latex(x), kwargs.get("raw"),
+        imgs = [CodeCogsRequest(latex(x), kwargs.get("raw"),
             kwargs.get("onload")) for x in args]
         for img in imgs: img.start()
         return imgs
@@ -130,13 +141,14 @@ class LatexCache:
         "Check if file exists in cache"
         return isfile(self.png(alias, dpi)) if alias else False
 
-    def get(self, *args, dpi=128, update=True, onload=None):
+    def get(self, *args, dpi=128, update=True, onload=None, color=None):
         "Return rendered LaTeX as an Image or list of Image instances"
 
         # Determine which files exist in cache
         imgs = []
         cogs = []
         for latex in args:
+            if color: latex = latexColor(latex, color)
             alias = self.index.get(latex)
             if alias and self.cached(alias, dpi):
                 imgs.append(self.png(alias, dpi))
@@ -145,7 +157,7 @@ class LatexCache:
                 cogs.append(latex)
 
         # Send requests to codecogs.com
-        if cogs: cogs_img = CodeCogs.request(*cogs, dpi=dpi, raw=True)
+        if cogs: cogs_img = CodeCogsRequest.request(*cogs, dpi=dpi, raw=True)
 
         # Load images from cache
         for i in range(len(imgs)):
@@ -154,15 +166,16 @@ class LatexCache:
 
         # Process cogecogs.com responses
         if cogs:
-            allCodes = self.index.values()
-            CodeCogs.wait(cogs_img)
+            aliasList = list(self.index.values())
+            CodeCogsRequest.wait(cogs_img)
             for i in range(len(cogs)):
                 latex = cogs[i]
                 alias = self.index.get(latex)
                 if alias is None:
-                    while alias is None or alias in allCodes:
+                    while alias is None or alias in aliasList:
                         alias = self._alias()
-                self.index[latex] = alias
+                    self.index[latex] = alias
+                    aliasList.append(alias)
                 fn = self.png(alias, dpi)
                 data = cogs_img[i].data
                 with open(fn, "wb") as png: png.write(data)
@@ -175,7 +188,7 @@ class LatexCache:
 
 def render(*args, **kwargs):
     "Render one or more LaTeX expressions without caching"
-    imgs = CodeCogs.request(*args, **kwargs)
-    CodeCogs.wait(imgs)
+    imgs = CodeCogsRequest.request(*args, **kwargs)
+    CodeCogsRequest.wait(imgs)
     imgs = [img.data for img in imgs]
     return imgs[0] if len(imgs) == 1 else imgs
