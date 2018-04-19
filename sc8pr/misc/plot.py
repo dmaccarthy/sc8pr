@@ -187,6 +187,8 @@ class Series:
 class Plot(Renderable):
     "Class for plotting multiple data series with lines and markers"
     bg = None
+    _xaxis = None
+    _yaxis = None
     contains = Image.contains
 
     def __init__(self, size, lrbt):

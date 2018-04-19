@@ -82,7 +82,7 @@ class Trace(BrainSketch):
 	def setup(self):
 		pl = Plot(self.size, [-4, 4, -1.5, 1.5]).config(bg="white")
 		marker = Image((6, 6), "blue")
-		pl["Curve"] = Series(sin, param=[-pi, pi, 2 * self.width - 1], marker=marker)
+		pl["Curve"] = Series(sin, param=[-pi, pi, 2 * self.width - 1]).config(marker=marker)
 		self.bg = pl.snapshot()
 		robo = Robot(["#ff5050", "#ffd428"])
 		self["Traci"] = self.bindBrain(robo).config(width=60, pos=self.center)
