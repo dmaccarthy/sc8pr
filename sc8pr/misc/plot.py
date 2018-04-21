@@ -16,6 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
+from math import log, exp
 import pygame
 from sc8pr import Renderable, Image, Graphic, BaseSprite
 from sc8pr.shape import Shape
@@ -59,7 +60,7 @@ def locus(func, param, **kwargs):
         except: pass
 
 def leastSq(x, y):
-    "Perform a simple least squares regression"
+    "Perform a simple least squares linear regression"
     n = len(x)
     if len(y) != n: raise ValueError("x and y data must be the same size")
     xav = sum(x) / n
@@ -68,6 +69,20 @@ def leastSq(x, y):
     m /= sum((xi - xav) ** 2 for xi in x)
     b = yav - m * xav
     return (lambda x: m * x + b), (m, b)
+
+def power(x, y):
+    "Least squares fit to model y = a x**n"
+    x = [log(xi) for xi in x]
+    y = [log(xi) for xi in y]
+    n, a = leastSq(x, y)[1]
+    a = exp(a)
+    return (lambda x:a * x**n), (a, n)
+
+def expon(x, y):
+    "Least squares fit to model y = a b**x"
+    y = [log(xi) for xi in y]
+    b, a = [exp(a) for a in leastSq(x, y)[1]]
+    return (lambda x:a * b**x), (a, b)
 
 def _isZero(x, fmt):
     "Check is text is formatted 0"
