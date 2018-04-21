@@ -28,6 +28,7 @@ def _lrbt(lrbt, w, h):
     "Calculate coordinate system limits"
     n = len(lrbt)
     if n < 4:
+        if not isinstance(lrbt, list): lrbt = list(lrbt)
         dy = h * (lrbt[1] - lrbt[0]) / w
         if n == 2:
             dy /= 2
@@ -48,7 +49,6 @@ def coordTr(lrbt, size):
 
 def locus(func, param, **kwargs):
     "Generate a parameterized sequence of 2D points"
-    print(param)
     t0, t1, steps = param
     for i in range(steps + 1):     
         try:
@@ -87,13 +87,13 @@ class Series:
     @stroke.setter
     def stroke(self, s): self._stroke = rgba(s) if s else None
 
-    def __init__(self, x, y=None, param=None, **kwargs):
+    def __init__(self, x, y=None, param=None):
         self._data = x if y is None else list(zip(x, y))
         self.param = param
-        self.vars = kwargs
+        self.vars = {}
 
     def __getitem__(self, i): return self._data[i]
-    def __setitem__(self, i, v): self._data[i] = v
+    def __setitem__(self, i, pt): self._data[i] = pt
 
     config = Graphic.config
 
@@ -107,18 +107,18 @@ class Series:
         "Return data as a new list"
         return list(self.pointGen())
 
-    def data(self, n):
+    def dataGen(self, n):
         "Generate values from x or y column of data table"
         for pt in self.pointGen(): yield pt[n]
 
     @property
-    def x(self): return list(self.data(0))
+    def x(self): return list(self.dataGen(0))
 
     @property
-    def y(self): return list(self.data(1))
+    def y(self): return list(self.dataGen(1))
 
     def regression(self, model=leastSq):
-        return model(*[list(self.data(i)) for i in (0, 1)])
+        return model(*[list(self.dataGen(i)) for i in (0, 1)])
 
     def transform(self, **kwargs):
         "Apply a transformation to the data points"
@@ -151,7 +151,7 @@ class Series:
                 srf.blit(img.image, pos)
 
     @staticmethod
-    def lattice(x=0, y=0):
+    def _lattice(x=0, y=0):
         "Generate a lattice of points"
         num = int, float
         x = (x,) if type(x) in num else rangef(*x)
@@ -161,12 +161,11 @@ class Series:
 
     @staticmethod
     def _tick(param, marker=9, y=False, **kwargs):
-#        if marker is None: marker = 9
         if type(marker) is int: marker = ((9,1) if y else (1,9), "black")
         label = type(marker) is str
         if not (label or isinstance(marker, Graphic)):
             marker = Image(*marker)
-        s = list(Series.lattice(0, param) if y else Series.lattice(param, 0))
+        s = list(Series._lattice(0, param) if y else Series._lattice(param, 0))
         if label:
             isZero = (lambda x: _isZero(x, marker)) if kwargs.get("omitZero")\
                 else (lambda x: False)
@@ -290,11 +289,11 @@ class Locus(Shape):
     "Class for drawing point sequences directly to the canvas"
     snapshot = None
 
-    def __init__(self, data, lrbt, param, **kwargs):
+    def __init__(self, data, lrbt, param):
         self.data = data
         self.lrbt = lrbt
         self.param = param
-        self.kwargs = kwargs
+        self.vars = {}
 
     def _getCoordTr(self):
         sz = self.canvas.size
@@ -312,7 +311,7 @@ class Locus(Shape):
         else: x0, y0 = self.canvas.rect.topleft
         tr = self._getCoordTr()
         d = self.data
-        pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.kwargs)
+        pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.vars)
         pts = [tr(p) for p in pts]
         pts = [(x + x0, y + y0) for (x, y) in pts]
         return pygame.draw.lines(srf, self.stroke, False, pts, self.weight)
@@ -320,7 +319,7 @@ class Locus(Shape):
     def pointGen(self):
         "Generate a sequence of points using canvas pixel coordinates"
         d = self.data
-        pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.kwargs)
+        pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.vars)
         tr = self._getCoordTr()
         for p in pts: yield tr(p)
 

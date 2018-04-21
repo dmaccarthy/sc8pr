@@ -105,12 +105,12 @@ class ParkingLot(BrainSketch):
 		attr = dict(stroke="orange", weight=4)
 		for x in range(1,6):
 			key = "Line{}".format(x)
-			p[key + "a"] = Series([(x, 0), (x, 1)], **attr)
-			p[key + "b"] = Series([(x, n), (x, n-1)], **attr)
+			p[key + "a"] = Series([(x, 0), (x, 1)]).config(**attr)
+			p[key + "b"] = Series([(x, n), (x, n-1)]).config(**attr)
 		attr.update(stroke="blue")
-		p["Blue"] = Series([(0.5, n/2), (5.5, n/2)], **attr)
+		p["Blue"] = Series([(0.5, n/2), (5.5, n/2)]).config(**attr)
 		redDot = Circle(64).config(fill="red").snapshot().config(width=16)
-		p["Red"] = Series([(x + 0.5, n/2) for x in range(6)], marker=redDot)
+		p["Red"] = Series([(x + 0.5, n/2) for x in range(6)]).config(marker=redDot)
 		return p
 
 	def setup(self):
