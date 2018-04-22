@@ -41,7 +41,7 @@ def randomMotor(r):
 def dumbBrain(r):
     randomMotor(r)
     while r.active:
-        r.sleep()
+        r.updateSensors()
         if r.collision or r.uptime > r.schedule: randomMotor(r)
 
 def followBall(r):

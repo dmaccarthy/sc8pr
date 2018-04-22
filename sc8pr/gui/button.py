@@ -54,14 +54,14 @@ class Button(Canvas):
         "Images for creating check boxes"
         if Button._check is None:
             Button._check = Image.fromBytes(sc8prData("checkbox"))
-        return Button._check.tiles(2, 2)
+        return Button._check.tiles(5)
 
     @staticmethod
     def _radioTiles():
         "Images for creating radio check boxes"
         if Button._radio is None:
             Button._radio = Image.fromBytes(sc8prData("radio"))
-        return Button._radio.tiles(2, 2)
+        return Button._radio.tiles(5)
 
     @staticmethod
     def checkbox(imgs=None):
@@ -153,6 +153,6 @@ class Button(Canvas):
             self._status &= 254
 
     def onclick(self, ev):
-        if ev.button in self.allowButton:
+        if self._status < 4 and ev.button in self.allowButton:
             if self.selectable: self.selected = not self.selected
             self.bubble("onaction", ev)

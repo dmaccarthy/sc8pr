@@ -32,6 +32,12 @@ def jsonToBytes(obj):
 def jsonFromBytes(b):
     return loads(str(b, encoding="utf-8"))
 
+def _saveRaw(img, fn, frmt=0):
+    "Save image as raw bytes"
+    data = convert(img, frmt)
+    with open(fn, "wb") as f:
+        for b in data: f.write(b)
+
 def convert(img, frmt=1):
     """Convert between pygame.Surface, PIL.Image, and binary data;
     only RGB and RGBA modes are supported"""

@@ -25,20 +25,22 @@ class Options(Canvas):
     """GUI control consisting of check boxes and text;
     buttons handle onclick; trigger onaction"""
 
-    def __init__(self, text, size=None, space=4, imgs=None, **kwargs):
+    def __init__(self, text, height=None, space=4, imgs=None, **kwargs):
         text = [Text(t).config(**kwargs) for t in text]
         check = []
-        y = w = 0
-        if not size: size = text[0].height
+        w = 0
+        y = space
+        if not height:
+            height = 1 + text[0].height // len(text[0].data.split("\n"))
         for t in text:
-            cb = Button.checkbox(imgs).config(height=size)
-            yc = y + size / 2
-            check.append(cb.config(height=size, pos=(0, yc), anchor=LEFT))
-            t.config(pos=(cb.width + space, yc), anchor=LEFT, **kwargs)
-            y += size + space
+            cb = Button.checkbox(imgs).config(height=height)
+            yc = y + t.height / 2
+            check.append(cb.config(height=height, pos=(space, yc), anchor=LEFT))
+            t.config(pos=(cb.width + 2 * space, yc), anchor=LEFT, **kwargs)
+            y += t.height + space
             w1 = cb.width + t.width
             if w1 > w: w = w1
-        super().__init__((w + space, y - space))
+        super().__init__((w + 3 * space, y))
         self += check + text
         self.boxes = check
         if hasattr(self, "selected"): self.selected = 0
@@ -48,9 +50,9 @@ class Radio(Options):
     """GUI control consisting of radio buttons and text;
     buttons handle onclick; radio handles onaction and triggers onchange"""
 
-    def __init__(self, text, size=None, space=4, imgs=None, **kwargs):
+    def __init__(self, text, height=None, space=4, imgs=None, **kwargs):
         if imgs is None: imgs = Button._radioTiles()
-        super().__init__(text, size, space, imgs, **kwargs)
+        super().__init__(text, height, space, imgs, **kwargs)
 
     @property
     def selected(self):
@@ -65,10 +67,12 @@ class Radio(Options):
             i += 1
 
     def onaction(self, ev):
-        change = ev.target.selected
-        for cb in self.boxes:
-            cb.selected = ev.target is cb
-        if change:
-            setattr(ev, "target", self)
-            self.bubble("onchange", ev)
+        t = ev.target
+        if t.enabled:
+            change = t.selected
+            for cb in self.boxes:
+                cb.selected = t is cb
+            if change:
+#                setattr(ev, "target", self)
+                self.bubble("onchange", ev)
     
