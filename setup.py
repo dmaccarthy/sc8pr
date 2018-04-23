@@ -11,7 +11,7 @@ setup(
     version = ver,
     license = "GPLv3",
     packages = find_packages(),
-    package_data = {"sc8pr": ["*.data", "examples/img/*.*"]},
+    package_data = {"sc8pr": ["*.data", "examples/img/*.*"], "":["LICENSE.txt"]},
 
     # Author
     author = "David MacCarthy",
