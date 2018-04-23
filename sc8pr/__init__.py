@@ -225,13 +225,16 @@ class Graphic:
         return self
 
     @property
-    def path(self):
+    def path(self): return self.pathTo(None)
+
+    def pathTo(self, cv):
         "List of parent canvases, beginning with the instance itself"
         g = self
         p = []
         while g is not None:
             p.append(g)
-            g = g.canvas
+            if g is cv: g = None
+            else: g = g.canvas                
         return p
 
     @property
