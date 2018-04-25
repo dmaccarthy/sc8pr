@@ -78,6 +78,4 @@ class Menu(Canvas):
 
     def buttonNumber(self, target):
         "Return the layer (index) of the button containing the target graphic"
-        btn = target.canvas
-        if btn is self: btn = target
-        return btn.layer
+        return target.pathTo(self)[-2].layer
