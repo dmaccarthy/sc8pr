@@ -40,8 +40,8 @@ from sc8pr.sprite import Sprite
 from sc8pr.gui.button import Button
 from sc8pr.gui.textinput import TextInput
 from sc8pr.gui.tkdialog import TkDialog, FOLDER
-from sc8pr.misc.video import Video, ImageIO, convert
-from sc8pr.misc.pil import Grabber
+from sc8pr.misc.video import Video, Grabber, ImageIO
+import zlib
 
 def timeStr():
     "Create a string that can be used as the recording file name"
@@ -94,7 +94,7 @@ class Recorder(Sketch):
     def ondraw(self):
         "Capture screen if recording"
         if self.grab:
-            self.rec.append(self.grab.image(False))
+            self.rec.append(self.grab.grab)
 
     def record(self):
         "Begin screen recording"
@@ -142,9 +142,13 @@ class SaveThread(Thread):
         "Convert frames to compressed bytes; save recording in S8V format"
         vid = Video().config(size=data[0].size)
         vid.meta["frameRate"] = fps
+        print("Compressing...")
+        i = 0
         for frame in data:
-            vid._costumes.append(convert(frame, 1))
-        vid.save(fn)     
+            vid._costumes.append(Image.fromPIL(frame, True, zlib.compress))
+            i += 1
+            if i % 50 == 0: print(i)
+        vid.save(fn)
 
 
 def main():

@@ -17,14 +17,14 @@
 
 version = 2, 1, "dev"
 
-import sys, os
+import sys, os, struct
 import pygame
 import pygame.display as _pd
 from pygame.transform import flip as _pyflip
 from sc8pr._event import EventManager
 from sc8pr.geom import transform2d, positiveAngle, delta
 from sc8pr.util import CachedSurface, style, logError, sc8prData,\
-    tile, rgba, drawBorder
+    tile, rgba, drawBorder, hasAlpha
 
 # Anchor point constants
 TOPLEFT = 0
@@ -74,6 +74,20 @@ class Graphic:
     def __str__(self):
         name = self.name
         return "<{} '{}'>".format(type(self).__name__, name if name else id(self))
+
+    def raw(self, compress=None):
+        "Convert pixel data to raw bytes"
+        srf = self.image
+        mode = 1 if hasAlpha(srf) else 0
+        data = pygame.image.tostring(srf, ["RGB", "RGBA"][mode])
+        if compress:
+            mode += 2
+            data = compress(data)
+        return data, struct.pack("!3I", mode, *srf.get_size())
+
+    def __bytes__(self):
+        b = self.raw()
+        return b[0] + b[1]
 
     def config(self, **kwargs):
         "Set multiple instance properties"
@@ -483,6 +497,18 @@ class Image(Graphic):
 
     @staticmethod
     def fromBytes(data): return Image(data[:-12], data[-12:])
+
+    @staticmethod
+    def fromPIL(img, raw=False, compress=None):
+        "Convert a Pillow image to sc8pr.Image"
+        data = img.tobytes()
+        if raw:
+            mode = ["RGB", "RGBA"].index(img.mode)
+            if compress:
+                data = compress(data)
+                mode += 2
+            return data, struct.pack("!3I", mode, *img.size)
+        return Image(pygame.image.fromstring(data, img.size, img.mode))
 
     def tiles(self, cols=1, rows=1, flip=0, padding=0):
         "Create a list of images from a spritesheet"

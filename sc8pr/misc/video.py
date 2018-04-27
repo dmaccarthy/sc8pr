@@ -22,7 +22,7 @@ from json import loads, dumps
 from sc8pr import Image, version
 from sc8pr.sprite import Sprite
 from sc8pr.util import hasAlpha
-try: from PIL import Image as PImage
+try: from PIL import Image as PImage, ImageGrab
 except: PImage = None
 
 
@@ -32,54 +32,10 @@ def jsonToBytes(obj):
 def jsonFromBytes(b):
     return loads(str(b, encoding="utf-8"))
 
-def _saveRaw(img, fn, frmt=0):
-    "Save image as raw bytes"
-    data = convert(img, frmt)
-    with open(fn, "wb") as f:
-        for b in data: f.write(b)
-
-def convert(img, frmt=1):
-    """Convert between pygame.Surface, PIL.Image, and binary data;
-    only RGB and RGBA modes are supported"""
-    # 0 = Uncompressed bytes
-    # 1 = Compressed bytes
-    # 2 = pygame.Surface
-    # 3 = PIL.Image
-    if type(img) is tuple:
-        data = img[0]
-        mode, w, h = struct.unpack("!3I", img[1])
-        if mode & 2: data = zlib.decompress(data)
-        mode = ["RGB", "RGBA"][mode & 1]
-        size = w, h
-        if frmt == 2: return pygame.image.fromstring(data, size, mode)
-        if frmt == 3: return PImage.frombytes(mode, size, data)
-        _formatError()
-    try: isPIL = isinstance(img, PImage.Image)
-    except: isPIL = False
-    if isPIL:
-        _formatError(frmt, 0, 1, 2)
-        data = img.tobytes()
-        if frmt == 2: return pygame.image.fromstring(data, img.size, img.mode)
-        return _image_bin(data, img.mode, img.size, frmt)
-    if not isinstance(img, pygame.Surface): img = img.image
-    _formatError(frmt, 0, 1, 3)
-    size = img.get_size()
-    mode = "RGBA" if hasAlpha(img) else "RGB"
-    data = pygame.image.tostring(img, mode)
-    if frmt == 3: return PImage.frombytes(mode, size, data)
-    return _image_bin(data, mode, size, frmt)
-
-def _image_bin(data, mode, size, compress=1):
-    "Return a 2-tuple of binary (data, (mode,size))"
-    mode = ["RGB", "RGBA"].index(mode)
-    if compress:
-        mode += 2
-        data = zlib.compress(data)
-    mode = struct.pack("!3I", mode, *size)
-    return data, mode
-
-def _formatError(n=None, *args):
-    if n not in args: raise ValueError("Invalid format")
+def _compress(img):
+    "Compress image data using zlib"
+    if not isinstance(img, Image): img = Image(img)
+    return img.raw(zlib.compress)
 
 
 class Video(Sprite):
@@ -94,7 +50,7 @@ class Video(Sprite):
         if t is str: self._load(data, progress)
         elif t is tuple and type(data[0]) is int: self._size = data
         elif data:
-            self._costumes = [convert(img) for img in data]
+            self._costumes = [_compress(img) for img in data]
         if len(self._costumes):
             img = Image(*self._costumes[0])
             self._size = img.size
@@ -104,7 +60,7 @@ class Video(Sprite):
 
     def __iadd__(self, img):
         "Append a frame to the video"
-        self._costumes.append(convert(img))
+        self._costumes.append(_compress(img))
         if not hasattr(self, "_size"): self._size = img.size
         return self
 
@@ -125,7 +81,7 @@ class Video(Sprite):
 
     def extend(self, imgs):
         "Append multiple frames to the video"
-        self._costumes.extend(convert(img) for img in imgs)
+        self._costumes.extend(_compress(img) for img in imgs)
         return self
 
     def _loadMeta(self, zf):
@@ -196,10 +152,31 @@ class Video(Sprite):
             mode, w, h = struct.unpack("!3I", mode)
             if (w, h) != size:
                 img = self[i].config(size=size).snapshot()
-                if inPlace: self._costumes[i] = convert(img)
+                if inPlace: self._costumes[i] = _compress(img)
                 else: vid += img
             elif not inPlace: vid._costumes.append(self._costumes[i])
         return vid
+
+
+class Grabber:
+    "A class for performing screen captures using PIL.ImageGrab"
+    
+    def __init__(self, rect=None):
+        if rect and not isinstance(rect, pygame.Rect):
+            if len(rect) == 2: rect = (0, 0), rect
+            rect = pygame.Rect(rect)
+        self.rect = rect
+
+    @property
+    def bbox(self):
+        "Bounding box for capture"
+        r = self.rect
+        if r: return [r.left, r.top, r.right, r.bottom]
+
+    @property
+    def grab(self, frmt=None):
+        "Grab an image using PIL.ImageGrab"
+        return ImageGrab.grab(self.bbox)
 
 
 try:
@@ -235,15 +212,21 @@ try:
         def pilFrame(img):
             "Format frame image data using PIL"
             if not isinstance(img, PImage.Image):
-                img = convert(img, 3)
+                if type(img) is tuple: img = Image(*img).image
+                elif isinstance(img, Image): img = img.image
+                mode = "RGBA" if hasAlpha(img) else "RGB"
+                data = pygame.image.tostring(img, mode)
+                img = PImage.frombytes(mode, img.get_size(), data)
             return numpy.array(img)
 
         @staticmethod
         def srfFrame(img):
             "Format frame image data using pygame.surfarray"
-            if isinstance(img, Image): img = img.image
-            if not isinstance(img, pygame.Surface):
-                img = convert(img, 2)
+            try:
+                if isinstance(img, PImage.Image): img = Image.fromPIL(img)
+            except: pass
+            if type(img) is tuple: img = Image(*img).image
+            elif isinstance(img, Image): img = img.image
             img = pygame.surfarray.array3d(img)
             return numpy.swapaxes(img, 0, 1)
 
