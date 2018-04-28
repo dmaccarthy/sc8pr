@@ -35,7 +35,7 @@ class VideoPlayer(Sketch):
 
     def setup(self):
         self.menu()
-        attr = dict(anchor=BOTTOMRIGHT, color="red", font=Font.mono())
+        attr = dict(anchor=BOTTOMRIGHT, color="red", font=Font.mono(), fontSize=18)
         self["Text"] = Text().config(pos=(self.width-4, self.height-4), **attr) 
 
     @staticmethod
@@ -78,7 +78,7 @@ class VideoPlayer(Sketch):
         if "Video" in self:
             vid = self["Video"]
             n = vid.costumeNumber
-            msg = "{1}/{2} [{3}, {4}] {0} fps".format(self.frameRate, n, len(vid), *self.clip)
+            msg = "{1}/{2} [{3},{4}] @ {0}".format(self.frameRate, n, len(vid), *self.clip)
         else: msg = "Type 'o' to Open Video"
         txt = self["Text"]
         if txt.data != msg: txt.config(data=msg)

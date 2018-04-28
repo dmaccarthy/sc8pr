@@ -17,7 +17,7 @@
 
 version = 2, 1, "dev"
 
-import sys, os, struct
+import sys, os, struct, zlib
 import pygame
 import pygame.display as _pd
 from pygame.transform import flip as _pyflip
@@ -44,6 +44,87 @@ BOTH = 3
 REMOVE_X = 4
 REMOVE_Y = 8
 REMOVE = 12
+
+
+class PixelData:
+    "A class for storing, compressing, and converting raw pixel data"
+
+    def __str__(self):
+        name = type(self).__name__
+        kb = len(self.data) / 1024
+        return "<{0} {1} {3}x{4} [{2:.1f} kb]>".format(name, self.mode, kb, *self.size)
+
+    def __init__(self, img, compress=False, codec=zlib):
+        self.compressed = False
+        if type(img) is bytes: img = img[:-12], img[-12:]
+        elif isinstance(img, Graphic):
+            try: img = img.image
+            except: img = img.snapshot()
+        if type(img) is tuple:
+            m, w, h, c = self.unpack(img[1])
+            self.compressed = c
+            self.data = img[0]
+            self.size = w, h
+        elif isinstance(img, pygame.Surface):
+            self.size = img.get_size()
+            bits = img.get_bitsize()
+            m = "RGB" if bits == 24 else "RGBA" if bits == 32 else None
+            self.data = pygame.image.tostring(img, m)
+        else: # Pillow image
+            self.size = img.size
+            m = img.mode
+            self.data = img.tobytes()
+        if m in ("RGB", "RGBA"): self.mode = m
+        else: raise NotImplementedError("Only RGB and RGBA modes are supported")
+        self.codec = codec
+        if compress: self.compress()
+
+    def compress(self):
+        if not self.compressed:
+            self.data = self.codec.compress(self.data)
+            self.compressed = True
+
+    def decompress(self):
+        if self.compressed:
+            self.data = self.codec.decompress(self.data)
+            self.compressed = False
+
+    def pack(self):
+        m = self.mode
+        m = 0 if m == "RGB" else 1
+        if self.compressed: m += 2
+        return struct.pack("!3I", m, *self.size)
+
+    @staticmethod
+    def unpack(p):
+        m, w, h = struct.unpack("!3I", p)
+        c = bool(m & 2)
+        m = "RGBA" if (m & 1) else "RGB" 
+        return m, w, h, c
+
+    def raw(self): return self.data, self.pack()
+
+    def writeTo(self, f):
+        for b in self.raw(): f.write(b)
+
+    def __bytes__(self):
+        b = self.raw()
+        return b[0] + b[1]
+
+    def _image(self, fn):
+        data = self.data
+        if self.compressed: data = self.codec.decompress(data)
+        return fn(data, self.size, self.mode)
+
+    @property
+    def srf(self): return self._image(pygame.image.fromstring)
+
+    @property
+    def img(self): return Image(self.srf)
+
+    def pil(self, pil):
+        fn = lambda d,s,m: pil.Image.frombytes(m, s, d)
+        return self._image(fn)
 
 
 class Graphic:
@@ -74,20 +155,6 @@ class Graphic:
     def __str__(self):
         name = self.name
         return "<{} '{}'>".format(type(self).__name__, name if name else id(self))
-
-    def raw(self, compress=None):
-        "Convert pixel data to raw bytes"
-        srf = self.image
-        mode = 1 if hasAlpha(srf) else 0
-        data = pygame.image.tostring(srf, ["RGB", "RGBA"][mode])
-        if compress:
-            mode += 2
-            data = compress(data)
-        return data, struct.pack("!3I", mode, *srf.get_size())
-
-    def __bytes__(self):
-        b = self.raw()
-        return b[0] + b[1]
 
     def config(self, **kwargs):
         "Set multiple instance properties"
@@ -483,7 +550,7 @@ class Image(Graphic):
     def __init__(self, data=(2,2), bg=None):
         self._srf = CachedSurface(data, bg)
         self._size = self._srf.get_size()
-    
+
     @property
     def original(self): return self._srf.original
 
@@ -496,19 +563,19 @@ class Image(Graphic):
     def dumpCache(self): self._srf.dumpCache()
 
     @staticmethod
-    def fromBytes(data): return Image(data[:-12], data[-12:])
+    def fromBytes(data): return PixelData(data).img
 
-    @staticmethod
-    def fromPIL(img, raw=False, compress=None):
-        "Convert a Pillow image to sc8pr.Image"
-        data = img.tobytes()
-        if raw:
-            mode = ["RGB", "RGBA"].index(img.mode)
-            if compress:
-                data = compress(data)
-                mode += 2
-            return data, struct.pack("!3I", mode, *img.size)
-        return Image(pygame.image.fromstring(data, img.size, img.mode))
+#     @staticmethod
+#     def fromPIL(img, raw=False, compress=None):
+#         "Convert a Pillow image to sc8pr.Image"
+#         data = img.tobytes()
+#         if raw:
+#             mode = ["RGB", "RGBA"].index(img.mode)
+#             if compress:
+#                 data = compress(data)
+#                 mode += 2
+#             return data, struct.pack("!3I", mode, *img.size)
+#         return Image(pygame.image.fromstring(data, img.size, img.mode))
 
     def tiles(self, cols=1, rows=1, flip=0, padding=0):
         "Create a list of images from a spritesheet"
@@ -529,13 +596,6 @@ class Image(Graphic):
         "Determine if the position is contained in the rect and not transparent"
         try: return bool(self.at(pos, self.rect).a)
         except: return False
-#         br = self.rect
-#         if br.collidepoint(pos):
-#             x, y = br.topleft
-#             x, y = transform2d(pos, shift=(-x,-y))
-#             try: return bool(self.image.get_at((round(x), round(y))).a)
-#             except: pass
-#         return False
 
     def save(self, fn):
         pygame.image.save(self._srf.original, fn)

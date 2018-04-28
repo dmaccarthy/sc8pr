@@ -61,8 +61,8 @@ class Dialog(Canvas):
         # Radio buttons
         text = self.options
         attr = {"font":sk.font, "fontSize":16}
-        radio = [Radio(text, **attr).config(anchor=TOPLEFT),
-            Radio(text[1:], **attr).config(anchor=TOPLEFT)]
+        radio = [Radio(text, txtConfig=attr).config(anchor=TOPLEFT),
+            Radio(text[1:], txtConfig=attr).config(anchor=TOPLEFT)]
 
         # Play button
         icon = Sprite(SoccerBall.ballImage).config(spin=1, costumeTime=10)

@@ -32,7 +32,7 @@ if __name__ == "__main__": import depends
 from sys import argv
 from datetime import datetime
 from threading import Thread
-from sc8pr import Sketch, Image, LEFT
+from sc8pr import Sketch, Image, PixelData, LEFT
 from sc8pr.text import Font, BOLD
 from sc8pr.util import logError
 from sc8pr.shape import Circle
@@ -41,7 +41,7 @@ from sc8pr.gui.button import Button
 from sc8pr.gui.textinput import TextInput
 from sc8pr.gui.tkdialog import TkDialog, FOLDER
 from sc8pr.misc.video import Video, Grabber, ImageIO
-import zlib
+import numpy, imageio as im
 
 def timeStr():
     "Create a string that can be used as the recording file name"
@@ -134,7 +134,10 @@ class SaveThread(Thread):
 
     def run(self):
         if self.output == "s8v" or ImageIO is None: self.s8v(self.fn, self.frames, self.fps)
-        else: ImageIO.encode(self.frames, self.fn, fps=self.fps)
+        else:
+            with im.get_writer(self.fn, fps=self.fps) as writer:
+                for img in self.frames:
+                    writer.append_data(numpy.array(img))
         print("Done!")
 
     @staticmethod
@@ -145,7 +148,7 @@ class SaveThread(Thread):
         print("Compressing...")
         i = 0
         for frame in data:
-            vid._costumes.append(Image.fromPIL(frame, True, zlib.compress))
+            vid._costumes.append(PixelData(frame, True))
             i += 1
             if i % 50 == 0: print(i)
         vid.save(fn)

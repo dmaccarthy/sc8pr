@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-import sys, zlib, struct, pygame
+import sys, pygame
 from random import randint
 from traceback import format_exc
 from zipfile import ZipFile
@@ -168,13 +168,8 @@ class CachedSurface:
         if t is str:
             srf = pygame.image.load(srf)
             if bg: srf = style(srf, bg)
-            elif srf.get_bitsize() < 32: #or not hasAlpha(srf):
+            elif srf.get_bitsize() < 32:
                 srf = srf.convert_alpha()
-        elif t is bytes:
-            mode, w, h = struct.unpack("!3I", bg)
-            if mode & 2: srf = zlib.decompress(srf)
-            mode = "RGBA" if mode & 1 else "RGB"
-            srf = pygame.image.fromstring(srf, (w,h), mode)
         elif t in (list, tuple):
             srf = pygame.Surface(srf, pygame.SRCALPHA)
             if bg is not None:
