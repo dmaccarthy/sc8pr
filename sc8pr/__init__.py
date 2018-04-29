@@ -51,7 +51,7 @@ class PixelData:
 
     def __str__(self):
         name = type(self).__name__
-        kb = len(self.data) / 1024
+        kb = len(self._data) / 1024
         return "<{0} {1} {3}x{4} [{2:.1f} kb]>".format(name, self.mode, kb, *self.size)
 
     def __init__(self, img, compress=False, codec=zlib):
@@ -63,17 +63,17 @@ class PixelData:
         if type(img) is tuple:
             m, w, h, c = self._unpack(img[1])
             self.compressed = c
-            self.data = img[0]
+            self._data = img[0]
             self.size = w, h
         elif isinstance(img, pygame.Surface):
             self.size = img.get_size()
             bits = img.get_bitsize()
             m = "RGB" if bits == 24 else "RGBA" if bits == 32 else None
-            self.data = pygame.image.tostring(img, m)
+            self._data = pygame.image.tostring(img, m)
         else: # Pillow image
             self.size = img.size
             m = img.mode
-            self.data = img.tobytes()
+            self._data = img.tobytes()
         if m in ("RGB", "RGBA"): self.mode = m
         else: raise NotImplementedError("Only RGB and RGBA modes are supported")
         self.codec = codec
@@ -81,13 +81,13 @@ class PixelData:
 
     def compress(self):
         if not self.compressed:
-            self.data = self.codec.compress(self.data)
+            self._data = self.codec.compress(self._data)
             self.compressed = True
         return self
 
     def decompress(self):
         if self.compressed:
-            self.data = self.codec.decompress(self.data)
+            self._data = self.codec.decompress(self._data)
             self.compressed = False
         return self
 
@@ -104,7 +104,7 @@ class PixelData:
         m = "RGBA" if (m & 1) else "RGB" 
         return m, w, h, c
 
-    def raw(self): return self.data, self._pack()
+    def raw(self): return self._data, self._pack()
 
     def writeTo(self, f):
         for b in self.raw(): f.write(b)
@@ -116,7 +116,7 @@ class PixelData:
 
     def _image(self, fn):
         "Convert raw data to an image using the function provided"
-        data = self.data
+        data = self._data
         if self.compressed: data = self.codec.decompress(data)
         return fn(data, self.size, self.mode)
 
