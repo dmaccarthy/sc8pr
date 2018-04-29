@@ -179,7 +179,13 @@ class Grabber:
         if r: return [r.left, r.top, r.right, r.bottom]
 
     @property
-    def grab(self, frmt=None): return grab(self.bbox)
+    def pil(self): return grab(self.bbox)
+
+    @property
+    def pix(self): return PixelData(grab(self.bbox))
+
+    @property
+    def img(self): return self.pix.img
 
 
 try:

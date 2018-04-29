@@ -48,7 +48,7 @@ class Effect:
 class ReplaceColor(Effect):
     "Replace one color by another (non-animated)"
 
-    def __init__(self, color, replace=(0,0,0,0), dist=0):
+    def __init__(self, color, replace=(0,0,0,0), dist=0.0):
         self.color1 = rgba(color)
         self.color2 = rgba(replace)
         self.dist = dist
@@ -69,6 +69,7 @@ class Style(Effect):
         self.kwargs = kwargs
     
     def apply(self, img, n=0):
+        if not isinstance(img, pygame.Surface): img = img.image
         return style(img, **self.kwargs)
 
 
@@ -132,14 +133,16 @@ class Squash(Wipe):
 class MathEffect(Effect):
     "Effect based on y < f(x) or y > f(x)"
 
-    def __init__(self, eqn=None, noise=0.15, fill=(0,0,0,0)):
+    def __init__(self, noise=0.15, fill=(0,0,0,0)):#, eqn=None):
         self.fill = rgba(fill)
-        self.dh = noise
-        if eqn: self.eqn = eqn.__get__(self, self.__class__)
+        self.above = noise > 0
+        self.noise = abs(noise)
+#        if eqn: self.eqn = eqn.__get__(self, self.__class__)
 
     def eqn(self, x, n, size):
-        dh = self.dh
-        return size[1] * ((1 + dh) * n - uniform(0, dh)), True
+        dh = self.noise
+        if not self.above: n = 1 - n
+        return size[1] * ((1 + dh) * n - uniform(0, dh)), self.above
 
     def apply(self, img, n=0):
         "Modify image based on equation provided"
@@ -227,12 +230,14 @@ class PaintDrops(MathEffect):
 class Dissolve(Effect):
     "Replace pixels randomly by a specified or random color"
 
-    def __init__(self, colors=(0,0,0,0), alpha=True, keepTransparent=True):
-        if not colors: self.colors = alpha
-        elif type(colors) is int:
+    def __init__(self, colors=(0,0,0,0), keepTransparent=True, alpha=True):
+#        if not colors: self.colors = alpha
+        t = type(colors)
+        if t is int:
             self.colors = [rgba(alpha) for i in range(colors)]
+        elif t is bool: self.colors = colors
         else:
-            if type(colors) in (str, pygame.Color) or type(colors[0]) is int:
+            if t in (str, pygame.Color) or type(colors[0]) is int:
                 colors = colors,
             self.colors = [rgba(i) for i in colors]
         self.n = -1

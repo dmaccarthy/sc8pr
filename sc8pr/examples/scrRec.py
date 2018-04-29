@@ -28,7 +28,13 @@ command. The default video codec and pixel format for the chosen container
 will be used. For MP4, this will probably be libx264 and yuv420p.
 """
 
+try: import numpy, imageio as im
+except Exception as e:
+    print("Missing dependencies! Run the following to correct...\n")
+    input("  pip3 install imageio\n\nPress ENTER to exit...")
+    exit()
 if __name__ == "__main__": import depends
+
 from sys import argv
 from datetime import datetime
 from threading import Thread
@@ -41,7 +47,7 @@ from sc8pr.gui.button import Button
 from sc8pr.gui.textinput import TextInput
 from sc8pr.gui.tkdialog import TkDialog, FOLDER
 from sc8pr.misc.video import Video, Grabber, ImageIO
-import numpy, imageio as im
+
 
 def timeStr():
     "Create a string that can be used as the recording file name"
@@ -93,8 +99,7 @@ class Recorder(Sketch):
 
     def ondraw(self):
         "Capture screen if recording"
-        if self.grab:
-            self.rec.append(self.grab.grab)
+        if self.grab: self.rec.append(self.grab.pil)
 
     def record(self):
         "Begin screen recording"

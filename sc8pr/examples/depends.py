@@ -35,8 +35,7 @@ def check():
 		except: depend = 2
 	if depend:
 		print("Missing dependencies! Run the following to correct...\n")
-		if depend == 1: url = "pygame"
-		else: url = "https://github.com/dmaccarthy/sc8pr/archive/master.zip"
+		url = "pygame" if depend == 1 else "sc8pr"
 		input("  pip3 install {}\n\nPress ENTER to exit...".format(url))
 		exit()
 

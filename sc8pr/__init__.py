@@ -61,7 +61,7 @@ class PixelData:
             try: img = img.image
             except: img = img.snapshot()
         if type(img) is tuple:
-            m, w, h, c = self.unpack(img[1])
+            m, w, h, c = self._unpack(img[1])
             self.compressed = c
             self.data = img[0]
             self.size = w, h
@@ -83,35 +83,39 @@ class PixelData:
         if not self.compressed:
             self.data = self.codec.compress(self.data)
             self.compressed = True
+        return self
 
     def decompress(self):
         if self.compressed:
             self.data = self.codec.decompress(self.data)
             self.compressed = False
+        return self
 
-    def pack(self):
+    def _pack(self):
         m = self.mode
         m = 0 if m == "RGB" else 1
         if self.compressed: m += 2
         return struct.pack("!3I", m, *self.size)
 
     @staticmethod
-    def unpack(p):
+    def _unpack(p):
         m, w, h = struct.unpack("!3I", p)
         c = bool(m & 2)
         m = "RGBA" if (m & 1) else "RGB" 
         return m, w, h, c
 
-    def raw(self): return self.data, self.pack()
+    def raw(self): return self.data, self._pack()
 
     def writeTo(self, f):
         for b in self.raw(): f.write(b)
+        return self
 
     def __bytes__(self):
         b = self.raw()
         return b[0] + b[1]
 
     def _image(self, fn):
+        "Convert raw data to an image using the function provided"
         data = self.data
         if self.compressed: data = self.codec.decompress(data)
         return fn(data, self.size, self.mode)
