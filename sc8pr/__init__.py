@@ -145,6 +145,7 @@ class Graphic:
     focusable = False
     ondraw = None
     effects = None
+    radiusFactor = 0.25
 
     @property
     def name(self):
@@ -193,7 +194,7 @@ class Graphic:
     def height(self): return self.size[1]
 
     @property
-    def radius(self): return sum(self.size) / 4
+    def radius(self): return sum(self.size) * self.radiusFactor
 
     @property
     def aspectRatio(self):

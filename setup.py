@@ -37,8 +37,9 @@ setup(
         "Intended Audience :: Education",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Programming Language :: Python :: 3",
+        "Topic :: Software Development :: Libraries :: pygame",
         "Topic :: Multimedia :: Graphics",
         "Topic :: Education",
-        "Framework :: Robot Framework :: Library"
+        "Topic :: Games/Entertainment"
     ]
 )
