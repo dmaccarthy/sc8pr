@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2018 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -105,6 +105,8 @@ class PixelData:
         return m, w, h, c
 
     def raw(self): return self._data, self._pack()
+    
+    def __eq__(self, other): return self.raw() == other.raw()
 
     def writeTo(self, f):
         for b in self.raw(): f.write(b)

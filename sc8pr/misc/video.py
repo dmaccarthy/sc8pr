@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2018 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -140,7 +140,7 @@ class Video(Sprite):
             for i in range(n):
                 c = costumes[i]
                 if progress: progress(i + 1, n, True)
-                same = i and c.data == costumes[i-1].data
+                same = i and c == costumes[i - 1]
                 zf.writestr(str(i), b'' if same else bytes(c))
         return self
 

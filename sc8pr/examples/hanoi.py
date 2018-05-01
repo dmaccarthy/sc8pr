@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2018 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -15,18 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-"""Animation of the Towers of Hanoi problem using sc8pr. Specify the
-number of disks and moves per second as command line arguments. For
-example, to use 10 disks and 2 moves per second...
+"""Animation of the Towers of Hanoi problem. Usage:
 
-python3 hanoi.py 10 2
+from sc8pr.examples.hanoi import play
+play(disks=6, speed=1, record="")
 
-The maximum moves per second is 60 (the animation frame rate). When
-the animation is running, click the mouse to pause or resume."""
+The maximum speed is 60 moves per second (the animation frame rate).
+When the animation is running, click the mouse to pause or resume.
+Set the speed to 0 or None to print the moves to the console only,
+without running the animation"""
 
 if __name__ == "__main__": import depends
-from sys import argv
 from sc8pr import Sketch, Image, BOTTOM
+from sc8pr.util import fileExt
+from sc8pr.misc.video import Video
 
 def moveDisks(towers, n, start=0, moveTo=1):
     "Recursively generate a sequence of disk movements"
@@ -42,15 +44,16 @@ def moveDisks(towers, n, start=0, moveTo=1):
 class Hanoi(Sketch):
     "Animation of the Towers of Hanoi problem"
 
-    def __init__(self, towers, speed):
+    def __init__(self, towers, speed, record):
         self.towers = towers
         self.disks = len(towers[0])
-        self.hanoi = iter(moveDisks(towers, self.disks))
+        self.hanoi = moveDisks(towers, self.disks)
         self.moves = 0
         self.paused = False
         self.interval = max(1, round(self.frameRate / speed))
         self.update = self.interval
-        super().__init__((600,256))
+        self.vid = Video() if record else None
+        super().__init__((768, 432))
 
     def setup(self):
         "Add random-color rectangles to the sketch to represent the disks"
@@ -67,11 +70,13 @@ class Hanoi(Sketch):
         "Move one disk at the specified frame interval"
         if self.hanoi and not self.paused and self.frameCount == self.update:
             try:
-                next(self.hanoi)
+                if self.vid is not None:
+                    self.vid += self
+                    print(self.frameCount, len(self.vid))
                 self.moves += 1
-                printState(self.towers, self.moves)    
-                self.setDiskPositions()
                 self.update += self.interval
+                printState(next(self.hanoi), self.moves)
+                self.setDiskPositions()
             except StopIteration: self.hanoi = None
  
     def setDiskPositions(self):
@@ -96,18 +101,18 @@ def printState(towers, i):
     "Print the current state of the towers"
     print("{:8d}: {} {} {}".format(i, *towers))
 
-def main(disks=6, speed=1):
+def play(disks=6, speed=1, record=False):
+    "Run the program"
     disks = int(disks)
     towers = list(range(disks, 0, -1)), [], []
     printState(towers, 0)
     if speed: # Play animation
-        Hanoi(towers, speed).play("Towers of Hanoi")
+        sk = Hanoi(towers, speed, record).play("Towers of Hanoi")
+        if record: sk.vid.save(fileExt(record, "s8v"))
     else:     # Console only; no animation
         i = 1
-        for t in moveDisks(towers, disks):
-            printState(t, i)
+        for towers in moveDisks(towers, disks):
+            printState(towers, i)
             i += 1
 
-if __name__ == "__main__":
-    args = [float(x) for x in argv[1:]]
-    main(*args)
+if __name__ == "__main__": play()
