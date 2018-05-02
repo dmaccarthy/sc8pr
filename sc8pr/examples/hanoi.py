@@ -27,7 +27,6 @@ without running the animation"""
 
 if __name__ == "__main__": import depends
 from sc8pr import Sketch, Image, BOTTOM
-from sc8pr.util import fileExt
 from sc8pr.misc.video import Video
 
 def moveDisks(towers, n, start=0, moveTo=1):
@@ -50,9 +49,16 @@ class Hanoi(Sketch):
         self.hanoi = moveDisks(towers, self.disks)
         self.moves = 0
         self.paused = False
-        self.interval = max(1, round(self.frameRate / speed))
+        if speed >= 15:
+            self.frameRate = speed
+            self.interval = 1
+        else:
+            self.interval = round(30 / speed)
+            self.frameRate = round(speed * self.interval)
         self.update = self.interval
-        self.vid = Video() if record else None
+        if record:
+            self.vid = Video().autoSave(record)
+        else: self.vid = None
         super().__init__((768, 432))
 
     def setup(self):
@@ -70,14 +76,18 @@ class Hanoi(Sketch):
         "Move one disk at the specified frame interval"
         if self.hanoi and not self.paused and self.frameCount == self.update:
             try:
-                if self.vid is not None:
-                    self.vid += self
-                    print(self.frameCount, len(self.vid))
+                vid = self.vid
+                if vid is not None: vid += self
                 self.moves += 1
                 self.update += self.interval
                 printState(next(self.hanoi), self.moves)
                 self.setDiskPositions()
             except StopIteration: self.hanoi = None
+ 
+    def onquit(self, ev):
+        "Write unsaved frames before quitting"
+        self.quit = True
+        if self.vid: self.vid.autoSave()
  
     def setDiskPositions(self):
         "Update disk positions to match the current state of the towers"
@@ -90,25 +100,22 @@ class Hanoi(Sketch):
                 img.pos = x, y
                 y -= img.height - 1
             x += dx
-
+        
     def onclick(self, ev):
         "Pause/Resume animation on mouse click"
         if self.paused: self.update = self.frameCount + 1
         self.paused = not self.paused
 
-
 def printState(towers, i):
     "Print the current state of the towers"
     print("{:8d}: {} {} {}".format(i, *towers))
 
-def play(disks=6, speed=1, record=False):
+def play(disks=6, speed=1, record=""):
     "Run the program"
-    disks = int(disks)
     towers = list(range(disks, 0, -1)), [], []
     printState(towers, 0)
     if speed: # Play animation
-        sk = Hanoi(towers, speed, record).play("Towers of Hanoi")
-        if record: sk.vid.save(fileExt(record, "s8v"))
+        Hanoi(towers, speed, record).play("Towers of Hanoi").vid
     else:     # Console only; no animation
         i = 1
         for towers in moveDisks(towers, disks):

@@ -21,7 +21,7 @@ from zipfile import ZipFile
 from json import loads, dumps
 from sc8pr import Image, PixelData, version
 from sc8pr.sprite import Sprite
-from sc8pr.util import hasAlpha
+from sc8pr.util import hasAlpha, fileExt
 try:
     import PIL
     from PIL.ImageGrab import grab
@@ -36,14 +36,14 @@ def _b2j(b): return loads(str(b, encoding="utf-8"))
 
 class Video(Sprite):
     "A class for storing and retrieving sequences of compressed images"
-    _current = None,
+    _autoSave = False
 
-    def __init__(self, data=None, alpha=False, progress=None):
+    def __init__(self, data=None, alpha=False, progress=None, start=0, end=None):
+        self.purge()
         self.alpha = alpha
         self.meta = {}
-        self._costumes = []
         t = type(data)
-        if t is str: self._load(data, progress)
+        if t is str: self._load(data, progress, start, end)
         elif t is tuple and type(data[0]) is int: self._size = data
         elif data:
             self._costumes = [PixelData(img, True) for img in data]
@@ -51,6 +51,12 @@ class Video(Sprite):
             img = self._costumes[0].img
             self._size = img.size
             self._current = 0, img
+
+    def purge(self):
+        "Remove all frames from the video"
+        self._costumes = []
+        self._current = None,
+        return self
 
     def __len__(self): return len(self._costumes)
 
@@ -60,6 +66,9 @@ class Video(Sprite):
             img = PixelData(img, True)
         self._costumes.append(img)
         if not hasattr(self, "_size"): self._size = img.size
+        if self._autoSave:
+            n = len(self)
+            if n > self._autoSave: self.autoSave(True, n)
         return self
 
     def __getitem__(self, n):
@@ -72,6 +81,20 @@ class Video(Sprite):
             img = Image(srf.convert_alpha())
             self._current = n, img
         return img.config(size=self.size, angle=self.angle)
+
+    def autoSave(self, fn=True, size=None):
+        "Turn auto save on/off, or perform an auto save"
+        if fn is True:
+            if size is None: size = len(self)
+            if size:
+                self.save(self._savefile, append=self._append)
+                self.purge()._append += size
+        elif fn is False: self._autoSave = False
+        else:
+            self._autoSave = size if size else 4096
+            self._savefile = fn
+            self._append = 0
+        return self
 
     def frame(self, n):
         "Return a frame as a PixelData instance"
@@ -97,22 +120,22 @@ class Video(Sprite):
     def _saveMeta(self, zf):
         if self.meta: zf.writestr("metadata", _j2b(self.meta))
 
-    def _load(self, fn, progress=None):
+    def _load(self, fn, progress=None, start, end):
         "Load the video from a ZIP file"
         with ZipFile(fn) as zf:
             self._loadMeta(zf)
             self._costumes = []
-            i = 0
-            while i >= 0:
+            i = start
+            while i != end:
                 try:
                     data = zf.read(str(i))
                     if data: data = PixelData(data, True)
-                    else: data = self._costumes[i-1]
+                    else: data = self._costumes[i - start - 1]
                     self._costumes.append(data)
                     i += 1
-                    if progress: progress(i, None, False)
+                    if progress: progress(i - start, None, False)
                 except:
-                    i = -1
+                    i = end
                     if progress: progress(None, None, False)
 
     def costumeSequence(self, seq):
@@ -130,18 +153,22 @@ class Video(Sprite):
         vid._costumes = [costumes[i] for i in start]
         return vid
 
-    def save(self, fn, progress=None):
+    def save(self, fn, progress=None, append=False):
         "Save the Video as a zip archive of PixelData binaries"
         self.meta["Saved By"] = "sc8pr{}".format(version)
-        with ZipFile(fn, "w") as zf:
-            self._saveMeta(zf)
+        fn = fileExt(fn, ["s8v", "zip"])
+        with ZipFile(fn, "a" if append else "w") as zf:
+            n = len(zf.namelist())
+            if n == 0: self._saveMeta(zf)
+            if append is True: append = (n - 1) if n else 0
             costumes = self._costumes
             n = len(costumes)
             for i in range(n):
                 c = costumes[i]
                 if progress: progress(i + 1, n, True)
                 same = i and c == costumes[i - 1]
-                zf.writestr(str(i), b'' if same else bytes(c))
+                fn = str((i + append) if append else i)
+                zf.writestr(fn, b'' if same else bytes(c))
         return self
 
     def capture(self, sk):

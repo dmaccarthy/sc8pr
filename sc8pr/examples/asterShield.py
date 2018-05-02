@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2018 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -17,7 +17,7 @@
 
 
 if __name__ == "__main__": import depends
-import json, os
+import json
 from time import time
 from math import pow
 from random import uniform, randint
@@ -25,14 +25,14 @@ from pygame.constants import K_UP, K_DOWN, K_LEFT, K_RIGHT
 from sc8pr import Sketch, Image, TOPLEFT, BOTH, RIGHT, LEFT, BOTTOM
 from sc8pr.sprite import Sprite, physics, Collisions
 from sc8pr.text import Text, Font
-from sc8pr.util import randPixel, rgba
+from sc8pr.util import randPixel, rgba, resolvePath
 from sc8pr.geom import vec2d, delta
 from sc8pr.gui.textinput import TextInput
 from sc8pr.gui.button import Button
 from sc8pr.misc.video import Video
 
 JSON = "asterShield_scores.json"
-MONO = Font.mono()
+FONT = Font.mono()
 
 class Ship(Sprite):
     "The spaceship is controlled by the player using the keyboard"
@@ -122,9 +122,9 @@ class Game(Sketch):
         except: self.highScores = []
 
         # Load images
-        Missile.original = Image("img/missile.png")
-        Asteroid.original = Image("img/target.png")
-        self.player = Ship("img/ship.png").config(wrap=BOTH)
+        Missile.original = Image(self.imgFldr + "/missile.png")
+        Asteroid.original = Image(self.imgFldr + "/target.png")
+        self.player = Ship(self.imgFldr + "/ship.png").config(wrap=BOTH)
 
         # Start the game
         self.playerName = None
@@ -206,7 +206,7 @@ class Game(Sketch):
         w, h = self.size
         x = w / 6
         y = h / 5
-        attr = dict(color="blue", font=MONO, fontSize=self.height/15)
+        attr = dict(color="blue", font=FONT, fontSize=self.height/15)
         for i in range(len(score)):
             if i == 5:
                 x += 0.5 * w
@@ -219,7 +219,7 @@ class Game(Sketch):
             y += self[-1].height + 8
 
         icon = Sprite(Asteroid.original).config(spin=0.4)
-        okay = Text("Okay").config(font=MONO)
+        okay = Text("Okay").config(font=FONT)
         self += Button((w/7, h/10)).bind(onclick=restart).textIcon(okay,
             icon, 10).config(pos=(self.center[0], 0.9 * h),
             anchor=BOTTOM, border="blue", weight=3)
@@ -235,7 +235,7 @@ class PlayerName(TextInput):
     
     def __init__(self):
         super().__init__("", "Please enter your name")
-        self.config(font=MONO, color="red",
+        self.config(font=FONT, color="red",
             promptColor="black", bg="white", padding=8)
 
     def onaction(self, ev):
@@ -252,17 +252,17 @@ class Score(Text):
     def __init__(self):
         super().__init__()
         self.config(anchor=TOPLEFT, pos=(8,0),
-            color="red", font=MONO, fontSize=36)
+            color="red", font=FONT, fontSize=36)
 
     def add(self, n):
         self.config(data = self.data + n, fontSize=round(self.sketch.height/15))
 
 
-def main(record=False):
-    os.chdir(os.path.dirname(__file__))
-    sk = Game((960,540))
-    if record: sk.config(capture=Video().config(interval=2))
-    sk.play("Asteroid Shield", "img/target.png")
-    if record: sk.capture.save("movie.s8v")
+def play(record="", auto=4096):
+    sk = Game((960,540)).config(imgFldr=resolvePath("img", __file__))
+    if record:
+        sk.capture = Video().config(interval=2).autoSave(record, auto)
+    sk.play("Asteroid Shield", sk.imgFldr + "/target.png")
+    if record: sk.capture.autoSave()
 
-if __name__ == "__main__": main()
+if __name__ == "__main__": play()
