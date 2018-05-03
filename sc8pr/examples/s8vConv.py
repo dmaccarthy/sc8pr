@@ -19,7 +19,6 @@
 "Convert S8V videos using imageio and ffmpeg"
 
 if __name__ == "__main__": import depends
-from sys import argv
 from pygame import K_LEFT, K_RIGHT, K_HOME
 from sc8pr import Sketch, TOPLEFT, BOTTOMRIGHT
 from sc8pr.misc.video import ImageIO, Video
@@ -122,7 +121,15 @@ class VideoPlayer(Sketch):
             print("{:^5s} = {}".format(i, m[i]))
 
 
-# Run the program...
-if __name__ == "__main__":
-    if len(argv) > 1: ImageIO.ffmpeg(argv[1])
+# Main program...
+
+def main(ffmpeg=False):
+    if ffmpeg: ImageIO.ffmpeg(ffmpeg)
     VideoPlayer().play("sc8pr Video Converter")
+
+if __name__ == "__main__":
+    from sys import argv
+    main(argv[1] if len(argv) > 1
+        else input("Path to ffmpeg? ").strip())
+#     if len(argv) > 1: ImageIO.ffmpeg(argv[1])
+#     VideoPlayer().play("sc8pr Video Converter")

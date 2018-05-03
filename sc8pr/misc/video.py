@@ -225,18 +225,24 @@ try:
         def ffmpeg(p): os.environ["IMAGEIO_FFMPEG_EXE"] = p
 
         @staticmethod
-        def decode(src, progress=None):
+        def convert(src, dest=None, size=512):
+            "Convert a video file to s8v format"
+            if dest is None: dest = src + ".s8v"
+            ImageIO.decode(src, vid=Video().autoSave(dest, size)).autoSave()
+
+        @staticmethod
+        def decode(src, progress=None, vid=None):
             "Load a movie file as a Video instance"
-            vid = Video()
+            if vid is None: vid = Video()
             with im.get_reader(src) as reader:
                 meta = reader.get_meta_data()
                 i, n = 1, meta.get("nframes")
                 vid.size = meta["size"]
                 vid.meta["frameRate"] = meta["fps"]
+                info = struct.pack("!3I", 0, *vid.size)
                 try: # Extra frames/bad metadata in MKV?
                     for f in reader:
-                        vid._costumes.append(PixelData((bytes(f),
-                            struct.pack("!3I", 0, *vid.size)), True))
+                        vid += bytes(f), info
                         if progress:
                             progress(i, n, False)
                             i += 1
