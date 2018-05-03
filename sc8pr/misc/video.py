@@ -120,7 +120,7 @@ class Video(Sprite):
     def _saveMeta(self, zf):
         if self.meta: zf.writestr("metadata", _j2b(self.meta))
 
-    def _load(self, fn, progress=None, start, end):
+    def _load(self, fn, progress=None, start=0, end=None):
         "Load the video from a ZIP file"
         with ZipFile(fn) as zf:
             self._loadMeta(zf)
