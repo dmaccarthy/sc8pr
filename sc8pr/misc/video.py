@@ -125,18 +125,19 @@ class Video(Sprite):
         with ZipFile(fn) as zf:
             self._loadMeta(zf)
             self._costumes = []
-            i = start
+            i = j = start
             while i != end:
                 try:
                     data = zf.read(str(i))
+                    while not data and i == start and j:
+                        j -= 1                        
+                        data = zf.read(str(j))
                     if data: data = PixelData(data, True)
                     else: data = self._costumes[i - start - 1]
                     self._costumes.append(data)
                     i += 1
-                    if progress: progress(i - start, None, False)
-                except:
-                    i = end
-                    if progress: progress(None, None, False)
+                    if progress: progress(self, i - start)
+                except: i = end
 
     def costumeSequence(self, seq):
         msg = "In-place costume sequencing is not supported; use the clip method instead"
@@ -165,7 +166,7 @@ class Video(Sprite):
             n = len(costumes)
             for i in range(n):
                 c = costumes[i]
-                if progress: progress(i + 1, n, True)
+                if progress: progress(self, i + 1, n)
                 same = i and c == costumes[i - 1]
                 fn = str((i + append) if append else i)
                 zf.writestr(fn, b'' if same else bytes(c))
@@ -244,7 +245,7 @@ try:
                     for f in reader:
                         vid += bytes(f), info
                         if progress:
-                            progress(i, n, False)
+                            progress(vid, i, n)
                             i += 1
                 except: pass
             return vid
@@ -267,7 +268,7 @@ try:
                 for img in vid.frames():
                     writer.append_data(ImageIO.frameData(img))
                     if progress:
-                        progress(i, n, True)
+                        progress(vid, i, n)
                         i += 1
 
 except: ImageIO = None
