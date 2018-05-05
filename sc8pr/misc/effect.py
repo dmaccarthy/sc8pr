@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2018 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from random import uniform, random
+from random import uniform, random, choice
 from math import sqrt, tan, pi
 import pygame
 from pygame.pixelarray import PixelArray
@@ -85,6 +85,33 @@ class Tint(Effect):
             color = [round(c + (255 - c) * n) for c in self.color]
             srf.fill(color, None, pygame.BLEND_RGBA_MULT)
         return img
+
+
+class Assemble(Effect):
+    "(Dis)assemble into many small rectangles"
+
+    def __init__(self, grid=(6, 6)):
+        r = lambda: uniform(1, 1.5) * choice([1, -1])
+        self._dir = [(r(), r()) for i in range(grid[0] * grid[1])]
+        self._grid = grid
+
+    def apply(self, img, n=0):
+        if n < 1:
+            gx, gy = self._grid
+            img, size = self.srfSize(img, True)
+            w, h = size[0] // gx, size[1] // gy
+            dx0 = size[0] * (1 - n) ** 1.5
+            dy0 = size[1] * (1 - n) ** 1.5
+            srf = pygame.Surface(size, pygame.SRCALPHA)
+            for r in range(gy):
+                y = h * r
+                for c in range(gx):
+                    dx, dy = self._dir[c + r * gy]
+                    x = w * c
+                    sqr = img.subsurface((x, y, w, h))
+                    srf.blit(sqr, (x + dx * dx0, y + dy * dy0))
+        else: srf = img
+        return srf
 
 
 class Wipe(Effect):
