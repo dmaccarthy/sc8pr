@@ -18,11 +18,12 @@
 
 if __name__ == "__main__": import depends
 import os
-from sc8pr import Sketch, Image, Graphic
+from sc8pr import Sketch, Image, Graphic, CENTER
 from sc8pr.shape import Line
 from sc8pr.sprite import Sprite
-from sc8pr.util import nothing, ondrag
 from sc8pr.gui.msgBox import MessageBox
+from sc8pr.misc.cursors import cross, circle
+from sc8pr.util import ondrag, sc8prData
 
 TITLE = "Tic-Tac-Toe"
 
@@ -43,11 +44,16 @@ def setup(game):
         ((120,20), (120,320)), ((220,20), (220,320))]: game += Line(*pts)
     startGame(game)
 
+def setCursor(game):
+    n = 0 if game.playerWin else game.playerTurn
+    game.cursor = [True, cross, circle][n]
+
 def startGame(game):
     "Set initial game state"
     game.playerWin = None
     game.playerTurn = 1
     for sp in game.sprites(): sp.costumeNumber = 0
+    setCursor(game)
 
 def clickSquare(sprite, ev):
     "Handle CLICK events on any square"
@@ -62,7 +68,9 @@ def clickSquare(sprite, ev):
         if winner(list(game.sprites()), n): game.playerWin = n
         elif 0 not in [sp.costumeNumber for sp in game.sprites()]:
             game.playerWin = 0
-        else: game.playerTurn = 3 - n 
+        else:
+            game.playerTurn = 3 - n
+            setCursor(game)
 
 def winner(sprites, n):
     "Check if player n occupies 3 squares in a row"
@@ -75,11 +83,13 @@ def ondraw(game):
     "Check game over status after each frame"
     n = game.playerWin
     if n is not None:
+        setCursor(game)
         msg = "Player {} Wins".format(n) if n else "It's a draw"
         msg += "!\nDo you want to play again?"
         game["Cover"] = game.cover()
-        game += MessageBox(msg, buttons=["Yes","No"]).bind(onaction,
-            ondrag, resize=nothing).config(pos=game.center)
+        img = Image.fromBytes(sc8prData("alien")).config(height=36)
+        game += MessageBox(msg, buttons=["Yes","No"], align=CENTER).bind(onaction,
+            ondrag).push(img, 12).title("Game Over").config(pos=game.center)
         game.playerWin = None
 
 def onaction(msgbox, ev):

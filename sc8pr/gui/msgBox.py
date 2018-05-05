@@ -17,19 +17,22 @@
 
 
 from sc8pr import Canvas, BOTTOM, TOP
-from sc8pr.text import Text, Font
+from sc8pr.text import Text, Font, BOLD
 from sc8pr.gui.button import Button
 from sc8pr.gui.textinput import TextInput
 
 
 class MessageBox(Canvas):
-    "Create 'alert', 'confirm' and 'prompt' dialogs"
+    "Create simple GUI dialogs"
 
-    def __init__(self, text, userInput=False, buttons=None, minSize = (1, 1),
-            txtConfig={"font":Font.sans(), "fontSize":14}):
-        super().__init__(minSize)
-        if buttons is None: buttons = ["Okay", "Cancel"][:2 if userInput else 1]
-        if type(buttons) is str: buttons = buttons,
+    def __init__(self, text, userInput=None, buttons=None, title=None, size=(1,1), **kwargs):
+        super().__init__(size)
+        txtConfig = {"font":Font.sans(), "fontSize":15}
+        txtConfig.update(kwargs)
+        if buttons is None:
+            buttons = ["Okay", "Cancel"]
+            if userInput is None: buttons = buttons[:1]
+        elif type(buttons) is str: buttons = buttons,
         bSize = None
         icon = True
         for t in buttons:
@@ -40,25 +43,11 @@ class MessageBox(Canvas):
         self.buttons = self[:len(buttons)]
         for b in self.buttons: b.bind(onaction=self._btnClick)
         self["Text"] = Text(text).config(anchor=TOP, **txtConfig)
-        if userInput:
-            self["Input"] = TextInput("", "Click to enter your response").config(anchor=TOP,
+        if userInput is not None: self["Input"] = TextInput(userInput,
+                "Click to enter your response").config(anchor=TOP,
                 bg="white", **txtConfig).bind(onaction=self._tiAction)
         self.arrange().config(bg="#f0f0f0", weight=2, border="blue")
-
-    @staticmethod
-    def _btnClick(gr, ev):
-        "Event handler for button clicks"
-        setattr(ev, "action", gr)
-        gr.canvas.bubble("onaction", ev)
-
-    @staticmethod
-    def _tiAction(gr, ev):
-        "Event handler for text input action"
-        try:
-            if ev.unicode == "\r":
-                setattr(ev, "action", gr)
-                gr.canvas.bubble("onaction", ev)
-        except: pass
+        if title: self.title(title, **txtConfig)
 
     def arrange(self, padding=12):
         "Adjust size and position of controls"
@@ -88,6 +77,45 @@ class MessageBox(Canvas):
             x = self._size[0] - x
         return self
 
+    def push(self, img, padding=0):
+        "Add content to the top of the dialog, shifting existing content down"
+        dh = img.height + padding
+        w, h = self._size
+        self._size = w, h + dh
+        for gr in self:
+            x, y = gr.pos
+            gr.pos = x, y + dh
+        self += img.config(pos=(w/2, padding), anchor=TOP)
+        return self
+
+    def title(self, title, padding=4, **kwargs):
+        "Add a title bar"
+        txtConfig = dict(font=Font.sans(), fontSize=15,
+            fontStyle=BOLD, color="white", padding=padding)
+        txtConfig.update(kwargs)
+        title = Text(title).config(**txtConfig)
+        cv = Canvas((self.width, title.height + self.weight), self.border)
+        cv += title.config(pos=(cv.center[0], self.weight), anchor=TOP)
+        self.push(cv.config(anchor=TOP))
+        return self
+
+    def resize(self, size): pass
+
     def onaction(self, ev):
         "Remove dialog when dismissed"
         self.remove()
+
+    @staticmethod
+    def _btnClick(gr, ev):
+        "Event handler for button clicks"
+        setattr(ev, "action", gr)
+        gr.canvas.bubble("onaction", ev)
+
+    @staticmethod
+    def _tiAction(gr, ev):
+        "Event handler for text input action"
+        try:
+            if ev.unicode == "\r":
+                setattr(ev, "action", gr)
+                gr.canvas.bubble("onaction", ev)
+        except: pass
