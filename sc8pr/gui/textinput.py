@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2018 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -29,7 +29,7 @@ class TextInput(Text):
     focusable = True
     cursorTime = 1.0
     cursorOn = 0.35
-    promptColor = rgba("#f0f0f0")
+    promptColor = rgba("#d0d0d0") #f0f0f0
     padding = 4
     allowButton = 1,
 

@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2018 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from sc8pr import Canvas, Image
+from sc8pr import Canvas, Image, LEFT
 from sc8pr.text import Text
 from sc8pr.util import rgba, sc8prData
 
@@ -117,18 +117,22 @@ class Button(Canvas):
         h = self.height - 2 * padding
         self += icon.config(height=h)
         w = icon.width
-        icon.config(pos=(padding + w / 2, padding + h / 2))
-        return icon
+        icon.config(pos=(padding, padding + h / 2), anchor=LEFT)
+        return w
 
     def textIcon(self, text, icon=None, padding=6):
         "Add text and icon to button"
-        x, y = self.center
-        if type(icon) is bool: icon = self._yesNoImg(icon)
-        if icon:
-            w = self._icon(icon, padding).width
-            x += (w + padding) / 2
         if type(text) is str: text = Text(text)
-        self += text.config(pos=(x,y))
+        if type(icon) is bool: icon = Image(self._yesNoImg(icon))
+        if icon:
+            w = self._icon(icon, padding)
+            x = (w + padding) / 2
+        else: x = w = 0
+        cx, cy = self.center
+        if cx <= 0:
+            self._size = (w + text.width + (3 if w else 2) * padding), self._size[1]
+            cx = self.center[0]
+        self += text.config(pos=(x + cx, cy))
         return self
 
     @staticmethod

@@ -880,6 +880,9 @@ class Sketch(Canvas):
         if fn is None: fn = "save/img{:05d}.png".format(self.frameCount)
         pygame.image.save(self.image, fn)
 
+    def cover(self):
+        return Image(self.size, "#ffffffc0").config(anchor=TOPLEFT)
+
 # Resizing methods
 
     @property

@@ -21,7 +21,8 @@ import os
 from sc8pr import Sketch, Image, Graphic
 from sc8pr.shape import Line
 from sc8pr.sprite import Sprite
-from sc8pr.gui.tkdialog import TkDialog
+from sc8pr.util import nothing, ondrag
+from sc8pr.gui.msgBox import MessageBox
 
 TITLE = "Tic-Tac-Toe"
 
@@ -74,9 +75,19 @@ def ondraw(game):
     "Check game over status after each frame"
     n = game.playerWin
     if n is not None:
-        msg = "Player {} Wins".format(n) if n else "It's a tie"
-        if TkDialog(bool, msg + "!\nPlay again?", TITLE).run(): startGame(game)
-        else: game.quit = True
+        msg = "Player {} Wins".format(n) if n else "It's a draw"
+        msg += "!\nDo you want to play again?"
+        game["Cover"] = game.cover()
+        game += MessageBox(msg, buttons=["Yes","No"]).bind(onaction,
+            ondrag, resize=nothing).config(pos=game.center)
+        game.playerWin = None
+
+def onaction(msgbox, ev):
+    "Game Over dialog event handler"
+    game = msgbox.sketch
+    game -= msgbox, game["Cover"]
+    if ev.action.layer: game.quit = True
+    else: startGame(game)
 
 def main():
     os.chdir(os.path.dirname(__file__))
