@@ -136,9 +136,19 @@ class Video(Sprite):
                     else: data = self._costumes[i - start - 1]
                     self._costumes.append(data)
                     i += 1
-                    if progress: progress(self, i - start)
+                    if progress: progress(i - start)
                 except: i = end
 
+    @staticmethod
+    def _iter(fn, maxFrames=256):
+        "Iterate through the frames in an s8V file"
+        i = 0
+        vid = Video(fn, start=i, end=i+maxFrames)
+        while len(vid):
+            for f in vid.frames(): yield f
+            i += maxFrames
+            vid = Video(fn, start=i, end=i+maxFrames)
+    
     def costumeSequence(self, seq):
         msg = "In-place costume sequencing is not supported; use the clip method instead"
         raise NotImplementedError(msg)
@@ -166,7 +176,7 @@ class Video(Sprite):
             n = len(costumes)
             for i in range(n):
                 c = costumes[i]
-                if progress: progress(self, i + 1, n)
+                if progress: progress(i + 1, n)
                 same = i and c == costumes[i - 1]
                 fn = str((i + append) if append else i)
                 zf.writestr(fn, b'' if same else bytes(c))
@@ -226,13 +236,7 @@ try:
         def ffmpeg(p): os.environ["IMAGEIO_FFMPEG_EXE"] = p
 
         @staticmethod
-        def convert(src, dest=None, size=512):
-            "Convert a video file to s8v format"
-            if dest is None: dest = src + ".s8v"
-            ImageIO.decode(src, vid=Video().autoSave(dest, size)).autoSave()
-
-        @staticmethod
-        def decode(src, progress=None, vid=None):
+        def decodev(src, progress=None, vid=None):
             "Load a movie file as a Video instance"
             if vid is None: vid = Video()
             with im.get_reader(src) as reader:
@@ -245,10 +249,16 @@ try:
                     for f in reader:
                         vid += bytes(f), info
                         if progress:
-                            progress(vid, i, n)
+                            progress(i, n)
                             i += 1
                 except: pass
             return vid
+
+        @staticmethod
+        def decodef(src, dest=None, size=512):
+            "Convert a video file to s8v format"
+            if dest is None: dest = src + ".s8v"
+            ImageIO.decodev(src, vid=Video().autoSave(dest, size)).autoSave()
 
         @staticmethod
         def frameData(img):
@@ -258,7 +268,7 @@ try:
             return numpy.swapaxes(img, 0, 1)
 
         @staticmethod
-        def encode(vid, dest, fps=None, progress=None):
+        def encodev(vid, dest, fps=None, progress=None):
             "Save a movie file from a Video instance"
             if isinstance(vid, Video): vid = vid.scaleFrames()
             i, n = 1, len(vid)
@@ -268,7 +278,21 @@ try:
                 for img in vid.frames():
                     writer.append_data(ImageIO.frameData(img))
                     if progress:
-                        progress(vid, i, n)
+                        progress(i, n)
+                        i += 1
+
+        @staticmethod
+        def encodef(fn, dest, fps=None, progress=None):
+            "Convert an s8v file to using ffmpeg"
+            vid = Video(fn, start=0, end=1)
+            if fps is None: fps = vid.meta.get("frameRate")
+            if fps is None: fps = 30
+            i = 0
+            with im.get_writer(dest, fps=fps) as writer:
+                for img in Video._iter(fn):
+                    writer.append_data(ImageIO.frameData(img))
+                    if progress:
+                        progress(i)
                         i += 1
 
 except: ImageIO = None

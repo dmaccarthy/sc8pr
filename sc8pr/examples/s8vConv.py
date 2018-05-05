@@ -38,15 +38,10 @@ class VideoPlayer(Sketch):
         self["Text"] = Text().config(pos=(self.width-4, self.height-4), **attr) 
 
     @staticmethod
-    def progress(i, n, encode):
-        if i == 1:
-            msg = "\nSaving" if encode else "\nLoading"
-            if n: msg += " {}".format(n)
-            msg += " frames..."
-        elif i == n: msg = "Done!"
-        elif i and i % 50 == 0: msg = str(i)
-        else: return
-        print(msg)
+    def progress(i, n):
+        if i == 1: print("\n{} frames...".format(n))
+        if i == n: print("Done!")
+        elif i % 50 == 0: print("{} / {}".format(i, n))
 
     @staticmethod
     def s8v(fn): return fn.split(".")[-1].lower() == "s8v"
@@ -56,7 +51,7 @@ class VideoPlayer(Sketch):
         if fn:
             if "Video" in self: self -= self["Video"]
             if self.s8v(fn): vid = Video(fn, progress=self.progress)
-            else: vid = ImageIO.decode(fn, self.progress)
+            else: vid = ImageIO.decodev(fn, self.progress)
             vid.originalSize = self.size = vid.size
             self["Video"] = vid.config(anchor=TOPLEFT)
             vid.layer = 0
@@ -71,7 +66,7 @@ class VideoPlayer(Sketch):
             vid = self["Video"]
             clip = vid.clip(f0, f1).config(size=vid.originalSize)
             if self.s8v(fn): clip.save(fn, self.progress)
-            else: ImageIO.encode(clip, fn, self.frameRate, self.progress)
+            else: ImageIO.encodev(clip, fn, self.frameRate, self.progress)
 
     def ondraw(self):
         if "Video" in self:
