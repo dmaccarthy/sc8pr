@@ -18,10 +18,10 @@
 
 if __name__ == "__main__": import depends
 import os
-from sc8pr import Sketch, Image, Graphic, CENTER, TOP
+from sc8pr import Sketch, Image, Graphic, CENTER
 from sc8pr.shape import Line
 from sc8pr.sprite import Sprite
-from sc8pr.gui.msgBox import MessageBox
+from sc8pr.gui.dialog import MessageBox
 from sc8pr.misc.cursors import cross, circle
 from sc8pr.util import ondrag, sc8prData
 
