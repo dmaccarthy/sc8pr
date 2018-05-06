@@ -38,6 +38,7 @@ if __name__ == "__main__": import depends
 from sys import argv
 from datetime import datetime
 from threading import Thread
+from tkinter.filedialog import askdirectory
 from sc8pr import Sketch, Image, PixelData, LEFT
 from sc8pr.text import Font, BOLD
 from sc8pr.util import logError
@@ -45,7 +46,7 @@ from sc8pr.shape import Circle
 from sc8pr.sprite import Sprite
 from sc8pr.gui.button import Button
 from sc8pr.gui.textinput import TextInput
-from sc8pr.gui.tkdialog import TkDialog, FOLDER
+from sc8pr.gui.dialog import ask
 from sc8pr.misc.video import Video, Grabber, ImageIO
 
 
@@ -160,8 +161,8 @@ class SaveThread(Thread):
 
 
 def main():
-    fldr = TkDialog(FOLDER, title="Select Recordings Folder",
-        initialdir="./").runAlone()
+    fldr = ask(askdirectory, allowQuit=None,
+        title="Select Recordings Folder", initialdir="./")
     if fldr:
         if len(argv) > 2: ImageIO.ffmpeg(argv[2])
         Recorder((288, 56)).config(recFolder=fldr).play("Screen Recorder")

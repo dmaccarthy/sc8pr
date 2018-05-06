@@ -20,9 +20,11 @@
 
 if __name__ == "__main__": import depends
 from pygame import K_LEFT, K_RIGHT, K_HOME
+from tkinter.filedialog import askopenfilename, asksaveasfilename
+from tkinter.simpledialog import askfloat
 from sc8pr import Sketch, TOPLEFT, BOTTOMRIGHT
 from sc8pr.misc.video import ImageIO, Video
-from sc8pr.gui.tkdialog import TkDialog, OPEN, SAVE
+from sc8pr.gui.dialog import ask
 from sc8pr.text import Text, Font
 from sc8pr.util import rgba
 
@@ -33,33 +35,35 @@ IMAGETYPES = [("Images", "*.png;*.jpg")]
 class VideoPlayer(Sketch):
 
     def setup(self):
+        self.caption = "sc8pr Video Converter"
         self.menu()
         attr = dict(anchor=BOTTOMRIGHT, color="red", font=Font.mono(), fontSize=18)
         self["Text"] = Text().config(pos=(self.width-4, self.height-4), **attr) 
 
     @staticmethod
-    def progress(i, n):
+    def progress(i, n=None):
         if i == 1: print("\n{} frames...".format(n))
-        if i == n: print("Done!")
-        elif i % 50 == 0: print("{} / {}".format(i, n))
+        elif i % 50 == 0 or i == n: print("{}".format(i))
 
     @staticmethod
     def s8v(fn): return fn.split(".")[-1].lower() == "s8v"
 
     def open(self):
-        fn = TkDialog(OPEN, filetypes=VIDEOTYPES).run()
+        fn = ask(askopenfilename, filetypes=VIDEOTYPES)
         if fn:
             if "Video" in self: self -= self["Video"]
-            if self.s8v(fn): vid = Video(fn, progress=self.progress)
+            if self.s8v(fn):
+                vid = Video(fn, progress=self.progress)
             else: vid = ImageIO.decodev(fn, self.progress)
             vid.originalSize = self.size = vid.size
             self["Video"] = vid.config(anchor=TOPLEFT)
             vid.layer = 0
             self.frameRate = vid.meta.get("frameRate", 30)
             self.clip = [0, len(vid) - 1]
+            self.caption = fn
 
     def saveAs(self):
-        fn = TkDialog(SAVE, filetypes=VIDEOTYPES, defaultextension="s8v").run()
+        fn = ask(asksaveasfilename, filetypes=VIDEOTYPES, defaultextension="s8v")
         if fn:
             f0, f1 = self.clip
             f1 += -1 if f1 < f0 else 1
@@ -86,10 +90,10 @@ class VideoPlayer(Sketch):
             vid = self["Video"]
             if u == 'S': self.saveAs()
             elif u == 'G':
-                fn = TkDialog(SAVE, filetypes=IMAGETYPES).run()
+                fn = ask(asksaveasfilename, filetypes=IMAGETYPES)
                 if fn: vid[vid.costumeNumber].save(fn)
             elif u == 'F':
-                fps = TkDialog(float, "Enter new frame rate:").run()
+                fps = ask(askfloat, "Enter new frame rate:")
                 if fps: self.frameRate = max(1.0, fps)
             elif u == ' ':
                 vid.costumeTime = 1 - vid.costumeTime 
@@ -120,11 +124,8 @@ class VideoPlayer(Sketch):
 
 def main(ffmpeg=False):
     if ffmpeg: ImageIO.ffmpeg(ffmpeg)
-    VideoPlayer().play("sc8pr Video Converter")
+    VideoPlayer().play()
 
 if __name__ == "__main__":
     from sys import argv
-    main(argv[1] if len(argv) > 1
-        else input("Path to ffmpeg? ").strip())
-#     if len(argv) > 1: ImageIO.ffmpeg(argv[1])
-#     VideoPlayer().play("sc8pr Video Converter")
+    main(argv[1] if len(argv) > 1 else input("Path to ffmpeg? ").strip())

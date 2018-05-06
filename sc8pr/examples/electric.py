@@ -20,12 +20,13 @@
 if __name__ == "__main__": import depends
 from math import hypot, asin, degrees
 from random import uniform
-from sc8pr import Sketch, Canvas, Image, BOTTOM, TOPRIGHT
+from sc8pr import Sketch, Canvas, Image, BOTTOM, TOPRIGHT, TOPLEFT
 from sc8pr.shape import Circle, Line
 from sc8pr.text import Text, Font, BOLD
 from sc8pr.geom import delta
 from sc8pr.util import ondrag
-from sc8pr.gui.tkdialog import TkDialog
+from sc8pr.misc.cursors import hand
+from sc8pr.gui.dialog import MessageBox
 
 MONO = Font.mono()
 
@@ -41,6 +42,7 @@ class Simulation(Sketch):
         super().__init__((640,256))
 
     def setup(self):
+        self.caption = "Electric Force Simulation"
         w, h = self.size
         y = h - 40
         x = w / 1.5
@@ -49,8 +51,17 @@ class Simulation(Sketch):
         self += Charge().config(pos=(x, y))
         self["blue"] = Circle(12).bind(ondrag).config(pos=(40,y), fill="blue")
         self["angle"] = Text().config(pos=pivot, anchor=TOPRIGHT,
-            font=MONO, color="red").config(height=24)
+            font=MONO, color="red").config(height=24).bind(ondrag)
         self += Ruler(self.scale).config(pos=self.center)
+        msg = "Red Sphere\n m = {:.2f} g\n q = {:.0f} nC\n\nBlue Sphere\n q = {:.0f} nC"
+        msg = msg.format(self.mass, 1000*self.q1, 1000*self.q2)
+        self += MessageBox(msg, buttons="Close", fontSize=14,
+            font=MONO).bind(ondrag).config(pos=(8,8), anchor=TOPLEFT)
+
+    def onmouseover(self, ev): self.cursor = hand
+
+    def ondraw(self):
+        if self.evMgr.hover is self: self.cursor = True
 
 
 class Charge(Circle):
@@ -93,8 +104,8 @@ class Charge(Circle):
         # Protractor
         if s.u[1] > 0:
             a = round(2 * degrees(asin(s.u[0]))) / 2
-            a = "Angle = {:.1f}° ".format(abs(a))
-        else: a = "Angle = ? "
+            a = "Angle = {:.1f}°".format(abs(a))
+        else: a = "Angle > 90°"
         sk["angle"].config(data=a)
 
 
@@ -125,16 +136,6 @@ class Ruler(Image):
         self.bind(ondrag)
 
 
-def main():
-    sk = Simulation().play("Electric Force")
-    msg = """The simulation used the following data:
-
-Red:
- m = {:.2f} g
- q = {:.3f} μC
-
-Blue:
- q = {:.3f} μC"""
-    TkDialog(None, msg.format(sk.mass, sk.q1, sk.q2), "Electric Force").runAlone()
+def main(): Simulation().play()
 
 if __name__ == "__main__": main()

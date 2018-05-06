@@ -126,6 +126,7 @@ class Video(Sprite):
             self._loadMeta(zf)
             self._costumes = []
             i = j = start
+            n = len(zf.namelist()) - 1
             while i != end:
                 try:
                     data = zf.read(str(i))
@@ -136,7 +137,7 @@ class Video(Sprite):
                     else: data = self._costumes[i - start - 1]
                     self._costumes.append(data)
                     i += 1
-                    if progress: progress(i - start)
+                    if progress: progress(i - start, n)
                 except: i = end
 
     @staticmethod
