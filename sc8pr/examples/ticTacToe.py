@@ -18,7 +18,7 @@
 
 if __name__ == "__main__": import depends
 import os
-from sc8pr import Sketch, Image, Graphic, CENTER
+from sc8pr import Sketch, Image, Graphic, CENTER, TOP
 from sc8pr.shape import Line
 from sc8pr.sprite import Sprite
 from sc8pr.gui.msgBox import MessageBox
@@ -30,8 +30,9 @@ TITLE = "Tic-Tac-Toe"
 def setup(game):
     "Create Tic-Tac-Toe board with 100 pixel squares and 20 pixel margins"
 
-    # Load costumes for X and O sprites
+    # Load costumes for X and O sprites, and logo
     img = Image("img/xo.png").tiles(3)
+    game.alien = Image.fromBytes(sc8prData("alien")).config(height=36)
 
     # Create and position sprites, one per square
     for s in range(9):
@@ -84,13 +85,18 @@ def ondraw(game):
     n = game.playerWin
     if n is not None:
         setCursor(game)
-        msg = "Player {} Wins".format(n) if n else "It's a draw"
-        msg += "!\nDo you want to play again?"
-        game["Cover"] = game.cover()
-        img = Image.fromBytes(sc8prData("alien")).config(height=36)
-        game += MessageBox(msg, buttons=["Yes","No"], align=CENTER).bind(onaction,
-            ondrag).push(img, 12).title("Game Over").config(pos=game.center)
+        gameover(game, n)
         game.playerWin = None
+
+def gameover(game, n):
+    "Compose Game Over dialog"
+    msg = "Player {} Wins".format(n) if n else "It's a draw"
+    msg += "!\nDo you want to play again?"
+    game["Cover"] = game.cover()
+    img = game.alien
+    dlg = MessageBox(msg, buttons=["Yes","No"], align=CENTER).bind(onaction,
+        ondrag).title("Game Over").config(pos=game.center)
+    game += dlg.top(img)
 
 def onaction(msgbox, ev):
     "Game Over dialog event handler"

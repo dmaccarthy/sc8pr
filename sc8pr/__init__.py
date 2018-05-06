@@ -713,6 +713,17 @@ class Canvas(Graphic):
             if recursive and isinstance(gr, Canvas): gr.purge()
             gr.remove()
 
+    def shiftContents(self, offset, *args, resize=True):
+        "Move contents and (optionally) adjust canvas size"
+        dx, dy = offset
+        for gr in self:
+            if gr not in args:
+                x, y = gr.pos
+                gr.pos = x + dx, y + dy
+        if resize:
+            self._size = self._size[0] + dx,self._size[1] + dy
+        return self
+
     def resize(self, size, resizeContent=True):
         "Resize the canvas contents"
         size = max(1, round(size[0])), max(1, round(size[1]))
