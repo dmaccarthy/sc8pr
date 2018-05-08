@@ -89,12 +89,12 @@ def collide_rect_circ(left, right):
 
 class Collisions:
 
-    def __init__(self, sk, collide=collide_rect_circ):
-        self.sk = sk
+    def __init__(self, cv, collide=collide_rect_circ):
+        self.cv = cv
         self.collide = collide
 
     def _group(self, g, convert=False):
-        if g is None: g = self.sk.sprites()
+        if g is None: g = self.cv.sprites()
         if convert and type(g) not in (tuple, list, set): g = list(g)
         return g
 
@@ -172,9 +172,9 @@ def elasticCircles(mass1, mass2):
         mass2.vel = (p2x + impulse * nx) / m2, (p2y + impulse * ny) / m2
         return True
 
-def physics(sk, model=elasticCircles):
+def physics(cv, model=elasticCircles):
     "Update colliding masses on a pair-wise basis; call oncollide handlers"
-    masses = [m for m in sk if isinstance(m, BaseSprite) and hasattr(m, "mass")]
+    masses = [m for m in cv if isinstance(m, BaseSprite) and hasattr(m, "mass")]
     coll = []
     n = len(masses)
     for m1 in range(n-1):

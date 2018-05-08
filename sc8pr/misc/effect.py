@@ -16,8 +16,8 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from random import uniform, random, choice
-from math import sqrt, tan, pi
+from random import uniform, random
+from math import sqrt, tan, pi, sin, cos, hypot
 import pygame
 from pygame.pixelarray import PixelArray
 from sc8pr.util import rgba, style
@@ -29,7 +29,7 @@ class Effect:
     "Base class for all effects / transitions"
     _time = None
 
-    def time(self, fullEffect, noEffect):
+    def time(self, fullEffect, noEffect=0):
         self._time = fullEffect, noEffect
         return self
 
@@ -45,6 +45,20 @@ class Effect:
         return (srf, srf.get_size()) if size else srf
 
 
+class Remove(Effect):
+    "Remove a graphic, or its effects lists, at the specified frame"
+
+    def __init__(self, gr, complete=True):
+        self._gr = gr
+        self._complete = complete
+
+    def apply(self, img, n=0):
+        if n <= 0:
+            if self._complete: self._gr.remove()
+            else: self._gr.effects = None
+        return img
+
+
 class ReplaceColor(Effect):
     "Replace one color by another (non-animated)"
 
@@ -54,6 +68,7 @@ class ReplaceColor(Effect):
         self.dist = dist
 
     def apply(self, img, n=0):
+        if n >= 1: return img
         srf = self.srfSize(img)
         d = self.dist * (1 - n)
         pygame.PixelArray(srf).replace(self.color1, self.color2, d)
@@ -80,37 +95,43 @@ class Tint(Effect):
         self.color = rgba(color)
 
     def apply(self, img, n=0):
-        if n < 1:
-            srf = self.srfSize(img)
-            color = [round(c + (255 - c) * n) for c in self.color]
-            srf.fill(color, None, pygame.BLEND_RGBA_MULT)
-        return img
+        if n >= 1: return img
+        srf = self.srfSize(img)
+        color = [round(c + (255 - c) * n) for c in self.color]
+        srf.fill(color, None, pygame.BLEND_RGBA_MULT)
+        return srf
 
 
 class Assemble(Effect):
     "(Dis)assemble into many small rectangles"
 
-    def __init__(self, grid=(6, 6)):
-        r = lambda: uniform(1, 1.5) * choice([1, -1])
-        self._dir = [(r(), r()) for i in range(grid[0] * grid[1])]
+    def __init__(self, grid=(16, 9), angles=(0, 360)):
+        self._dir = d = []
+        for i in range(grid[0] * grid[1]):
+            r = uniform(1, 1.5)
+            a = uniform(*angles) / 180 * pi           
+            d.append([r*cos(a), r*sin(a), uniform(0, 540)])
         self._grid = grid
 
     def apply(self, img, n=0):
-        if n < 1:
-            gx, gy = self._grid
-            img, size = self.srfSize(img, True)
-            w, h = size[0] // gx, size[1] // gy
-            dx0 = size[0] * (1 - n) ** 1.5
-            dy0 = size[1] * (1 - n) ** 1.5
-            srf = pygame.Surface(size, pygame.SRCALPHA)
-            for r in range(gy):
-                y = h * r
-                for c in range(gx):
-                    dx, dy = self._dir[c + r * gy]
-                    x = w * c
-                    sqr = img.subsurface((x, y, w, h))
-                    srf.blit(sqr, (x + dx * dx0, y + dy * dy0))
-        else: srf = img
+        if n >= 1: return img
+        gx, gy = self._grid
+        img, size = self.srfSize(img, True)
+        w, h = size[0] // gx, size[1] // gy
+        n = (1 - n) ** 1.5
+        hyp = n * hypot(size[0], size[1])
+        srf = pygame.Surface(size, pygame.SRCALPHA)
+        for r in range(gy):
+            y = h * r
+            for c in range(gx):
+                dx, dy, a = self._dir[c + r * gy]
+                x = w * c
+                sqr = img.subsurface((x, y, w, h))
+                sqr = pygame.transform.rotate(sqr, a * n)
+                wr, hr = sqr.get_size()
+                xb = x - (wr - w) // 2 + hyp * dx
+                yb = y - (hr - h) // 2 + hyp * dy
+                srf.blit(sqr, (xb, yb))
         return srf
 
 
@@ -137,6 +158,7 @@ class Wipe(Effect):
         return img
 
     def apply(self, img, n=0):
+        if n >= 1: return img
         srf, sz = self.srfSize(img, True)
         s = self.start
         wx = None if s in (1, 9) else (s & 3)
@@ -173,6 +195,7 @@ class MathEffect(Effect):
 
     def apply(self, img, n=0):
         "Modify image based on equation provided"
+        if n >= 1: return img
         srf, size = self.srfSize(img, True)
         h = size[1]
         pxa = PixelArray(srf)
@@ -272,6 +295,7 @@ class Dissolve(Effect):
 
     def apply(self, img, n):
         "Apply pixel-by-pixel effect"
+        if n >= 1: return img
         srf = self.srfSize(img)
         self.alphaMask = srf.map_rgb((0,0,0,255))
         pxa = PixelArray(srf)

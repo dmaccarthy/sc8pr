@@ -29,10 +29,10 @@ def _knobDrag(knob, ev):
     "Handle drag events on the slider's 'knob' object"
     slider = knob.canvas
     if slider._lastButton in slider.allowButton:
-        x = slider.eventValue(ev)
+        x = slider._eventValue(ev)
         setattr(ev, "target", slider)
         if x != slider._val:
-            slider.value = x
+            slider.val = x
             setattr(ev, "method", DRAG)
             slider.bubble("onchange", ev)
 
@@ -51,23 +51,23 @@ class Slider(Canvas):
         self.knob = knob
         self.steps = steps
         if upper < lower:
-            self.flip = True
+            self._flip = True
             upper, lower = lower, upper
-        else: self.flip = False
+        else: self._flip = False
         self.lower = lower
         self.upper = upper
-        self.value = lower
+        self.val = lower
 
     @property
-    def value(self): return self._val
+    def val(self): return self._val
 
-    @value.setter
-    def value(self, val):
+    @val.setter
+    def val(self, val):
         "Change the current value of the slider"
         val = max(self.lower, min(self.upper, val))
         x = self._round((val - self.lower) / (self.upper - self.lower))
         self._val = self._calc(x)
-        if self.flip: x = 1 - x
+        if self._flip: x = 1 - x
         knob = self.knob
         dim = tall(*self.size)
         wh = knob.size[dim] + 2
@@ -81,12 +81,12 @@ class Slider(Canvas):
     def _calc(self, x):
         return self.lower + min(max(0, x), 1) * (self.upper - self.lower)
 
-    def eventValue(self, ev):
+    def _eventValue(self, ev):
         "Determine a numerical value from the event coordinates"
         dim = tall(*self.size)
         wh = self.knob.size[dim] + 2
         x = self._round((self.relXY(ev.pos)[dim] - wh / 2) / (self.size[dim] - wh))
-        if self.flip: x = 1 - x
+        if self._flip: x = 1 - x
         return self._calc(x)
 
     def onclick(self, ev):
@@ -97,14 +97,14 @@ class Slider(Canvas):
             lims = [self.lower, self.upper]
             if btn == 4: x = lims[dim]
             elif btn == 5: x = lims[1-dim]
-            else: x = self.eventValue(ev)
+            else: x = self._eventValue(ev)
             s = self.steps
             if not s: s = 100
             s = (self.upper - self.lower) / s
             v = self._val
             if x != v:
-                if x < v: self.value -= s
-                else: self.value += s
+                if x < v: self.val -= s
+                else: self.val += s
                 setattr(ev, "method", SCROLL if btn in (4,5) else CLICK)
                 if ev: self.bubble("onchange", ev)
 
@@ -114,12 +114,12 @@ class Slider(Canvas):
             dx = 1 if ev.key == K_DOWN else -1 if ev.key == K_UP else 0
         else:
             dx = 1 if ev.key == K_RIGHT else -1 if ev.key == K_LEFT else 0
-        if self.flip: dx = -dx
+        if self._flip: dx = -dx
         if dx:
             cur = self._val
             s = self.steps
             if not s: s = 100
-            self.value = self._val + dx * (self.upper - self.lower) / s
+            self.val = self._val + dx * (self.upper - self.lower) / s
             if self._val != cur:
                 setattr(ev, "method", KEY)
                 self.bubble("onchange", ev)

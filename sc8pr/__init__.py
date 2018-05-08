@@ -351,9 +351,8 @@ class Graphic:
         "Apply effects to the surface"
         srf = self.image
         if self.effects:
-            n = self.sketch.frameCount
             srf = srf.copy()
-            for e in self.effects: srf = e.transition(srf, n)
+            for e in self.effects: srf = e.transition(srf, self.sketch.frameCount)
         return srf
 
     def snapshot(self, **kwargs):
@@ -761,10 +760,16 @@ class Canvas(Graphic):
             if br: self.dirtyRegions = []
             for g in list(self):
                 srf.set_clip(self.clipRect)
-                grect = g.draw(srf)
+                if not hasattr(g, "image") and g.effects:
+                    img = g.snapshot()
+                    for a in ["pos", "anchor", "canvas", "effects"]:
+                        setattr(img, a, getattr(g, a))
+                    grect = img.draw(srf)
+                else: grect = g.draw(srf)
                 g.rect = grect
                 if br: self.dirtyRegions.append(grect)
-                if g.ondraw and g.ondraw(): g.remove()
+#                if g.ondraw and g.ondraw(): g.remove()
+                if g.ondraw: g.ondraw()
 
         # Draw border
         if mode & 1 and self.weight:
