@@ -2,7 +2,7 @@
 
 An educational programming package for [Python 3.4+](https://www.python.org). Inspired by [Scratch](https://scratch.mit.edu) and [Processing](https://www.processing.org), sc8pr’s aim is to make it easy for new and experienced Python programmers to create animations, games, and other graphics-based programs.
 
-sc8pr 2.0 features include:
+sc8pr 2 features include:
 * a simple, event-driven approach to creating interactive animations
 * sprite management
 * physics-based collisions
