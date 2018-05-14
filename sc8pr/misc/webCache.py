@@ -112,12 +112,12 @@ class WebCache:
         self.index = {}
         self.imageData(False)
         try:
-            if WebCache.log: WebCache.log("Loading index")
             with open(self._indexFile, encoding="utf-8") as f:
+                if WebCache.log: WebCache.log("Reading index file")
                 isKey = True
                 for line in f:
                     if isKey: key = line.strip()
-                    else: self._setkey(key, line.strip())
+                    else: self._setkey(key, line.strip(), False)
                     isKey = not isKey
         except: pass
 
@@ -175,9 +175,9 @@ class WebCache:
         r.start()
         return r
 
-    def _setkey(self, key, val):
+    def _setkey(self, key, val, log=True):
         "Add item to index after removing conflicting entries"
-        if WebCache.log: WebCache.log("Updating index")
+        if log and WebCache.log: WebCache.log("Updating index")
         absSave = self._file(val)
         dupl = []
         for k, v in self.index.items():

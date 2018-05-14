@@ -42,6 +42,7 @@ class MessageBox(Canvas):
 
     def __init__(self, text, userInput=None, buttons=None, title=None, size=(1,1), **kwargs):
         super().__init__(size)
+        self.command = None
 
         # Collect text options
         txtConfig = {"font":Font.sans(), "fontSize":15}
@@ -50,8 +51,8 @@ class MessageBox(Canvas):
         # Compose button text
         if buttons is None:
             buttons = ["Okay", "Cancel"]
-            if userInput is None: buttons = buttons[:1]
         elif type(buttons) is str: buttons = buttons,
+        if len(buttons) > 2: buttons = buttons[:2]
 
         # Add buttons
         bSize = None
@@ -59,22 +60,23 @@ class MessageBox(Canvas):
         for t in buttons:
             t = Text(t).config(**txtConfig)
             if not bSize: bSize = 0, t.height + 12
-            self[t.data] = Button(bSize, 2).textIcon(t, icon).config(anchor=BOTTOM) 
+            name = "Button_{}".format(t.data)
+            self[name] = Button(bSize, 2).textIcon(t, icon).config(anchor=BOTTOM) 
             icon = not icon
         self.buttons = self[:len(buttons)]
         for b in self.buttons: b.bind(onaction=_btnClick)
 
         # Add text label and text input
-        self["Text"] = Text(text).config(anchor=TOP, **txtConfig)
         if userInput is not None: self["Input"] = TextInput(userInput,
                 "Click to enter your response").config(anchor=TOP,
                 bg="white", **txtConfig).bind(onaction=_tiAction)
+        self["Text"] = Text(text).config(anchor=TOP, **txtConfig)
 
         # Position controls and add title bar
-        self.arrange().config(bg="#f0f0f0", weight=2, border="blue")
+        self._arrange().config(bg="#f0f0f0", weight=2, border="blue")
         if title: self.title(title, **txtConfig)
 
-    def arrange(self, padding=12):
+    def _arrange(self, padding=12):
         "Adjust size and position of controls"
 
         # Get references to controls
@@ -112,7 +114,7 @@ class MessageBox(Canvas):
             x = self._size[0] - x
         return self
 
-    def top(self, gr, padding=12, name=None):
+    def insertTop(self, gr, padding=12, name=None):
         "Insert content at top of dialog"
         try: tb = self["TitleBar"],
         except: tb = ()
@@ -131,7 +133,7 @@ class MessageBox(Canvas):
         title = Text(title).config(**txtConfig)
         cv = Canvas((self.width, title.height + self.weight), self.border)
         cv += title.config(pos=(cv.center[0], self.weight), anchor=TOP)
-        self.top(cv, 0, "TitleBar")
+        self.insertTop(cv, 0, "TitleBar")
         return self
 
     def resize(self, size): pass
@@ -143,13 +145,13 @@ class MessageBox(Canvas):
 
 def _btnClick(gr, ev):
     "Event handler for button clicks"
-    setattr(ev, "action", gr)
+    setattr(ev, "command", gr)
     gr.canvas.bubble("onaction", ev)
 
 def _tiAction(gr, ev):
     "Event handler for text input action"
     try:
         if ev.unicode == "\r":
-            setattr(ev, "action", gr)
+            setattr(ev, "command", gr)
             gr.canvas.bubble("onaction", ev)
     except: pass

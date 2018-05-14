@@ -862,6 +862,13 @@ class Sketch(Canvas):
         self.evMgr = EventManager(self)
 
     @property
+    def caption(self): return _pd.get_caption()
+
+    @caption.setter
+    def caption(self, caption):
+        return _pd.set_caption(caption)
+
+    @property
     def focusable(self): return True
 
     @property

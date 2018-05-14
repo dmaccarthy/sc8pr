@@ -96,13 +96,13 @@ def gameover(game, n):
     img = game.alien
     dlg = MessageBox(msg, buttons=["Yes","No"], align=CENTER).bind(onaction,
         ondrag).title("Game Over").config(pos=game.center)
-    game += dlg.top(img)
+    game += dlg.insertTop(img)
 
 def onaction(msgbox, ev):
     "Game Over dialog event handler"
     game = msgbox.sketch
     game -= msgbox, game["Cover"]
-    if ev.action.layer: game.quit = True
+    if ev.command.layer: game.quit = True
     else: startGame(game)
 
 def main():
