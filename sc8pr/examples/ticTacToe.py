@@ -102,7 +102,7 @@ def onaction(msgbox, ev):
     "Game Over dialog event handler"
     game = msgbox.sketch
     game -= msgbox, game["Cover"]
-    if ev.command.layer: game.quit = True
+    if msgbox.command.layer: game.quit = True
     else: startGame(game)
 
 def main():

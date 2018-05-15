@@ -119,7 +119,7 @@ class MessageBox(Canvas):
         try: tb = self["TitleBar"],
         except: tb = ()
         self.shiftContents((0, gr.height + padding), *tb)
-        y = self.weight + padding + (tb[0].height if tb else 0)
+        y = padding + (tb[0].height if tb else 0) # + self.weight
         gr.config(anchor=TOP, pos=(self.center[0], y))
         if name: self[name] = gr
         else: self += gr
@@ -145,13 +145,11 @@ class MessageBox(Canvas):
 
 def _btnClick(gr, ev):
     "Event handler for button clicks"
-    setattr(ev, "command", gr)
-    gr.canvas.bubble("onaction", ev)
+    gr.canvas.config(command=gr).bubble("onaction", ev)
 
 def _tiAction(gr, ev):
     "Event handler for text input action"
     try:
         if ev.unicode == "\r":
-            setattr(ev, "command", gr)
-            gr.canvas.bubble("onaction", ev)
+            gr.canvas.config(command=gr).bubble("onaction", ev)
     except: pass
