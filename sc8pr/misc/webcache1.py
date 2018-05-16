@@ -121,7 +121,11 @@ class WebCache:
                     isKey = not isKey
         except: pass
 
-    def __getitem__(self, i): return self._queue[i]
+    def __getitem__(self, i):
+        if i < 0: i += len(self._queue)
+        return self._queue[i]
+    
+    def __len__(self): return len(self._queue)
 
     def _file(self, name): return abspath(self.path + "/" + name)
 
@@ -196,6 +200,15 @@ class WebCache:
         for r in self._queue:
             if wait: r.wait()
             if isinstance(r.data, Exception): return r
+
+    @property
+    def status(self):
+        s = e = p = 0
+        for r in self._queue:
+            if r.data is None: p += 1
+            elif isinstance(r.data, Exception): e += 1
+            else: s += 1
+        return dict(success=s, error=e, pending=p)
 
     def flush(self):
         "Reset queue and return generator for response data"
