@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
-from sc8pr.util import fileExt
 
 "Retrieve data asynchronously from the web, and save the data in a cache folder"
 
@@ -25,8 +24,8 @@ from urllib.request import urlopen
 from urllib.parse import quote, urlparse
 from os.path import abspath, isdir, isfile
 from random import randint
-try: import pygame
-except: pygame = None
+import pygame
+from sc8pr.util import fileExt
 
 def _fname(p):
     "Get file name"
@@ -96,7 +95,6 @@ class CacheRequest(WebRequest):
         if self._image: self.data = pygame.image.load(save)
         else:
             with open(save, "rb") as f: self.data = f.read()
-
 
 
 class WebCache:
