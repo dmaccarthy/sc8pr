@@ -48,19 +48,30 @@ def pref(latex, val, key="dpi"):
 class WebRequest(Thread):
     "Thread for sending HTTP requests and processing responses "
     response = None
+    success = error = None
 
-    def __init__(self, url, onload=None, save=None):
+    def __init__(self, url, image=None, save=None):
         super().__init__()
         self.data = None
         self.url = url
         self.save = save
-        if pygame:
-            if onload is True: onload = _fext(url)
-            if type(onload) is str:
-                hint = "x." + onload
-                onload = lambda x: pygame.image.load(BytesIO(x), hint)
-        else: onload = None
-        self._onload = onload
+        if image is True: image = _fext(url)
+        self._image = image
+
+    def _convertImage(self, data):
+        "Convert response data from bytes to pygame.Surface"
+        image = self._image
+        if image:
+            hint = "x." + image
+            data = pygame.image.load(BytesIO(data), hint)
+        return data          
+
+    def onload(self):
+        "Callback when request completed"
+        d = self.data
+        if isinstance(d, Exception):
+            if self.error: self.error(self)
+        elif self.success: self.success(self)
 
     def run(self):
         try:
@@ -70,9 +81,9 @@ class WebRequest(Thread):
             if self.save:
                 if WebCache.log: WebCache.log("Saving:", self.save)
                 with open(self.save, "wb") as f: f.write(data)
-            onload = self._onload
-            self.data = onload(data) if onload else data
+            self.data = self._convertImage(data)
         except Exception as e: self.data = e
+        self.onload()
 
     def wait(self):
         while self.data is None: sleep(0.001)
@@ -82,19 +93,22 @@ class WebRequest(Thread):
 class CacheRequest(WebRequest):
     "Thread for loading cached data asynchronously"
 
-    def __init__(self, fn, image, url):
+    def __init__(self, url, image, save):
         Thread.__init__(self)
         self.url = url
-        self.save = fn
+        self.save = save
         self.data = None
-        self._image = image if pygame else False
+        self._image = image
 
     def run(self):
         save = self.save
         if WebCache.log: WebCache.log("Loading:", save)
-        if self._image: self.data = pygame.image.load(save)
-        else:
-            with open(save, "rb") as f: self.data = f.read()
+        try:
+            if self._image: self.data = pygame.image.load(save)
+            else:
+                with open(save, "rb") as f: self.data = f.read()
+        except Exception as e: self.data = e
+        self.onload()
 
 
 class WebCache:
@@ -142,7 +156,7 @@ class WebCache:
             else: self._imgExt = formats
         return self
 
-    def get(self, key, save=None, dpi=None, color=None):
+    def get(self, key, filename=None, dpi=None, color=None, success=None, error=None):
         "Push one request thread onto the queue"
 
         # Get URL and save name
@@ -150,12 +164,12 @@ class WebCache:
             if color: key = wrap(key, color)
             key = pref(key, dpi)
             url = "https://latex.codecogs.com/png.latex?" + quote(key)
-            if save in (None, True): save = self._randName(key, "png")
+            if filename in (None, True): filename = self._randName(key, "png")
         else:
             url = key
-            if save is True: save = _fname(url)
-            elif save is None: save = self._randName(key, _fext(url))
-        save = save.replace("\\", "/").split("/")[-1]
+            if filename is True: filename = _fname(url)
+            elif filename is None: filename = self._randName(key, _fext(url))
+        filename = filename.replace("\\", "/").split("/")[-1]
 
         # Load from cache
         r = None
@@ -163,16 +177,18 @@ class WebCache:
         if prevSave:
             prevSave = self._file(prevSave)
             if isfile(prevSave):
-                r = CacheRequest(prevSave, _fext(save) in self._imgExt, url)
+                r = CacheRequest(url, _fext(filename) in self._imgExt, prevSave)
 
         # Load via HTTP request
         if not r:
-            self._setkey(key, save)
+            self._setkey(key, filename)
             with open(self._indexFile, "a", encoding="utf-8") as f:
-                for b in (key, "\n", save, "\n"): f.write(b)
-            r = WebRequest(url, _fext(save) in self._imgExt, self._file(save))
+                for b in (key, "\n", filename, "\n"): f.write(b)
+            r = WebRequest(url, _fext(filename) in self._imgExt, self._file(filename))
 
         # Send request
+        r.success = success
+        r.error = error
         self._queue.append(r)
         r.start()
         return r
@@ -238,8 +254,8 @@ class WebCache:
         "Remove deleted/missing files from cache index"
         index = self.index
         for key, val in list(index.items()):
-            save = self._file(val)
-            if not isfile(save): del index[key]
+            filename = self._file(val)
+            if not isfile(filename): del index[key]
         index = self.index
         with open(self._indexFile, "w", encoding="utf-8") as f:
             if WebCache.log: WebCache.log("Saving index")
