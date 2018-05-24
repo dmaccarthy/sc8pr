@@ -299,7 +299,6 @@ class Polygon(Shape):
         "Resize the polygon (e.g. when scaling the canvas)"
         w, h = self._rect[1]
         f = size[0] / w, size[1] / h
-        print(w, h, size, f)
         self.transform(scale=f)
         return f
 
