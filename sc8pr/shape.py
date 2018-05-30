@@ -115,10 +115,6 @@ class Line(Shape):
     resolution = 1e-10
     snapshot = None
 
-#     def snapshot(self, **kwargs):
-#         msg = "{} does not support snapshot"
-#         raise NotImplementedError(msg.format(type(self)))
-
     def __init__(self, start, point=None, vector=None):
         "Create a line or line segment"
         self.pos = start
@@ -227,8 +223,17 @@ class Line(Shape):
 class Polygon(Shape):
     _angle = 0
 
+    @staticmethod
+    def _noRepeat(pts):
+        "Remove repeated points"
+        p0 = None
+        for p in pts:
+            if p != p0:
+                yield p
+                p0 = p
+
     def setPoints(self, pts, pos=None):
-        self.vertices = pts = list(pts)
+        self.vertices = pts = list(self._noRepeat(pts))
         self._rect = self._metrics(pts)
         if pos is None: pos = self.center
         elif type(pos) is int: pos = pts[pos]
@@ -321,7 +326,6 @@ class Polygon(Shape):
         size = self.size
         size = 2 * w + size[0], 2 * w + size[1] 
         srf = pygame.Surface(size, pygame.SRCALPHA)
-#        pts = list((x+dx,y+dy) for (x,y) in self.vertices)
         pts = [(round(x+dx), round(y+dy)) for (x,y) in self.vertices]
         if f: pygame.draw.polygon(srf, f, pts)
         if w and s: pygame.draw.polygon(srf, s, pts, w)
