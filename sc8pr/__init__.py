@@ -685,7 +685,9 @@ class Canvas(Graphic):
         elif t in (int, slice):
             raise KeyError("Assignment by layer is not supported")
         gr._name = key
-        if gr.canvas is not self: gr.setCanvas(self)
+#        if gr.canvas is not self:
+        if gr not in self:
+            gr.setCanvas(self)
 
     def __iadd__(self, gr):
         "Add a Graphics instance(s) to the Canvas"
