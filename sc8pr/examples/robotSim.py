@@ -28,6 +28,24 @@ from sc8pr.util import rgba, randPixel
 from sc8pr.robot import Robot, RobotThread
 from sc8pr.sprite import physics, Collisions
 from sc8pr.misc.plot import Plot, Series
+from sc8pr.gui.dialog import MessageBox
+
+def ask(robot, prompt, title="User Input", allowCancel=False):
+	"Synchronous input to the robot brain"
+	sk = robot.sketch
+	btns = None if allowCancel else ["Okay"]
+	sk["User"] = mb = MessageBox(prompt, "", btns, title).config(pos=sk.center)
+	while not mb.command: robot.updateSensors()
+	return None if mb.command.name == "Button_Cancel" else mb["Input"].data
+
+def circles(sk, n=50):
+	"Draw random circles for arena floor"
+	size = sk.size
+	cv = Canvas(size, "white")
+	for i in range(n):
+		r = randint(10, size[0]/8)
+		cv += Circle(r).config(weight=0, fill=rgba(True), pos=randPixel(size))
+	return cv.snapshot()
 
 
 class BrainSketch(Sketch):
@@ -50,30 +68,20 @@ class Arena(BrainSketch):
 	"Empty arena for robot challenges"
 
 	def setup(self):
-		self.bg = self.renderBG()
+		try:
+			img = self.render
+			try: self.bg = img(self)
+			except: self.bg = Image(img)
+		except: self.bg = Image(self.size, "white")
 		self.weight = 1
 		robo = Robot(["#ff5050", "#ffd428"])
 		self["Red"] = self.bindBrain(robo).config(width=60,
 			pos=(100,400), angle=270, bounce=BOTH)
 		robo.gyro = robo.angle
 
-	def renderBG(self): return Image(self.size, "white")
-
 	@classmethod
-	def run(cls, brain=None, **kwargs):
-		cls((640,480)).config(brain=brain).play("Robot Arena")
-
-
-class Circles(Arena):
-	"Arena painted in random colors"
-
-	def renderBG(self, n=50):
-		size = self.size
-		cv = Canvas(size, "white")
-		for i in range(n):
-			r = randint(10, size[0]/8)
-			cv += Circle(r).config(weight=0, fill=rgba(True), pos=randPixel(size))
-		return cv.snapshot()
+	def run(cls, brain=None, render=None):
+		cls((640,480)).config(brain=brain, render=render).play("Robot Arena")
 
 
 class Trace(BrainSketch):

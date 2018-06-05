@@ -107,13 +107,13 @@ class Robot(Sprite):
     def stopped(self):
         return self.vel == (0,0) and self.motors == (0,0)
 
-    def setCanvas(self, sk):
+    def setCanvas(self, sk, key=None):
         "Add Robot instance to the sketch"
         if not isinstance(sk, Sketch):
             raise Exception("Robot cannot be added to {}".format(type(sk).__name__))
         b = hasattr(self, "brain")
         if b and self.canvas: raise Exception("Robot is already active!")
-        super().setCanvas(sk)
+        super().setCanvas(sk, key)
         if b:
             self._startFrame = sk.frameCount
             self._gyro = self.angle
@@ -135,17 +135,16 @@ class Robot(Sprite):
         "Sleep for the specified time"
         if not self.active: raise InactiveError()
         if t: sleep(t)
-        else:
-#            if not self.active: raise InactiveError()
-            sleep(1 / self.sketch.frameRate)
+        else: sleep(1 / self.sketch.frameRate)
 
     @property
     def motors(self): return self._motors
 
     @motors.setter
     def motors(self, m):
-        if type(m) in (int, float): m = (m, m)
-        self._motors = tuple(max(-1, min(1, x)) for x in m)
+        if type(m) is int: m = float(m)
+        if type(m) is float: m = (m, m)
+        self._motors = tuple(max(-1.0, min(1.0, x)) for x in m)
 
     @property
     def power(self): return sum(abs(m) for m in self._motors) / 2

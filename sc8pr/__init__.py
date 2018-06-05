@@ -264,24 +264,28 @@ class Graphic:
 
 # Canvas interaction
 
-    def setCanvas(self, cv):
+    def setCanvas(self, cv, key=None):
         "Add the object to a canvas"
-        key = self.name
-        if key and key in cv and cv[key] is not self:
-            raise KeyError("Key '{}' is already in use".format(key))
+#        key = self._name
         self.remove()
+        if key: 
+            if key in cv and cv[key] is not self:
+                raise KeyError("Key '{}' is already in use".format(key))
+            self._name = key
         self.canvas = cv
         cv._items.append(self)
         return self
 
     def remove(self, deleteRect=True):
         "Remove the instance from its canvas"
-        cv = self.canvas
-        if cv and self in cv._items:
-            cv._items.remove(self)
+#        if cv and self in cv._items:
+        try:
+            cv = self.canvas
             self.anon()
             if deleteRect and hasattr(self, "rect"):
                 del self.rect
+            cv._items.remove(self)
+        except: pass
         return self
 
     @property
@@ -684,10 +688,9 @@ class Canvas(Graphic):
             raise KeyError("Type '{}' cannot be used as a key".format(t.__name__))
         elif t in (int, slice):
             raise KeyError("Assignment by layer is not supported")
-        gr._name = key
+#        gr._name = key
 #        if gr.canvas is not self:
-        if gr not in self:
-            gr.setCanvas(self)
+        if gr not in self: gr.setCanvas(self, key)
 
     def __iadd__(self, gr):
         "Add a Graphics instance(s) to the Canvas"
