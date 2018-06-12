@@ -19,7 +19,7 @@
 if __name__ == "__main__": import depends
 from random import uniform, randint, choice
 from sc8pr import Sketch, Canvas, Image, BOTH,\
-    LEFT, RIGHT, TOPLEFT, TOPRIGHT, TOP, BOTTOM
+    LEFT, RIGHT, TOPLEFT, TOPRIGHT, TOP, BOTTOM, CENTER
 from sc8pr.sprite import Sprite, physics
 from sc8pr.geom import vec2d, polar2d, dist
 from sc8pr.text import Text, Font
@@ -65,9 +65,12 @@ class Dialog(Canvas):
             Radio(text[1:], txtConfig=attr).config(anchor=TOPLEFT)]
 
         # Play button
-        icon = Sprite(SoccerBall.ballImage).config(spin=1, costumeTime=10)
+        icon = Sprite(SoccerBall.ballImage).config(spin=1)
         play = Text("Play").config(**attr)
         play = Button((96,36), 2).textIcon(play, icon)
+        x, y = icon.pos
+        x += icon.width / 2
+        icon.config(anchor=CENTER, pos=(x,y))
 
         # Titles
         attr.update(anchor=TOP)
