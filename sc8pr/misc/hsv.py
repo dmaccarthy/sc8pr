@@ -26,7 +26,7 @@ DEG = pi / 180
 def hsva(h, s, v=100, a=100):
     "Create a color from HSVA values"
     c = pygame.Color(0, 0, 0)
-    c.hsva = h, s, v, a
+    c.hsva = h, min(100, s), v, a
     return c
 
 def hs_surface(size=(100,100), v=100, wheel=False):
