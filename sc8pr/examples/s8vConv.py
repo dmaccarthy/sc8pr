@@ -127,5 +127,8 @@ def main(ffmpeg=False):
     VideoPlayer().play()
 
 if __name__ == "__main__":
-    from sys import argv
-    main(argv[1] if len(argv) > 1 else input("Path to ffmpeg? ").strip())
+    if ImageIO:
+        from sys import argv
+        ff = argv[1] if len(argv) > 1 else input("Path to ffmpeg? ").strip()
+    else: ff = False
+    main(ff)
