@@ -55,6 +55,7 @@ class PixelData:
         return "<{0} {1} {3}x{4} [{2:.1f} kb]>".format(name, self.mode, kb, *self.size)
 
     def __init__(self, img, compress=False, codec=zlib):
+        rgb = "RGBA", "RGB"
         self.compressed = False
         if type(img) is bytes: img = img[:-12], img[-12:]
         elif isinstance(img, Graphic):
@@ -73,8 +74,11 @@ class PixelData:
         else: # Pillow image
             self.size = img.size
             m = img.mode
+            if m not in rgb:
+                m = rgb[0]
+                img = img.convert(m)
             self._data = img.tobytes()
-        if m in ("RGB", "RGBA"): self.mode = m
+        if m in rgb: self.mode = m
         else: raise NotImplementedError("Only RGB and RGBA modes are supported")
         self.codec = codec
         if compress: self.compress()
@@ -574,18 +578,6 @@ class Image(Graphic):
 
     @staticmethod
     def fromBytes(data): return PixelData(data).img
-
-#     @staticmethod
-#     def fromPIL(img, raw=False, compress=None):
-#         "Convert a Pillow image to sc8pr.Image"
-#         data = img.tobytes()
-#         if raw:
-#             mode = ["RGB", "RGBA"].index(img.mode)
-#             if compress:
-#                 data = compress(data)
-#                 mode += 2
-#             return data, struct.pack("!3I", mode, *img.size)
-#         return Image(pygame.image.fromstring(data, img.size, img.mode))
 
     def tiles(self, cols=1, rows=1, flip=0, padding=0):
         "Create a list of images from a spritesheet"
