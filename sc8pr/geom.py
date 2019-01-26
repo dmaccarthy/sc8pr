@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -42,7 +42,7 @@ def delta(v2, v1=None, mag=None):
         x = v2[0] - v1[0]
         y = v2[1] - v1[1]
     else: x, y = v2
-    if mag:
+    if mag is not None:
         r = hypot(x, y)
         if r:
             mag /= r

@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2019 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
+from math import hypot
 
 version = 2, 1, "dev"
 
@@ -266,6 +267,7 @@ class Graphic:
                 setattr(self, a, (x * fx, y * fy))
             except: pass
 
+
 # Canvas interaction
 
     def setCanvas(self, cv, key=None):
@@ -467,6 +469,10 @@ class BaseSprite(Graphic):
         p = self._pen
         if p: self._pen = p[:2] + (None,)
 
+    def resize(self, size):
+        self._size = size
+        self.penReset()
+
     def onwrap(self, update): self.penReset()
 
     def circleBounce(self, cv):
@@ -553,9 +559,10 @@ class BaseSprite(Graphic):
             if pos: cv._paint(pos, self.pos, c, w)
             self._pen = c, w, self.pos
 
-    def resize(self, size):
-        self._size = size
-        self.penReset()
+    def toward(self, pos, mag=None):
+        "Return a vector directed toward the specified position"
+        if mag is None: mag = hypot(*self.vel)
+        return delta(pos, self.pos, mag)
 
 
 class Image(Graphic):
