@@ -21,7 +21,7 @@ Latest relase:
 pip3 install sc8pr==2.1a0
 ```
 
-Develppment version:
+Development version:
 ```
 pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
 ```
