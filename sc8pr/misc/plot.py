@@ -322,10 +322,15 @@ class Plot(Renderable):
             pygame.draw.line(srf, s, transform(p0), transform(p1), w)
             x += dx
 
+    def _transform(self):
+        "Create a coordinate transformation"
+        w, h = self._size
+        return coordTr(self._coords, [w-1, h-1])
+
     def render(self):
         "Render the plot as a surface"
         srf = Image(self._size, self.bg).image
-        transform = coordTr(self._coords, self._size)
+        transform = self._transform()
         if self._xgrid: self._drawGrid(srf, 0, transform, self._xgrid)
         if self._ygrid: self._drawGrid(srf, 1, transform, self._ygrid)
         if self._xaxis: self._drawAxis(srf, 0, transform, *self._xaxis)
@@ -333,8 +338,7 @@ class Plot(Renderable):
         for k in self._keys: self._series[k].draw(srf, transform)
         return srf
 
-    def pixelCoords(self, xy):
-        return coordTr(self._coords, self._size)(xy)
+    def pixelCoords(self, xy): return self._transform()(xy)
 
 
 class PlotSprite(Plot, BaseSprite): pass
