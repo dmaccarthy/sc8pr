@@ -19,7 +19,7 @@ setup(
 
     # Dependencies
     python_requires = ">=3.4, <4",
-    install_requires = ["pygame(>=1.9.1)"],
+    install_requires = ["pygame>=1.9.1,<2"],
     
     # URLs
     url = "http://dmaccarthy.github.io/sc8pr",
