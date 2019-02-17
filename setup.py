@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = 2, 1, "dev"
+version = 2, 1, "b0"
 ver = "{}.{}.{}".format(*version)
 archive = "master" if version[-1] == "dev" else "v" + ver
 with open("README.txt", encoding="utf8") as f: readme = f.read()
@@ -32,7 +32,7 @@ setup(
     # Additional data
     keywords = "graphics animation sprite gui robotics pygame educational",
     classifiers = [
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Intended Audience :: Education",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
