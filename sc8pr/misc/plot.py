@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -203,6 +203,8 @@ class Plot(Renderable):
     bg = None
     _xaxis = None
     _yaxis = None
+    _xgrid = None
+    _ygrid = None
     contains = Image.contains
 
     def __init__(self, size, lrbt):
@@ -270,12 +272,12 @@ class Plot(Renderable):
         text = [Text(t).config(**kwargs) for t in text]
         return Series(pos, marker=text)
 
-    @staticmethod
-    def xtick(param, marker=9, **kwargs):
+    def xtick(self, dx, ends=None, marker=9, **kwargs):
+        param = (ends if ends else self._coords[:2]) + [dx]
         return Series._tick(param, marker, **kwargs)
 
-    @staticmethod
-    def ytick(param, marker=9, **kwargs):
+    def ytick(self, dy, ends=None, marker=9, **kwargs):
+        param = (ends if ends else self._coords[2:]) + [dy]
         return Series._tick(param, marker, True, **kwargs)
 
     def _drawAxis(self, srf, n, transform, x, stroke, weight):
@@ -284,10 +286,48 @@ class Plot(Renderable):
         x0, x1 = [(0,x0), (0,x1)] if n else [(x0,0), (x1,0)]
         pygame.draw.line(srf, stroke, transform(x0), transform(x1), weight)
 
+    def _grid(self, n, interval, xends=None, yends=None, stroke="grey", weight=1):
+        "Set the x or y gridlines"
+        if interval is False: cfg = None
+        else:
+            if xends is None: xends = self._coords[:2]
+            if yends is None: yends = self._coords[2:]
+            cfg = dict(interval=interval, xends=xends,
+                yends=yends, stroke=stroke, weight=weight)
+        if n: self._ygrid = cfg
+        else: self._xgrid = cfg
+        self.stale = True
+        return self
+    
+    def grid(self, dx=None, dy=None, xends=None, yends=None, stroke="grey", weight=1):
+        "Set both x and y gridlines"
+        if dx is not None: self._grid(0, dx, xends, yends, stroke, weight)
+        if dy is not None: self._grid(1, dy, xends, yends, stroke, weight)
+        return self
+
+    def _drawGrid(self, srf, n, transform, cfg):
+        "Draw gridlines"
+        s = rgba(cfg["stroke"])
+        w = cfg["weight"]
+        x, x1 = cfg["yends" if n else "xends"]
+        y0, y1 = cfg["xends" if n else "yends"]
+        dx = cfg["interval"]
+        while x <= x1:
+            if n:
+                p0 = [y0, x]
+                p1 = [y1, x]
+            else:
+                p0 = [x, y0]
+                p1 = [x, y1]
+            pygame.draw.line(srf, s, transform(p0), transform(p1), w)
+            x += dx
+
     def render(self):
         "Render the plot as a surface"
         srf = Image(self._size, self.bg).image
         transform = coordTr(self._coords, self._size)
+        if self._xgrid: self._drawGrid(srf, 0, transform, self._xgrid)
+        if self._ygrid: self._drawGrid(srf, 1, transform, self._ygrid)
         if self._xaxis: self._drawAxis(srf, 0, transform, *self._xaxis)
         if self._yaxis: self._drawAxis(srf, 1, transform, *self._yaxis)
         for k in self._keys: self._series[k].draw(srf, transform)
