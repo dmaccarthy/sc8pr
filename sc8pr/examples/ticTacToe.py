@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -93,6 +93,7 @@ def gameover(game, n):
     msg = "Player {} Wins".format(n) if n else "It's a draw"
     msg += "!\nDo you want to play again?"
     game["Cover"] = game.cover()
+    game.cursor = True
     img = game.alien
     dlg = MessageBox(msg, buttons=["Yes","No"], align=CENTER).bind(onaction,
         ondrag).title("Game Over").config(pos=game.center)
@@ -106,7 +107,8 @@ def onaction(msgbox, ev):
     else: startGame(game)
 
 def main():
-    os.chdir(os.path.dirname(__file__))
+    fldr = os.path.dirname(__file__)
+    if fldr: os.chdir(fldr)
     Sketch((340,340)).bind(ondraw).play(TITLE)
 
 if __name__ == "__main__": main()

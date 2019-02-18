@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -109,30 +109,28 @@ class Charge(Circle):
         sk["angle"].config(data=a)
 
 
-class Ruler(Image):
+class Ruler(Canvas):
 
-    def __init__(self, scale=10, size=50, step=5, unit=("cm", 2), **kwargs):
-        cfg = dict()
-        cfg.update(**kwargs)
+    def __init__(self, scale=10, size=50, step=5, unit=("cm", 2), **cfg):
         if "bg" not in cfg: cfg["bg"] = Image(bg="#e0e0f0a0")
         if "weight" not in cfg: cfg["weight"] = 1
         coord = lambda x: (x + 1) * scale
         h = 3.5 * scale
-        r = Canvas((coord(size + 1), h)).config(**cfg)
+        super().__init__((coord(size + 1), h))
+        self.config(**cfg)
         x = 0
         cfg = dict(anchor=BOTTOM, font=MONO, fontStyle=BOLD, color="#000000a0")
         while x <= size:
-            r += Text(x).config(pos=(coord(x), h-1), **cfg)
+            self += Text(x).config(pos=(coord(x), h-1), **cfg)
             x += step
-        if unit: r += Text(unit[0]).config(pos=(coord(unit[1]), h-1), **cfg)
+        if unit: self += Text(unit[0]).config(pos=(coord(unit[1]), h-1), **cfg)
         x = 0
         while x <= size:
             s = coord(x)
-            r += Line((s,0), (s, scale / (2 if x % step else 1)))
+            self += Line((s,0), (s, scale / (2 if x % step else 1)))
             x += 1
-        for t in r:
+        for t in self:
             if isinstance(t, Text): t.config(height=h/2)
-        super().__init__(r.snapshot())
         self.bind(ondrag)
 
 
