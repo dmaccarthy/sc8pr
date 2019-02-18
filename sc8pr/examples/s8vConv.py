@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2019 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -77,6 +77,7 @@ class VideoPlayer(Sketch):
             vid = self["Video"]
             n = vid.costumeNumber
             msg = "{1}/{2} [{3},{4}] @ {0}".format(self.frameRate, n, len(vid), *self.clip)
+            if n == len(vid) - 1: vid.costumeTime = 0
         else: msg = "Type 'o' to Open Video"
         txt = self["Text"]
         if txt.data != msg: txt.config(data=msg)
