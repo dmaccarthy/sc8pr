@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -88,10 +88,10 @@ class Trace(BrainSketch):
 	"Sketch that implements a follow-the-blue-curve challenge"
 
 	def setup(self):
-		pl = Plot(self.size, [-4, 4, -1.5, 1.5]).config(bg="white")
+		p = Plot(self.size, [-4, 4, -1.5, 1.5]).config(bg="white")
 		marker = Image((6, 6), "blue")
-		pl["Curve"] = Series(sin, param=[-pi, pi, 2 * self.width - 1]).config(marker=marker)
-		self.bg = pl.snapshot()
+		p["Curve"] = Series(sin, param=[-pi, pi, 2 * self.width - 1]).config(marker=marker)
+		self.bg = p.snapshot()
 		robo = Robot(["#ff5050", "#ffd428"])
 		self["Traci"] = self.bindBrain(robo).config(width=60, pos=self.center)
 
@@ -150,10 +150,33 @@ class Party(BrainSketch):
 	"Sketch that implements a robot-mingling party"
 	friends = 12
 
+	names = ['Liam', 'Olivia', 'Benjamin', 'Emma', 'Lucas', 'Sophia', 'Oliver',
+		'Ava', 'Noah', 'Emily', 'William', 'Charlotte', 'Ethan', 'Amelia', 'Jack',
+		'Abigail', 'Lincoln', 'Chloe', 'Owen', 'Aria', 'Jacob', 'Grace', 'Isabella',
+		'Alexander', 'James', 'Logan', 'Avery', 'Elizabeth', 'Hunter', 'Lily',
+		'Nathan', 'Hannah', 'Carter', 'Ella', 'Grayson', 'Henry', 'Ellie', 'Quinn',
+		'Scarlett', 'Isaac', 'Mason', 'Anna', 'Jackson', 'Harper', 'Gabriel',
+		'Hailey', 'Daniel', 'Luke', 'Brooklyn', 'Evelyn', 'Samuel', 'Wyatt', 'Isla',
+		'Mia', 'Connor', 'Sarah', 'Hudson', 'Claire', 'Bennett', 'Elijah', 'Madison',
+		'Mila', 'Joshua', 'Victoria', 'Thomas', 'Addison', 'Caleb', 'Emmett',
+		'Natalie', 'Zoey', 'Adam', 'Hazel', 'Matthew', 'Eva', 'Maya', 'David',
+		'Zachary', 'Isabelle', 'Michael', 'Sadie', 'Sophie', 'Aiden', 'Jaxon',
+		'Everly', 'Sofia', 'Violet', 'Ryan', 'Austin', 'Jayden', 'John', 'Ivy',
+		'Paisley', 'Max', 'Brielle', 'Zoe', 'Parker', 'Levi', 'Aubrey', 'Leo',
+		'Theodore', 'Nora', 'Audrey', 'Asher', 'Stella', 'Cooper', 'Sebastian',
+		'Aurora', 'Alice', 'Dominic', 'Gavin', 'Nolan', 'Piper', 'Kinsley', 'Julia',
+		'Naomi', 'Ruby', 'Willow', 'Joseph', 'Eli', 'Blake', 'Harrison', 'Ryker',
+		'Sawyer', 'Layla', 'Samantha', 'Mackenzie', 'Brody', 'Clara', 'Leah', 'Maria',
+		'Penelope', 'Riley', 'Dylan', 'Evan', 'Marcus', 'Andrew', 'Charles', 'Ryder',
+		'Lillian', 'Alexandra']
+	shuffle(names)
+	names = names[:friends]
+	
 	def setup(self):
 		RobotThread.log = False
 		self.config(bg="white", border="blue", weight=1)
-		for i in range(self.friends): self += PartyRobot(self)
+		for name in self.names:
+			self[name] = PartyRobot(self)
 		RobotThread.log = True
 		robo = Robot(["#ff5050", "#ffd428"])
 		self["Red"] = self.bindBrain(robo).config(width=2*RADIUS,
@@ -179,32 +202,9 @@ class PartyRobot(Robot):
 	bounce = BOTH
 	mass = 1
 
-	names = ['Liam', 'Olivia', 'Benjamin', 'Emma', 'Lucas', 'Sophia', 'Oliver',
-		'Ava', 'Noah', 'Emily', 'William', 'Charlotte', 'Ethan', 'Amelia', 'Jack',
-		'Abigail', 'Lincoln', 'Chloe', 'Owen', 'Aria', 'Jacob', 'Grace', 'Isabella',
-		'Alexander', 'James', 'Logan', 'Avery', 'Elizabeth', 'Hunter', 'Lily',
-		'Nathan', 'Hannah', 'Carter', 'Ella', 'Grayson', 'Henry', 'Ellie', 'Quinn',
-		'Scarlett', 'Isaac', 'Mason', 'Anna', 'Jackson', 'Harper', 'Gabriel',
-		'Hailey', 'Daniel', 'Luke', 'Brooklyn', 'Evelyn', 'Samuel', 'Wyatt', 'Isla',
-		'Mia', 'Connor', 'Sarah', 'Hudson', 'Claire', 'Bennett', 'Elijah', 'Madison',
-		'Mila', 'Joshua', 'Victoria', 'Thomas', 'Addison', 'Caleb', 'Emmett',
-		'Natalie', 'Zoey', 'Adam', 'Hazel', 'Matthew', 'Eva', 'Maya', 'David',
-		'Zachary', 'Isabelle', 'Michael', 'Sadie', 'Sophie', 'Aiden', 'Jaxon',
-		'Everly', 'Sofia', 'Violet', 'Ryan', 'Austin', 'Jayden', 'John', 'Ivy',
-		'Paisley', 'Max', 'Brielle', 'Zoe', 'Parker', 'Levi', 'Aubrey', 'Leo',
-		'Theodore', 'Nora', 'Audrey', 'Asher', 'Stella', 'Cooper', 'Sebastian',
-		'Aurora', 'Alice', 'Dominic', 'Gavin', 'Nolan', 'Piper', 'Kinsley', 'Julia',
-		'Naomi', 'Ruby', 'Willow', 'Joseph', 'Eli', 'Blake', 'Harrison', 'Ryker',
-		'Sawyer', 'Layla', 'Samantha', 'Mackenzie', 'Brody', 'Clara', 'Leah', 'Maria',
-		'Penelope', 'Riley', 'Dylan', 'Evan', 'Marcus', 'Andrew', 'Charles', 'Ryder',
-		'Lillian', 'Alexandra']
-	shuffle(names)
-	names = names[:Party.friends]
-
 	def __init__(self, sk):
 		super().__init__([False, False])
-		self.config(width=2*RADIUS, pos=sk.center,
-			angle=uniform(0,360), _name=self.names[len(sk)])
+		self.config(width=2*RADIUS, pos=sk.center, angle=uniform(0,360))
 
 	def randPos(self, sk):
 		w, h = sk.size

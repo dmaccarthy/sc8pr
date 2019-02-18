@@ -230,6 +230,8 @@ class Plot(Renderable):
     @coords.setter
     def coords(self, lrbt):
         self._coords = _lrbt(lrbt, *self._size)
+        w, h = self._size
+        self.pixelCoords = coordTr(self._coords, [w-1, h-1])
         self.stale = True
 
     def __len__(self): return len(self._keys)
@@ -280,11 +282,11 @@ class Plot(Renderable):
         param = (ends if ends else self._coords[2:]) + [dy]
         return Series._tick(param, marker, True, **kwargs)
 
-    def _drawAxis(self, srf, n, transform, x, stroke, weight):
+    def _drawAxis(self, srf, n, x, stroke, weight):
         "Draw the axes onto the plot surface"
         x0, x1 = x
         x0, x1 = [(0,x0), (0,x1)] if n else [(x0,0), (x1,0)]
-        pygame.draw.line(srf, stroke, transform(x0), transform(x1), weight)
+        pygame.draw.line(srf, stroke, self.pixelCoords(x0), self.pixelCoords(x1), weight)
 
     def _grid(self, n, interval, xends=None, yends=None, stroke="grey", weight=1):
         "Set the x or y gridlines"
@@ -305,7 +307,7 @@ class Plot(Renderable):
         if dy is not None: self._grid(1, dy, xends, yends, stroke, weight)
         return self
 
-    def _drawGrid(self, srf, n, transform, cfg):
+    def _drawGrid(self, srf, n, cfg):
         "Draw gridlines"
         s = rgba(cfg["stroke"])
         w = cfg["weight"]
@@ -319,26 +321,18 @@ class Plot(Renderable):
             else:
                 p0 = [x, y0]
                 p1 = [x, y1]
-            pygame.draw.line(srf, s, transform(p0), transform(p1), w)
+            pygame.draw.line(srf, s, self.pixelCoords(p0), self.pixelCoords(p1), w)
             x += dx
-
-    def _transform(self):
-        "Create a coordinate transformation"
-        w, h = self._size
-        return coordTr(self._coords, [w-1, h-1])
 
     def render(self):
         "Render the plot as a surface"
         srf = Image(self._size, self.bg).image
-        transform = self._transform()
-        if self._xgrid: self._drawGrid(srf, 0, transform, self._xgrid)
-        if self._ygrid: self._drawGrid(srf, 1, transform, self._ygrid)
-        if self._xaxis: self._drawAxis(srf, 0, transform, *self._xaxis)
-        if self._yaxis: self._drawAxis(srf, 1, transform, *self._yaxis)
-        for k in self._keys: self._series[k].draw(srf, transform)
+        if self._xgrid: self._drawGrid(srf, 0, self._xgrid)
+        if self._ygrid: self._drawGrid(srf, 1, self._ygrid)
+        if self._xaxis: self._drawAxis(srf, 0, *self._xaxis)
+        if self._yaxis: self._drawAxis(srf, 1, *self._yaxis)
+        for k in self._keys: self._series[k].draw(srf, self.pixelCoords)
         return srf
-
-    def pixelCoords(self, xy): return self._transform()(xy)
 
 
 class PlotSprite(Plot, BaseSprite): pass
@@ -355,8 +349,8 @@ class Locus(Shape):
         self.vars = {}
 
     def _getCoordTr(self):
-        sz = self.canvas.size
-        return coordTr(_lrbt(self.lrbt, *sz), sz) 
+        w, h = sz = self.canvas.size
+        return coordTr(_lrbt(self.lrbt, *sz), [w-1, h-1]) 
 
     def contains(self, pos): return False
 
