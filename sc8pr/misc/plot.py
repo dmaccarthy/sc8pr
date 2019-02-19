@@ -223,6 +223,7 @@ class Plot(Renderable):
         s = size[1] / self._size[1]
         for k in self: self[k].scaleMarkers(s)
         super().resize(size)
+        self.coords = self._coords
 
     @property
     def coords(self): return self._coords
