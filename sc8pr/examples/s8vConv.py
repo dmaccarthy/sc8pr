@@ -94,7 +94,7 @@ class VideoPlayer(Sketch):
                 fn = ask(asksaveasfilename, filetypes=IMAGETYPES)
                 if fn: vid[vid.costumeNumber].save(fn)
             elif u == 'F':
-                fps = ask(askfloat, "Enter new frame rate:")
+                fps = ask(askfloat, title="Frame Rate", prompt="Enter new frame rate:")
                 if fps: self.frameRate = max(1.0, fps)
             elif u == ' ':
                 vid.costumeTime = 1 - vid.costumeTime 
