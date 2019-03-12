@@ -106,6 +106,6 @@ def onaction(msgbox, ev):
     else: startGame(game)
 
 def main():
-    Sketch((340,340)).bind(ondraw).play(TITLE)
+    Sketch((340,340)).bind(setup, ondraw).play(TITLE)
 
 if __name__ == "__main__": main()
