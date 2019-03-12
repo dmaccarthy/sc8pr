@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -24,11 +24,13 @@ loads image and sound files directly from the [pygame]/examples/data folder.
 
 if __name__ == "__main__": import depends
 from random import randint
-import os.path, pygame
+import pygame
 from sc8pr import Sketch, Image, BOTH, TOP, TOPLEFT, TOPRIGHT
 from sc8pr.sprite import Sprite
 from sc8pr.text import Text, Font, BOLD
 from sc8pr.misc.effect import ReplaceColor
+from sc8pr.util import resolvePath
+
 
 def loadImage(filename):
     "Load image file and change background to transparent"
@@ -47,7 +49,7 @@ def setup(sk):
         anchor=TOPRIGHT, **font).config(width=0.75*sk.width)
 
     # Add fist
-    folder = os.path.split(pygame.__file__)[0] + "/examples/data/"
+    folder = resolvePath("examples/data", pygame.__file__) + "/"
     img = loadImage(folder + "fist.bmp")
     sk += Image(img).config(pos=sk.center, anchor=TOP).bind(ondraw)
 

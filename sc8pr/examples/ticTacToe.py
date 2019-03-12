@@ -17,13 +17,12 @@
 
 
 if __name__ == "__main__": import depends
-import os
 from sc8pr import Sketch, Image, Graphic, CENTER
 from sc8pr.shape import Line
 from sc8pr.sprite import Sprite
 from sc8pr.gui.dialog import MessageBox
 from sc8pr.misc.cursors import cross, circle
-from sc8pr.util import ondrag, sc8prData
+from sc8pr.util import ondrag, sc8prData, resolvePath
 
 TITLE = "Tic-Tac-Toe"
 
@@ -31,7 +30,7 @@ def setup(game):
     "Create Tic-Tac-Toe board with 100 pixel squares and 20 pixel margins"
 
     # Load costumes for X and O sprites, and logo
-    img = Image("img/xo.png").tiles(3)
+    img = Image(resolvePath("img/xo.png", __file__)).tiles(3)
     game.alien = Image.fromBytes(sc8prData("alien")).config(height=36)
 
     # Create and position sprites, one per square
@@ -107,8 +106,6 @@ def onaction(msgbox, ev):
     else: startGame(game)
 
 def main():
-    fldr = os.path.dirname(__file__)
-    if fldr: os.chdir(fldr)
     Sketch((340,340)).bind(ondraw).play(TITLE)
 
 if __name__ == "__main__": main()
