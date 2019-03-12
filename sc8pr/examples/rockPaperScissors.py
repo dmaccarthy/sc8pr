@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2019 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -21,11 +21,13 @@ from random import randint
 from sc8pr import Sketch, Image, TOPLEFT, TOPRIGHT, BOTTOM
 from sc8pr.text import Text, Font, BOLD
 from sc8pr.gui.button import Button
+from sc8pr.util import resolvePath
 
 def setup(sk):
     # Load image originals
-    sk.imgs = [Image("img/target.png"),
-        Image("img/paper.png"), Image("img/scissors.png")]
+    fldr = resolvePath("img", __file__)
+    sk.imgs = [Image("{}/{}.png".format(fldr, f))
+        for f in ("target", "paper", "scissors")]
 
     # Create button controls and add images to buttons
     w, h = sk.size
