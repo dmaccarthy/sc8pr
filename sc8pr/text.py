@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -31,12 +31,12 @@ class Font:
     _sort = None
     _cache = {}
     _cacheOrder = []
-    _serif = ("Merriweather", "DroidSerif", "Palatino", "Garamond",
-        "Georgia", "Century", "TimesNewRoman", "Times")
+    _serif = ("Merriweather", "DroidSerif", "Deja Vu Serif", "Palatino",
+        "Garamond", "Georgia", "Century", "TimesNewRoman", "Times")
     _sans = ("MerriweatherSans", "OpenSans", "Arsenal", "Oxygen",
-        "DroidSans", "LucidaSans", "Verdana", "Geneva", "Helvetica", "Arial")
+        "DroidSans", "Deja Vu Sans", "LucidaSans", "Verdana", "Geneva", "Helvetica", "Arial")
     _mono = ("SourceCodePro", "Inconsolata", "LucidaConsole",
-        "DroidSansMono", "Monaco", "CourierNew", "Courier")
+        "DroidSansMono", "Deja Vu Sans Mono", "Monaco", "CourierNew", "Courier")
 
     @staticmethod
     def _key(name, size=24, style=0):
