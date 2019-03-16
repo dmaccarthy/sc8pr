@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from math import hypot, pi, sin, cos, atan2, floor
+from math import hypot, pi, sin, cos, asin, atan2, floor
 
 DEG = pi / 180
 
@@ -63,6 +63,13 @@ def polar2d(vx, vy, deg=True):
     "2D Cartesian to Polar conversion"
     a = atan2(vy, vx)
     return hypot(vx, vy), (a / DEG if deg else a)
+
+def subtend(P, C, r, maxSep=None):
+    "Position relative to P in polar form, and angle subtended by a circle C of radius r"
+    sep, direct = polar2d(*delta(C, P))
+    if maxSep is None or sep <= maxSep:
+        half = 180.0 if sep < r else asin(r / sep) / DEG
+        return sep, direct, half
 
 def _matrix(rotate=0, scale=1, rev=False):
     "Create a 2x2 matrix (as a 4-tuple) to perform a scale transformation and a rotation"

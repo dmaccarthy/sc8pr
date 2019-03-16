@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -19,13 +19,14 @@
 from time import sleep, time
 from threading import Thread
 from sys import stderr
-from math import hypot, asin, cos, sqrt, pi
+from math import hypot, cos
 import pygame
 from pygame.constants import K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE
 from sc8pr import Image, Sketch
 from sc8pr.sprite import Sprite
-from sc8pr.util import sc8prData, logError, rgba, noise, divAlpha#, hasAlpha
-from sc8pr.geom import vec2d, delta, DEG, dist, sprod, positiveAngle
+from sc8pr.util import sc8prData, logError, rgba, noise, divAlpha
+from sc8pr.geom import vec2d, delta, DEG, dist, positiveAngle, angleDifference,\
+    subtend
 from sc8pr.shape import Line, Polygon
 
 
@@ -75,6 +76,7 @@ class Robot(Sprite):
     sensorDown = None
     sensorFront = None
     sensorWidth = 10
+    sensorResolution = 0.1
     proximity = None
 
     def __init__(self, colors=None):
@@ -220,40 +222,47 @@ class Robot(Sprite):
     def _checkFront(self):
         "Update the front color sensor"
 
-        # Get sensor position
+        # Sensor info
+        sw = self.sensorWidth
+        res = self.sensorResolution
+        if res: res *= sw
         pos = delta(self.pos, vec2d(-self.radius, self.angle))
-
-        # Sensor distance to edge of sketch
+    
+        # Distance from sensor to edge of sketch
+        obj = prox = None
         sk = self.sketch
         if sk.weight:
-            obj = sk
             prox = _distToWall(pos, self.angle, self.sensorWidth, *sk.size)
-        else: obj = prox = None
+            if prox: obj = sk
 
-        # Find closest object within sensor width
-        u = vec2d(1, self.angle)
-        sw = self.sensorWidth * DEG
+        # Find closest object within "sensor cone"
         for gr in self.sensorObjects(sk):
             if gr is not self and gr.avgColor and hasattr(gr, "rect"):
-                dr = delta(gr.rect.center, pos)
-                d = hypot(*dr)
                 r = gr.radius
-                if r >= d:
-                    prox = 0
-                    obj = gr
-                elif prox is None or d - r < prox:
-                    minDot = cos(min(sw + asin(r/d), pi / 2))
-                    x = (1 - sprod(u, dr) / d) / (1 - minDot)
-                    if x < 1:
-                        obj = gr
-                        prox = (d - r) * (1 - x) + x * sqrt(d*d-r*r)
+                view = subtend(pos, gr.rect.center, r, None if prox is None else prox + r)
+                if view:
+                    # Object may be closer than the current closest object
+                    sep, direct, half = view
+                    if not res or half > res:
+                        # Object size meets sensor resolution threshold
+                        beta = abs(angleDifference(self.angle, direct)) - sw
+                        if beta < half or sep < r:
+                            # Object is in sensor cone
+                            pr = sep - r
+                            if beta > 0:
+                                # CLOSEST point is NOT in sensor cone
+                                dr = r + sep * (cos(half * DEG) - 1)
+                                pr += dr * (beta / half) ** 2
+                            if prox is None or pr < prox:
+                                # Object is closest (so far)
+                                prox = pr
+                                obj = gr
 
         # Save data
         self.closestObject = obj
-        c = rgba(sk.border if obj is sk
-            else obj.avgColor if obj else (0,0,0))
+        c = rgba(sk.border if obj is sk else obj.avgColor if obj else (0,0,0))
         self.sensorFront = noise(divAlpha(c), self.sensorNoise, 255)
-        self.proximity = None if prox is None else round(prox)
+        self.proximity = None if prox is None else max(0, round(prox))
 
     def _checkDown(self):
         "Update the down color sensor"

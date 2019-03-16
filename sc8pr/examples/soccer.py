@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -49,6 +49,13 @@ def followBall(r):
     while r.active:
         r.updateSensors() 
         r.motors = 1 if isGrey(r.sensorFront) else (m, -m)
+
+def remote(r):
+    while r.active: r.updateSensors()
+
+def boxSize(w, h):
+    "Size of the goal box"
+    return round(0.075 * w), round(0.3 * h)
 
 
 class Dialog(Canvas):
@@ -111,7 +118,7 @@ class SoccerBall(Sprite):
         img = Image(resolvePath("img/ball.png", __file__))
         SoccerBall.ballImage = img
         super().__init__(img)
-        self.config(height = 30, mass = 1, drag = 0.0001, bounce = BOTH)
+        self.config(height=30, mass=1, drag=0.00025, bounce=BOTH)
 
     def oncollide(self): self.spin = uniform(-2, 2)
 
@@ -145,51 +152,70 @@ class SoccerBall(Sprite):
 
     def goal(self, sk):
         "Check if ball is in one of the nets"
-        r = self.rect
-        r = r.midleft, r.midright, r.midtop, r.midbottom
+        x, y = self.pos
+        r = self.radius
+        yn = sk.center[1]
+        dy = abs(y - yn)
+        w, h = boxSize(*sk.size)
         player = None
-        for n in (0, 1):
-            net = sk.nets[n]
-            score = True
-            for p in r:
-                if not net.contains(p): score = False
-            if score: player = n
+        if dy < h/2 - r:
+            if x < w - r: player = 1
+            elif x > sk.width - 1 + r - w: player = 0
         return player
 
 
 class SoccerRobot(Robot):
-    brains = [None, followBall, dumbBrain]
+    brains = [remote, followBall, dumbBrain]
 
     def __init__(self, color):
         super().__init__(color)
         self.config(mass=20, bounce=BOTH)
 
-    def sensorObjects(self, sk):
-        return list(sk.sprites()) + sk.nets
-
 
 class SoccerGame(Sketch):
 
     def setup(self):
-        netSize = 48, 128
-        self += Image(netSize, "yellow").config(anchor=RIGHT, pos=(639,240))
-        self += Image(netSize, "red").config(anchor=LEFT, pos=(0,240))
-        self.nets = list(self)
-        self.config(border="blue", bg="#20b050")
+        self.config(border="blue", weight=1, bg=self.field())
+        
+        # Display the score
         attr = {"font":self.font, "fontSize":48}
         self += Text(0).config(pos=(8,8), anchor=TOPLEFT, color="red", **attr)
         self += Text(0).config(pos=(631,8), anchor=TOPRIGHT, color="yellow", **attr)
         self.score = list(self)[-2:]
+
+        # Paint the back of the nets so the robots can see them
+        w, h = self.size
+        d = h / 8
+        r = 0.65 * boxSize(w, h)[1]
+        h = (h - 1) / 2
+        self += Sprite(Image((2,2), "red")).config(pos=(-d, h), wrap=0)
+        self += Sprite(Image((2,2), "yellow")).config(pos=(w+d, h), wrap=0)
+        for s in self[-2:]: s.radiusFactor *= r / s.radius
+
+        # Get a soccer ball
         self += SoccerBall().config(pos=self.center)
+
+        # Start the simulation
         if hasattr(self, "brains"): self.start()
         else: self += Dialog(self).config(pos=self.center)
 
+    def field(self):
+        "Draw red and yellow goal boxes on green turf"
+        w, h = self.size
+        y = self.center[1]
+        sz = boxSize(w, h)
+        cv = Canvas((w, h), "#20b050")
+        cv += Image(sz, "red").config(pos=(0, y), anchor=LEFT)
+        cv += Image(sz, "yellow").config(pos=(w-1, y), anchor=RIGHT)
+        return cv.snapshot()
+
     def bindBrain(self, robot, brain):
-        if brain is None:
+        if brain is remote:
             self.bind(onkeydown=Robot.remoteControl).config(remoteRobot=robot)
-        else: robot.bind(brain=brain)
+        robot.bind(brain=brain)
 
     def start(self):
+        "Robots take the field"
         yellow = SoccerRobot(["#ffd428", "#ff5050"])
         red = SoccerRobot(["#ff5050", "#ffd428"])
         self.bindBrain(red, self.brains[0])
@@ -199,9 +225,10 @@ class SoccerGame(Sketch):
         self["Yellow"] = yellow.config(pos=(1.5 * x, y), width=y/4, angle=90)
         self["Red"] = red.config(pos=(0.5 * x, y), width=y/4, angle=270)
 
-    def ondraw(self): physics(self)
+    ondraw = physics
     
     def goal(self, player):
+        "Change the scoreboard"
         score = self.score[player]
         score.config(data=score.data+1)
 
