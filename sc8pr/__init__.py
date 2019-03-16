@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 from math import hypot
 
-version = 2, 1, "dev"
+version = 2, 1, "b1"
 
 import sys, os, struct, zlib
 import pygame
