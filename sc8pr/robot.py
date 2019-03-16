@@ -75,8 +75,8 @@ class Robot(Sprite):
     maxSpeed = 1 / 512
     sensorDown = None
     sensorFront = None
-    sensorWidth = 10
-    sensorResolution = 0.1
+    sensorWidth = 10.0
+    sensorResolution = 2.0
     proximity = None
 
     def __init__(self, colors=None):
@@ -224,8 +224,7 @@ class Robot(Sprite):
 
         # Sensor info
         sw = self.sensorWidth
-        res = self.sensorResolution
-        if res: res *= sw
+        res = 0.5 * self.sensorResolution
         pos = delta(self.pos, vec2d(-self.radius, self.angle))
     
         # Distance from sensor to edge of sketch
