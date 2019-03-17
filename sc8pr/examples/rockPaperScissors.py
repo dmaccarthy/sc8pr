@@ -78,4 +78,4 @@ def onkeydown(sk, ev):
     except: pass
 
 # Play the game!
-Sketch().bind(onkeydown).play("Rock, Paper, Scissors")
+Sketch().bind(setup, onkeydown).play("Rock, Paper, Scissors")

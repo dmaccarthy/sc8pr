@@ -89,4 +89,4 @@ def ondraw(fist):
     fist.pos = fist.sketch.mouse.pos
 
 # Run the sketch
-Sketch((468,60)).play("Monkey Fever")
+Sketch((468,60)).bind(setup).play("Monkey Fever")
