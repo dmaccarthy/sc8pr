@@ -45,6 +45,8 @@ BOTH = 3
 REMOVE_X = 4
 REMOVE_Y = 8
 REMOVE = 12
+CIRCLE = 0
+RECT = 1
 
 
 class PixelData:
@@ -442,7 +444,7 @@ class BaseSprite(Graphic):
     "Base class for sprite animations"
     # Edge behaviours
     wrap = REMOVE
-    bounce = 0
+    bounce = bounceType = 0
     onbounce = None
 
     # Kinematics
@@ -475,22 +477,32 @@ class BaseSprite(Graphic):
 
     def onwrap(self, update): self.penReset()
 
-    def circleBounce(self, cv):
-        "Bounce the sprite from the edges of the canvas"
-        x, y = delta(self.rect.center, cv.rect.topleft)
-        r = self.radius
+    def _bounce(self, cv):
+        "Bounce sprite from the edge of its canvas"
         vx, vy = self.vel
         w, h = cv.size
         b = self.bounce
         update = 0
-        if b & HORIZONTAL and (x < r and vx < 0 or x > w-r and vx > 0):
-            self.vel = -vx, vy
-            update += HORIZONTAL
-        if b & VERTICAL and (y < r and vy < 0 or y > h-r and vy > 0):
-            self.vel = vx, -vy
-            update += VERTICAL
-        if update and self.onbounce:
-            self.onbounce(update)
+        if self.bounceType == 0:
+            x, y = delta(self.rect.center, cv.rect.topleft)
+            r = self.radius
+            if b & HORIZONTAL and (x < r and vx < 0 or x > w-r and vx > 0):
+                self.vel = -vx, vy
+                update += HORIZONTAL
+            if b & VERTICAL and (y < r and vy < 0 or y > h-r and vy > 0):
+                self.vel = vx, -vy
+                update += VERTICAL
+        else:
+            r = self.rect
+            if b & HORIZONTAL and (r.left < 0 and vx < 0 or r.right >= w and vx > 0):
+                self.vel = -vx, vy
+                update += HORIZONTAL
+            if b & VERTICAL and (r.top < 0 and vy < 0 or r.bottom >= h and vy > 0):
+                self.vel = vx, -vy
+                update += VERTICAL  
+        return update
+
+    circleBounce = _bounce
 
     def simpleWrap(self, cv):
         "Wrap sprite when it leaves the canvas"
@@ -551,7 +563,9 @@ class BaseSprite(Graphic):
     def ondraw(self):
         "Update sprite properties after drawing each frame"
         cv = self.canvas
-        if self.bounce: self.circleBounce(cv)
+        if self.bounce:
+            update = self._bounce(cv)
+            if update and self.onbounce: self.onbounce(update)
         if self.wrap and self.simpleWrap(cv): return True
         self.kinematics()
         if self._pen:
