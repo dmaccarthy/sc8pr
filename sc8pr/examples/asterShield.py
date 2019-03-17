@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2019 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -258,8 +258,8 @@ class Score(Text):
         self.config(data = self.data + n, fontSize=round(self.sketch.height/15))
 
 
-def play(record="", auto=4096):
-    sk = Game((960,540)).config(imgFldr=resolvePath("img", __file__))
+def play(size=(720, 480), record="", auto=4096):
+    sk = Game(size).config(imgFldr=resolvePath("img", __file__))
     if record:
         sk.capture = Video().config(interval=2).autoSave(record, auto)
     sk.play("Asteroid Shield", sk.imgFldr + "/target.png")
