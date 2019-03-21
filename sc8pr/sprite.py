@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -39,7 +39,7 @@ class Sprite(BaseSprite):
         self._size = tiles[0].size
 
     def __len__(self): return len(self._costumes)
-    def __getitem__(self, i): return len(self._costumes[i])
+    def __getitem__(self, i): return self._costumes[i]
 
     @property
     def costumeNumber(self): return self._costumeNumber
