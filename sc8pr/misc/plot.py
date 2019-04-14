@@ -273,7 +273,7 @@ class Plot(Renderable):
     def labels(text, pos, **kwargs):
         "Create a Series of Text labels"
         text = [Text(t).config(**kwargs) for t in text]
-        return Series(pos, marker=text)
+        return Series(pos).config(marker=text)
 
     def xtick(self, dx, ends=None, marker=9, **kwargs):
         param = (ends if ends else self._coords[:2]) + [dx]
