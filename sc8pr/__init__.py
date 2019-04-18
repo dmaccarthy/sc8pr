@@ -692,7 +692,7 @@ class Canvas(Graphic):
         if type(i) in (int, slice): return self._items[i]
         if i:
             for gr in self._items:
-                if getattr(gr, "_name", None) is i: return gr
+                if getattr(gr, "_name", None) == i: return gr
         raise KeyError("{} contains no items with key '{}'".format(self, i))
 
     def __setitem__(self, key, gr):
