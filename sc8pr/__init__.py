@@ -14,11 +14,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
-from math import hypot
 
 version = 2, 1, "dev"
 
 import sys, os, struct, zlib
+from math import hypot
 import pygame
 import pygame.display as _pd
 from pygame.transform import flip as _pyflip
@@ -692,7 +692,7 @@ class Canvas(Graphic):
         if type(i) in (int, slice): return self._items[i]
         if i:
             for gr in self._items:
-                if getattr(gr, "_name", None) is i: return gr
+                if getattr(gr, "_name", None) == i: return gr
         raise KeyError("{} contains no items with key '{}'".format(self, i))
 
     def __setitem__(self, key, gr):

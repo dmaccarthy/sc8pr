@@ -368,7 +368,10 @@ class Locus(Shape):
         pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.vars)
         pts = [tr(p) for p in pts]
         pts = [(x + x0, y + y0) for (x, y) in pts]
-        return pygame.draw.lines(srf, self.stroke, False, pts, self.weight)
+        if len(pts) > 1:
+            wt = self.weight
+            return pygame.draw.lines(srf, self.stroke, False, pts, wt).inflate(wt, wt)
+        else: return pygame.Rect(0,0,0,0)
 
     def pointGen(self):
         "Generate a sequence of points using canvas pixel coordinates"
