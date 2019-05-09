@@ -53,9 +53,12 @@ class Sprite(BaseSprite):
         n = self.costumeNumber
         return self._costumes[n].config(size=self.size, angle=self.angle)
 
-    def costumeSequence(self, seq):
+    def costumeSequence(self, seq, n=None):
         "Select and order the costumes to animate"
         self._costumes = list(self.costumeList[i] for i in seq)
+        if n is None and self._costumeNumber >= len(self._costumes):
+            n = 0
+        if n is not None: self.costumeNumber = n
         return self
 
     @property
