@@ -205,7 +205,7 @@ class Plot(Renderable):
     _yaxis = None
     _xgrid = None
     _ygrid = None
-    contains = Image.contains
+#    contains = Image.contains
 
     def __init__(self, size, lrbt):
         self._size = size
