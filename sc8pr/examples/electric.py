@@ -138,6 +138,7 @@ class Ruler(Canvas):
         self.bind(ondrag)
 
 
-def main(): Simulation().play()
+def play(): Simulation().play()
+main = play
 
-if __name__ == "__main__": main()
+if __name__ == "__main__": play()

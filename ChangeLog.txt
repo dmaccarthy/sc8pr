@@ -1,0 +1,7 @@
+sc8pr 2.1.dev...
+
+* Fix bug where BLUR event does not fire when focus changes while the focussed graphic is being dragged
+* Add FOCUS event
+* Add 'hoverable' property to Graphic class and add 'includeAll' argument to 'Canvas.objectAt'
+* Add 'fakeCursor' example (depends on 'hoverable' property)
+* Normalize examples to use 'play' as name of main function

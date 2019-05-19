@@ -108,7 +108,8 @@ def onaction(msgbox, ev):
     if msgbox.command.layer: game.quit = True
     else: startGame(game)
 
-def main():
+def play():
     Sketch((340,340)).bind(setup, ondraw).play(TITLE)
 
-if __name__ == "__main__": main()
+main = play
+if __name__ == "__main__": play()

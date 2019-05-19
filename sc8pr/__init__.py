@@ -151,6 +151,7 @@ class Graphic:
     pos = 0, 0
     anchor = CENTER
     angle = 0
+    hoverable = True
     focusable = False
     ondraw = None
     effects = None
@@ -274,7 +275,6 @@ class Graphic:
 
     def setCanvas(self, cv, key=None):
         "Add the object to a canvas"
-#        key = self._name
         self.remove()
         if key: 
             if key in cv and cv[key] is not self:
@@ -286,7 +286,6 @@ class Graphic:
 
     def remove(self, deleteRect=True):
         "Remove the instance from its canvas"
-#        if cv and self in cv._items:
         try:
             cv = self.canvas
             self.anon()
@@ -701,8 +700,6 @@ class Canvas(Graphic):
             raise KeyError("Type '{}' cannot be used as a key".format(t.__name__))
         elif t in (int, slice):
             raise KeyError("Assignment by layer is not supported")
-#        gr._name = key
-#        if gr.canvas is not self:
         if gr not in self: gr.setCanvas(self, key)
 
     def __iadd__(self, gr):
@@ -786,7 +783,6 @@ class Canvas(Graphic):
                 else: grect = g.draw(srf)
                 g.rect = grect
                 if br: self.dirtyRegions.append(grect)
-#                if g.ondraw and g.ondraw(): g.remove()
                 if g.ondraw: g.ondraw()
 
         # Draw border
@@ -817,11 +813,11 @@ class Canvas(Graphic):
         if self.weight: drawBorder(srf, self.border, self.weight)
         return Image(srf)
 
-    def objectAt(self, pos):
+    def objectAt(self, pos, includeAll=False):
         obj = self
         for g in self:
             try: # Objects added but not yet blitted have no rect
-                if g.contains(pos):
+                if (includeAll or g.hoverable) and g.contains(pos):
                     obj = g.objectAt(pos) if isinstance(g, Canvas) else g
             except: pass
         return obj
@@ -879,6 +875,12 @@ class Sketch(Canvas):
         self.evMgr = EventManager(self)
 
     @property
+    def focusable(self): return True
+
+    @property
+    def hoverable(self): return True
+
+    @property
     def pos(self): return 0, 0
 
     @property
@@ -890,9 +892,6 @@ class Sketch(Canvas):
     @caption.setter
     def caption(self, caption):
         return _pd.set_caption(caption)
-
-    @property
-    def focusable(self): return True
 
     @property
     def timeFactor(self):

@@ -236,10 +236,12 @@ class SoccerGame(Sketch):
         score.config(data=score.data+1)
 
 
-def main(*brains, **kwargs):
+def play(*brains, **kwargs):
     sk = SoccerGame((640,480)).config(font=kwargs.get("font"))
     if len(brains) == 1: sk.brains = [brains[0], followBall]
     elif len(brains) == 2: sk.brains = brains
     sk.play("Robot Soccer")
 
-if __name__ == "__main__": main(font=Font.mono())
+main = play
+
+if __name__ == "__main__": play(font=Font.mono())
