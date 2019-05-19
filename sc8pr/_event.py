@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -58,19 +58,21 @@ class EventManager:
             setattr(ev, "target", current)
             self.handle(current.path, name, ev)
 
-        # Send MOUSEDOWN events to the onblur and onclick methods of the
-        # respective objects. Set focus if a focusable object is clicked
+        # Send MOUSEDOWN events to the onblur, onfocus and onclick
+        # methods of the respective objects, while setting focus
         elif ev.type == pygame.MOUSEBUTTONDOWN:
             for p in path:
                 if p.focusable:
                     focus = p
                     break
             if self.drag is not None: self._dragRelease(ev)
-            elif self.focus is not focus and hasattr(self.focus, "onblur"):
-                setattr(ev, "target", self.focus)
-                getattr(self.focus, "onblur")(ev)
-                setattr(ev, "target", path[0])
-            self.focus = focus
+            if self.focus is not focus: # elif in 2.1!
+                if hasattr(self.focus, "onblur"):
+                    setattr(ev, "target", self.focus)
+                    getattr(self.focus, "onblur")(ev)
+                    setattr(ev, "target", path[0])
+                self.focus = focus
+                self.handle(path, "onfocus", ev)
             self.handle(path, "onclick", ev)
 
         # Send MOUSEUP events to the object bring dragged
@@ -97,7 +99,9 @@ class EventManager:
 
         # Trigger sk.onhandled
         self.hover = path[0]
-        if hasattr(sk, "onhandled"): sk.onhandled(ev)
+        if hasattr(sk, "onhandled"):
+            delattr(ev, "target")
+            sk.onhandled(ev)
 
     def handle(self, path, eventName, ev):
         "Locate and call the appropriate event handler"

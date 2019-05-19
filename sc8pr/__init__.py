@@ -869,7 +869,6 @@ class Sketch(Canvas):
     capture = None
     realTime = False
     frameRate = 60
-    anchor = 0
     _fixedAspect = True
     dirtyRegions = []
 
@@ -878,6 +877,12 @@ class Sketch(Canvas):
         self.quit = False
         self.frameCount = 0
         self.evMgr = EventManager(self)
+
+    @property
+    def pos(self): return 0, 0
+
+    @property
+    def anchor(self): 0
 
     @property
     def caption(self): return _pd.get_caption()
