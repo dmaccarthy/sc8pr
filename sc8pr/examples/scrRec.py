@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -30,24 +30,26 @@ will be used. For MP4, this will probably be libx264 and yuv420p.
 
 try: import numpy, imageio as im
 except Exception as e:
-    print("Missing dependencies! Run the following to correct...\n")
-    input("  pip3 install imageio\n\nPress ENTER to exit...")
+    print(e)
+    print("Try running 'pip3 install imageio imageio-ffmpeg' on command line")
+try:
+    from sc8pr import Sketch, Image, PixelData, LEFT
+    from sc8pr.text import Font, BOLD
+    from sc8pr.util import logError
+    from sc8pr.shape import Circle
+    from sc8pr.sprite import Sprite
+    from sc8pr.gui.button import Button
+    from sc8pr.gui.textinput import TextInput
+    from sc8pr.gui.dialog import ask
+    from sc8pr.misc.video import Video, Grabber, ImageIO
+except Exception as e:
+    print(e)
+    print("Try running 'pip3 install sc8pr' on command line")
     exit()
-if __name__ == "__main__": import depends
-
 from sys import argv
 from datetime import datetime
 from threading import Thread
 from tkinter.filedialog import askdirectory
-from sc8pr import Sketch, Image, PixelData, LEFT
-from sc8pr.text import Font, BOLD
-from sc8pr.util import logError
-from sc8pr.shape import Circle
-from sc8pr.sprite import Sprite
-from sc8pr.gui.button import Button
-from sc8pr.gui.textinput import TextInput
-from sc8pr.gui.dialog import ask
-from sc8pr.misc.video import Video, Grabber, ImageIO
 
 
 def timeStr():
@@ -58,7 +60,6 @@ def timeStr():
 
 def onclick(btn, ev):
     "Toggle recording mode when record button is pressed"
-    Button.onclick(btn, ev)
     sk = btn.sketch
     if sk.grab:
         blink(sk, False)

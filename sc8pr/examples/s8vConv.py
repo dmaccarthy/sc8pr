@@ -15,18 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-
 "Convert S8V videos using imageio and ffmpeg"
 
-if __name__ == "__main__": import depends
+try: import imageio
+except Exception as e:
+    print(e)
+    print("Try running 'pip3 install imageio imageio-ffmpeg' on command line")
+try:
+    from sc8pr import Sketch, TOPLEFT, BOTTOMRIGHT
+    from sc8pr.misc.video import ImageIO, Video
+    from sc8pr.gui.dialog import ask
+    from sc8pr.text import Text, Font
+    from sc8pr.util import rgba
+except Exception as e:
+    print(e)
+    print("Try running 'pip3 install sc8pr' on command line")
+    exit()
 from pygame import K_LEFT, K_RIGHT, K_HOME
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 from tkinter.simpledialog import askfloat
-from sc8pr import Sketch, TOPLEFT, BOTTOMRIGHT
-from sc8pr.misc.video import ImageIO, Video
-from sc8pr.gui.dialog import ask
-from sc8pr.text import Text, Font
-from sc8pr.util import rgba
 
 VIDEOTYPES = [("Video", "*.s8v;*.mp4;*.mkv;*.wmv;*.avi;*.mov")]
 IMAGETYPES = [("Images", "*.png;*.jpg")]

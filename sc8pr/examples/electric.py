@@ -17,16 +17,20 @@
 
 "A simulation of the electric force (Coulomb's Law) between two spheres"
 
-if __name__ == "__main__": import depends
+try:
+    from sc8pr import Sketch, Canvas, Image, BOTTOM, TOPRIGHT, TOPLEFT
+    from sc8pr.shape import Circle, Line
+    from sc8pr.text import Text, Font, BOLD
+    from sc8pr.geom import delta
+    from sc8pr.util import ondrag
+    from sc8pr.misc.cursors import hand
+    from sc8pr.gui.dialog import MessageBox
+except Exception as e:
+    print(e)
+    print("Try running 'pip3 install sc8pr' on command line")
+    exit()
 from math import hypot, asin, degrees
 from random import uniform
-from sc8pr import Sketch, Canvas, Image, BOTTOM, TOPRIGHT, TOPLEFT
-from sc8pr.shape import Circle, Line
-from sc8pr.text import Text, Font, BOLD
-from sc8pr.geom import delta
-from sc8pr.util import ondrag
-from sc8pr.misc.cursors import hand
-from sc8pr.gui.dialog import MessageBox
 
 MONO = Font.mono()
 

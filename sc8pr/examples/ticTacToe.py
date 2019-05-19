@@ -15,14 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-
-if __name__ == "__main__": import depends
-from sc8pr import Sketch, Image, Graphic, CENTER
-from sc8pr.shape import Line
-from sc8pr.sprite import Sprite
-from sc8pr.gui.dialog import MessageBox
-from sc8pr.misc.cursors import cross, circle
-from sc8pr.util import ondrag, sc8prData, resolvePath
+try:
+    from sc8pr import Sketch, Image, Graphic, CENTER
+    from sc8pr.shape import Line
+    from sc8pr.sprite import Sprite
+    from sc8pr.gui.dialog import MessageBox
+    from sc8pr.misc.cursors import cross, circle
+    from sc8pr.util import ondrag, sc8prData, resolvePath
+except Exception as e:
+    print(e)
+    print("Try running 'pip3 install sc8pr' on command line")
+    exit()
 
 TITLE = "Tic-Tac-Toe"
 

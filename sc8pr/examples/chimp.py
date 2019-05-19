@@ -22,14 +22,18 @@ sc8pr rather than using pygame directly (except for sound). This version
 loads image and sound files directly from the [pygame]/examples/data folder.
 """
 
-if __name__ == "__main__": import depends
-from random import randint
+try:
+    from sc8pr import Sketch, Image, BOTH, TOP, TOPLEFT, TOPRIGHT
+    from sc8pr.sprite import Sprite
+    from sc8pr.text import Text, Font, BOLD
+    from sc8pr.misc.effect import ReplaceColor
+    from sc8pr.util import resolvePath
+except Exception as e:
+    print(e)
+    print("Try running 'pip3 install sc8pr' on command line")
+    exit()
 import pygame
-from sc8pr import Sketch, Image, BOTH, TOP, TOPLEFT, TOPRIGHT
-from sc8pr.sprite import Sprite
-from sc8pr.text import Text, Font, BOLD
-from sc8pr.misc.effect import ReplaceColor
-from sc8pr.util import resolvePath
+from random import randint
 
 
 def loadImage(filename):

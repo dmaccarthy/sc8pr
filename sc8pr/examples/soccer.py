@@ -15,18 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>. 
 
-
-if __name__ == "__main__": import depends
+try:
+    from sc8pr import Sketch, Canvas, Image, BOTH,\
+        LEFT, RIGHT, TOPLEFT, TOPRIGHT, TOP, BOTTOM, CENTER
+    from sc8pr.sprite import Sprite, physics
+    from sc8pr.geom import vec2d, polar2d, dist
+    from sc8pr.text import Text, Font
+    from sc8pr.robot import Robot
+    from sc8pr.util import resolvePath
+    from sc8pr.gui.radio import Radio
+    from sc8pr.gui.button import Button
+except Exception as e:
+    print(e)
+    print("Try running 'pip3 install sc8pr' on command line")
+    exit()
 from random import uniform, randint, choice
-from sc8pr import Sketch, Canvas, Image, BOTH,\
-    LEFT, RIGHT, TOPLEFT, TOPRIGHT, TOP, BOTTOM, CENTER
-from sc8pr.sprite import Sprite, physics
-from sc8pr.geom import vec2d, polar2d, dist
-from sc8pr.text import Text, Font
-from sc8pr.robot import Robot
-from sc8pr.util import resolvePath
-from sc8pr.gui.radio import Radio
-from sc8pr.gui.button import Button
 
 
 def isGrey(color):

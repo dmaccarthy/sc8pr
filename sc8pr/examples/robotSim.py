@@ -15,20 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-"A collection of robotics simulations for sc8pr 2.0"
+"A collection of robotics simulations for sc8pr 2"
 
-
-if __name__ == "__main__": import depends
+try:
+	from sc8pr import Sketch, Image, Canvas, BOTH
+	from sc8pr.geom import dist 
+	from sc8pr.shape import Circle 
+	from sc8pr.util import rgba, randPixel
+	from sc8pr.robot import Robot, RobotThread
+	from sc8pr.sprite import physics, Collisions
+	from sc8pr.misc.plot import Plot, Series
+	from sc8pr.gui.dialog import MessageBox
+except Exception as e:
+	print(e)
+	print("Try running 'pip3 install sc8pr' on command line")
+	exit()
 from math import sin, pi
 from random import randint, uniform, choice, shuffle
-from sc8pr import Sketch, Image, Canvas, BOTH
-from sc8pr.geom import dist 
-from sc8pr.shape import Circle 
-from sc8pr.util import rgba, randPixel
-from sc8pr.robot import Robot, RobotThread
-from sc8pr.sprite import physics, Collisions
-from sc8pr.misc.plot import Plot, Series
-from sc8pr.gui.dialog import MessageBox
 
 def ask(robot, prompt, title="User Input", allowCancel=False):
 	"Synchronous input to the robot brain"

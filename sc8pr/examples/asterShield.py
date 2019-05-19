@@ -15,21 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-
-if __name__ == "__main__": import depends
+try:
+    from sc8pr import Sketch, Image, TOPLEFT, BOTH, RIGHT, LEFT, BOTTOM
+    from sc8pr.sprite import Sprite, physics, Collisions
+    from sc8pr.text import Text, Font
+    from sc8pr.util import randPixel, rgba, resolvePath
+    from sc8pr.geom import vec2d, delta
+    from sc8pr.gui.textinput import TextInput
+    from sc8pr.gui.button import Button
+    from sc8pr.misc.video import Video
+except Exception as e:
+    print(e)
+    print("Try running 'pip3 install sc8pr' on command line")
+    exit()
+from pygame.constants import K_UP, K_DOWN, K_LEFT, K_RIGHT
 import json
 from time import time
 from math import pow
 from random import uniform, randint
-from pygame.constants import K_UP, K_DOWN, K_LEFT, K_RIGHT
-from sc8pr import Sketch, Image, TOPLEFT, BOTH, RIGHT, LEFT, BOTTOM
-from sc8pr.sprite import Sprite, physics, Collisions
-from sc8pr.text import Text, Font
-from sc8pr.util import randPixel, rgba, resolvePath
-from sc8pr.geom import vec2d, delta
-from sc8pr.gui.textinput import TextInput
-from sc8pr.gui.button import Button
-from sc8pr.misc.video import Video
+
 
 JSON = "asterShield_scores.json"
 FONT = Font.mono()
