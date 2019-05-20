@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2019 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -21,6 +21,7 @@ from pygame.constants import K_ESCAPE, K_BACKSPACE, K_LEFT, K_RIGHT,\
     K_DELETE, K_HOME, K_END, KMOD_CTRL, KMOD_ALT
 from sc8pr.text import Text, Font
 from sc8pr.util import style, rgba
+from sc8pr.geom import vec2d, sigma
 
 
 class TextInput(Text):
@@ -29,9 +30,11 @@ class TextInput(Text):
     focusable = True
     cursorTime = 1.0
     cursorOn = 0.35
-    promptColor = rgba("#d0d0d0") #f0f0f0
+    promptColor = rgba("#d0d0d0")
     padding = 4
     allowButton = 1,
+    _cursorX = 0
+    _scrollX = 0
 
     def __init__(self, data="", prompt=None):
         super().__init__(str(data).split("\n")[0])
@@ -72,10 +75,11 @@ class TextInput(Text):
             text = self.data
         srf = font.render(text, True, color)
         srf = style(srf, self.bg, self.border, self.weight, self.padding)
+        x = font.size(text[:self.cursor])[0]
+        p = self.padding
+        x += p
+        self._cursorX = x
         if self.cursorStatus:
-            x, h = font.size(text[:self.cursor])
-            p = self.padding
-            x += p
             h = srf.get_height()
             pygame.draw.line(srf, self.color, (x,p), (x,h-1-p), 2)
         return srf
@@ -128,9 +132,39 @@ class TextInput(Text):
             i = 0
             while i < n and x > self._widthTo(i): i += 1
             self.cursor = i
+            self.stale = True
         elif not hasattr(self, "cursorStart"): self.blur()
 
     def onblur(self, ev):
         if not self.data: self.stale = True
         if hasattr(self, "cursorStart"): del self.cursorStart
         self.bubble("onaction", ev)
+
+    def scroll(self, pix=None, rel=True):
+        # Calculate optimal scroll
+        if pix is None: pix = self.focussed
+        if pix is False:
+            pix, rel = 0, False
+        elif pix is True:
+            a = self.angle
+            if a not in (0, 90): raise ValueError("Cannot autoscroll unless angle is a 0 or 90")
+            width = (self.canvas.height if a else self.canvas.width) - 2
+            if self.width <= width:
+                pix, rel = 0, False
+            else:
+                rel = True
+                x = (self.anchor & 12) // 4 if a else (self.anchor & 3)
+                x = self.pos[1 if a else 0] - x * self.width / 2 + self._cursorX
+                if x < 0: pix = -x
+                elif x > width: pix = width - x
+                else: pix, rel = 0, True
+
+        # Set scrolling attributes
+        if rel:
+            self._scrollX += pix
+            dx = pix
+        else:
+            dx = pix - self._scrollX
+            self._scrollX = pix
+        self.pos = sigma(self.pos, vec2d(dx, self.angle))
+        return self

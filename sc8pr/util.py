@@ -104,14 +104,15 @@ def style(srf, bg=None, border=(0,0,0), weight=0, padding=0):
     w, h = srf.get_size()
 
     # Add padding
-    padding += weight
-    w += 2 * padding
-    h += 2 * padding
+    if type(padding) is int: px = py = padding + weight
+    else: px, py = [p + weight for p in padding]
+    w += 2 * px
+    h += 2 * py
     img = pygame.Surface((w, h), pygame.SRCALPHA)
 
     # Add background color and border
     if bg: img.fill(rgba(bg))
-    img.blit(srf, (padding, padding))
+    img.blit(srf, (px, py))
     if weight: drawBorder(img, border, weight)
 
     return img
