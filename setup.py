@@ -32,7 +32,7 @@ setup(
     # Additional data
     keywords = "graphics animation sprite gui robotics pygame educational",
     classifiers = [
-        "Development Status :: 5 - Production/Stable",
+        "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
         "Intended Audience :: Education",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
