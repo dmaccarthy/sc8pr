@@ -1,10 +1,12 @@
-sc8pr 2.1.dev...
+sc8pr 2.2.dev...
 
 * Fix bug where BLUR event does not fire when focus changes while the focussed graphic is being dragged
-* Add FOCUS event
+* Add FOCUS event and 'Graphic.focus' method
+* Add 'eventPath' to 'EventManager'
 * Add 'hoverable' property to Graphic class and add 'includeAll' argument to 'Canvas.objectAt'
 * Allow 'padding' argument of 'util.style' to be a 2-tuple with different x and y values
 * Fix delay on moving 'TextInput' cursor after CLICK
-* Add 'TextInput.scroll' method
+* Add 'TextInput.scroll' method as default 'ondraw' event handler
+* Add 'TextInputCanvas' class
 * Add 'fakeCursor' example (depends on 'hoverable' property)
 * Normalize examples to use 'play' as name of main function

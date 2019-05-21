@@ -19,14 +19,19 @@
 import pygame
 from pygame.constants import K_ESCAPE, K_BACKSPACE, K_LEFT, K_RIGHT,\
     K_DELETE, K_HOME, K_END, KMOD_CTRL, KMOD_ALT
+from sc8pr import Canvas, LEFT, CENTER, TOP
 from sc8pr.text import Text, Font
 from sc8pr.util import style, rgba
 from sc8pr.geom import vec2d, sigma
 
 
+_ERROR = ValueError("Operation is only supported for angles of 0 or 90")
+
+
 class TextInput(Text):
     """Editable text GUI control:
-    handles onclick, onkeydown, onblur; triggers onchange, onaction"""
+    handles ondraw, onclick, onkeydown, onblur;
+    triggers onchange, onaction"""
     focusable = True
     cursorTime = 1.0
     cursorOn = 0.35
@@ -49,9 +54,10 @@ class TextInput(Text):
 
     def draw(self, srf):
         if self.focussed:
-            sk = self.sketch 
-            n = (sk.frameCount - self.cursorStart) / sk.frameRate
-            if n > self.cursorTime: self._startCursor()
+            sk = self.sketch
+            try: n = (sk.frameCount - self.cursorStart) / sk.frameRate
+            except: n = None
+            if n is None or n > self.cursorTime: self._startCursor()
             else:
                 c =  n < self.cursorOn
                 if c is not self.cursorStatus:
@@ -70,7 +76,7 @@ class TextInput(Text):
         if self.prompt and not self.data and not focus:
             color = self.promptColor
             text = self.prompt
-        else: 
+        else:
             color = self.color
             text = self.data
         srf = font.render(text, True, color)
@@ -109,15 +115,15 @@ class TextInput(Text):
             self.data = d[:cursor] + u + d[cursor:]
             cursor += 1
         else: change = False
+        if not change:
+            if cursor:
+                if k == K_LEFT: cursor -= 1
+                elif k == K_HOME: cursor = 0
+            if cursor < n:
+                if k == K_RIGHT: cursor += 1
+                elif k == K_END: cursor = n
         self.cursor = cursor
         if change: return self.bubble("onchange", ev)
-        if cursor:
-            if k == K_LEFT: cursor -= 1
-            elif k == K_HOME: cursor = 0
-        if cursor < n:
-            if k == K_RIGHT: cursor += 1
-            elif k == K_END: cursor = n
-        self.cursor = cursor
 
     def _widthTo(self, i):
         font = Font.get(self.font, self.fontSize, self.fontStyle)
@@ -138,33 +144,63 @@ class TextInput(Text):
     def onblur(self, ev):
         if not self.data: self.stale = True
         if hasattr(self, "cursorStart"): del self.cursorStart
+        self.scroll(False)
         self.bubble("onaction", ev)
 
+    def _scrollCalc(self, a):
+        """Calculate how many pixels to scroll to keep the
+           text insertion point visible within the canvas"""
+        if a not in (0, 90): raise _ERROR
+        if a: a = 1
+        cv = self.canvas
+        pad = self.padding
+        x = self.rect.topleft[a] + self._cursorX - cv.rect.topleft[a]
+        if x < pad: pix = pad - x
+        else:
+            width = cv.size[a] - (pad + 1)
+            if x > width: pix = width - x
+            else: pix = 0
+        return pix
+
     def scroll(self, pix=None, rel=True):
-        # Calculate optimal scroll
-        if pix is None: pix = self.focussed
-        if pix is False:
-            pix, rel = 0, False
-        elif pix is True:
-            a = self.angle
-            if a not in (0, 90): raise ValueError("Cannot autoscroll unless angle is a 0 or 90")
-            width = (self.canvas.height if a else self.canvas.width) - 2
-            if self.width <= width:
-                pix, rel = 0, False
-            else:
-                rel = True
-                x = (self.anchor & 12) // 4 if a else (self.anchor & 3)
-                x = self.pos[1 if a else 0] - x * self.width / 2 + self._cursorX
-                if x < 0: pix = -x
-                elif x > width: pix = width - x
-                else: pix, rel = 0, True
+        # Calculate scroll when not specified
+        a = self.angle
+        if pix is None: pix = self.focussed and a in (0, 90)
+        if pix is False: pix, rel = 0, False
+        elif pix is True: pix, rel = self._scrollCalc(a), True
 
         # Set scrolling attributes
-        if rel:
-            self._scrollX += pix
-            dx = pix
-        else:
-            dx = pix - self._scrollX
-            self._scrollX = pix
-        self.pos = sigma(self.pos, vec2d(dx, self.angle))
+        if pix or not rel:
+            if rel: self._scrollX += pix
+            else:
+                tmp = pix
+                pix -= self._scrollX
+                self._scrollX = tmp
+            if pix:
+                if a == 90: self.pos = self.pos[0], self.pos[1] + pix
+                else: self.pos = sigma(self.pos, vec2d(pix, a))
         return self
+
+    ondraw = scroll
+
+
+class TextInputCanvas(Canvas):
+    "Wrap a TextInput instance inside a Canvas"
+
+    def __init__(self, ti, width, center=False):
+        a = ti.angle
+        if a not in (0, 90): raise _ERROR
+        sz = (ti.height, width) if a else (width, ti.height)
+        super().__init__(sz)
+        cfg = {"anchor":CENTER, "pos":self.center} if center \
+            else {"anchor":TOP, "pos":(self.center[0], 0)} if a \
+            else {"anchor":LEFT, "pos":(0, self.center[1])}
+        self.ti = ti.config(**cfg)
+        self += ti.bind(refocus=self.refocus)
+
+    @staticmethod
+    def refocus(ti, ev):
+        return (ev.type == pygame.MOUSEBUTTONDOWN and
+            ti.canvas.sketch.evMgr.eventPath[0] is ti.canvas)
+
+    def onclick(self, ev): self.ti.focus().onclick(ev)

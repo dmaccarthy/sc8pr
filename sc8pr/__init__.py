@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-version = 2, 1, "dev"
+version = 2, 2, "dev"
 
 import sys, os, struct, zlib
 from math import hypot
@@ -318,9 +318,21 @@ class Graphic:
         return self is self.sketch.evMgr.focus
 
     def blur(self):
+        "Relinquish event focus to the sketch"
         sk = self.sketch
         ev = sk.evMgr
         if ev.focus is self: ev.focus = sk
+        return self
+
+    def focus(self):
+        "Acquire event focus"
+        sk = self.sketch
+        if not sk:
+            raise KeyError("Cannot focus graphic that has not been added to the sketch")
+        ev = sk.evMgr
+        gr = ev.focus
+        if gr is not self and hasattr(gr, "onblur"): gr.onblur(None)
+        ev.focus = self
         return self
 
     @property

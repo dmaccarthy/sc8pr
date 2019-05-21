@@ -24,6 +24,7 @@ class EventManager:
     def __init__(self, sk):
         self.sk = sk
         self.focus = sk
+        self.eventPath = [sk]
         self.hover = sk
         self.drag = None
 
@@ -36,15 +37,16 @@ class EventManager:
         elif hasattr(ev, "pos"): sk.mouse = ev
         else: other = True
 
-        # Trigger sk.onevent
-        if hasattr(sk, "onevent"):
-            if sk.onevent(ev): return
-
         # Get event target and handler name
         path = sk.objectAt(sk.mouse.pos).path
         if not path: path = [sk]
+        self.eventPath = path
         setattr(ev, "target", path[0])
         name = "on" + pygame.event.event_name(ev.type).lower()
+
+        # Trigger sk.onevent
+        if hasattr(sk, "onevent"):
+            if sk.onevent(ev): return
 
         # Send events other than mouse or keyboard to the sketch handler
         if other:
@@ -66,11 +68,13 @@ class EventManager:
                     focus = p
                     break
             if self.drag is not None: self._dragRelease(ev)
-            if self.focus is not focus: # elif in 2.1!
+            if self.focus is not focus:
                 if hasattr(self.focus, "onblur"):
                     setattr(ev, "target", self.focus)
+                    setattr(ev, "focus", focus)
                     getattr(self.focus, "onblur")(ev)
                     setattr(ev, "target", path[0])
+                    delattr(ev, "focus")
                 self.focus = focus
                 self.handle(path, "onfocus", ev)
             self.handle(path, "onclick", ev)
