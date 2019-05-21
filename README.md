@@ -18,7 +18,7 @@ For more information, please see the [documentation](http://dmaccarthy.github.io
 
 Latest relase:
 ```
-pip3 install sc8pr==2.1b1
+pip3 install sc8pr
 ```
 
 Development version:
