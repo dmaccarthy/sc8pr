@@ -16,12 +16,17 @@ For more information, please see the [documentation](http://dmaccarthy.github.io
 
 # Installation
 
-Latest relase:
+Latest relase (2.1.0):
 ```
 pip3 install sc8pr
 ```
 
-Development version:
+Bug fixes:
+```
+pip3 install https://github.com/dmaccarthy/sc8pr/archive/BugFix-2.1.zip
+```
+
+Development version (2.2.dev):
 ```
 pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
 ```
