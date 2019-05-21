@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -66,7 +66,7 @@ class EventManager:
                     focus = p
                     break
             if self.drag is not None: self._dragRelease(ev)
-            elif self.focus is not focus and hasattr(self.focus, "onblur"):
+            if self.focus is not focus and hasattr(self.focus, "onblur"):
                 setattr(ev, "target", self.focus)
                 getattr(self.focus, "onblur")(ev)
                 setattr(ev, "target", path[0])
