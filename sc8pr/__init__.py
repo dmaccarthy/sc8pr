@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-version = 2, 1, 0
+version = 2, 1, 1
 
 import sys, os, struct, zlib
 from math import hypot
