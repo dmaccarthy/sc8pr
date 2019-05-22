@@ -317,22 +317,24 @@ class Graphic:
     def focussed(self):
         return self is self.sketch.evMgr.focus
 
-    def blur(self):
+    def blur(self, trigger=False):
         "Relinquish event focus to the sketch"
         sk = self.sketch
-        ev = sk.evMgr
-        if ev.focus is self: ev.focus = sk
+        if self is sk.evMgr.focus: sk.focus(trigger)
         return self
 
-    def focus(self):
+    def focus(self, trigger=False):
         "Acquire event focus"
         sk = self.sketch
         if not sk:
             raise KeyError("Cannot focus graphic that has not been added to the sketch")
         ev = sk.evMgr
         gr = ev.focus
-        if gr is not self and hasattr(gr, "onblur"): gr.onblur(None)
+        if trigger and gr is not self and hasattr(gr, "onblur"):
+            gr.onblur(None)
         ev.focus = self
+        if trigger and self.focusable and hasattr(self, "onfocus"):
+            self.onfocus(None)
         return self
 
     @property

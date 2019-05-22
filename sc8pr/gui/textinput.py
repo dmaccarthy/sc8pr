@@ -95,8 +95,8 @@ class TextInput(Text):
         self._startCursor()
         u = ev.unicode
         if u in ("\n", "\r", "\t"):
-            self.blur()
-            return self.onblur(ev)
+            return self.blur(True)
+#             return self.onblur(ev)
         d = self.data
         n = len(d)
         cursor = self.cursor
@@ -200,7 +200,7 @@ class TextInputCanvas(Canvas):
 
     @staticmethod
     def refocus(ti, ev):
-        return (ev.type == pygame.MOUSEBUTTONDOWN and
+        return (ev and ev.type == pygame.MOUSEBUTTONDOWN and
             ti.canvas.sketch.evMgr.eventPath[0] is ti.canvas)
 
     def onclick(self, ev): self.ti.focus().onclick(ev)
