@@ -24,7 +24,7 @@ class EventManager:
     def __init__(self, sk):
         self.sk = sk
         self.focus = sk
-        self.eventPath = [sk]
+#         self.mouse = sk
         self.hover = sk
         self.drag = None
 
@@ -40,8 +40,8 @@ class EventManager:
         # Get event target and handler name
         path = sk.objectAt(sk.mouse.pos).path
         if not path: path = [sk]
-        self.eventPath = path
-        setattr(ev, "target", path[0])
+#         self.mouse = path[0]
+        setattr(ev, "hover", path[0])
         name = "on" + pygame.event.event_name(ev.type).lower()
 
         # Trigger sk.onevent
@@ -55,10 +55,10 @@ class EventManager:
 
         # Send KEYDOWN and KEYUP events to the focused object
         elif key:
-            current = self.focus
-            if current is None: current = sk
-            setattr(ev, "target", current)
-            self.handle(current.path, name, ev)
+#             current = self.focus
+#             if current is None: current = sk
+#             setattr(ev, "target", current)
+            self.handle(self.focus, name, ev) # Was current
 
         # Send MOUSEDOWN events to the onblur, onfocus and onclick
         # methods of the respective objects, while setting focus
@@ -69,19 +69,19 @@ class EventManager:
                     break
             if self.drag is not None: self._dragRelease(ev)
             if self.focus is not focus:
-                if hasattr(self.focus, "onblur"):
-                    setattr(ev, "target", self.focus)
-                    setattr(ev, "focus", focus)
-                    getattr(self.focus, "onblur")(ev)
-                    setattr(ev, "target", path[0])
-                    delattr(ev, "focus")
+#                 setattr(ev, "target", self.focus)
+                setattr(ev, "focus", focus)
+                self.handle(self.focus, "onblur", ev)
+#                 setattr(ev, "target", path[0])
+                delattr(ev, "focus")
                 self.focus = focus
-                self.handle(path, "onfocus", ev)
+                self.handle(focus, "onfocus", ev) # path -> focus
             self.handle(path, "onclick", ev)
 
         # Send MOUSEUP events to the object bring dragged
         elif ev.type == pygame.MOUSEBUTTONUP:
             if not self._dragRelease(ev):
+#                 setattr(ev, "target", path[0])
                 self.handle(path, "onmouseup", ev)
 
         # Send MOUSEMOTION events to the onmouseout and onmouseover
@@ -94,12 +94,16 @@ class EventManager:
                 if self.drag is not None: hoverPath = self.drag.path
                 else: hoverPath = self.hover.path
                 current = _find(hoverPath, "ondrag")
-                if current is not None:
+                if current not in (None, sk):
                     if self.drag is not current:
                         self.drag = current
-                    getattr(current, "ondrag")(ev)
+#                     setattr(ev, "target", current)
+#                     current.ondrag(ev)
+                    self.handle(current, "ondrag", ev)
                     drag = True
-            if not drag: self.handle(path, "onmousemotion", ev)
+            if not drag:
+#                 setattr(ev, "target", path[0])
+                self.handle(path, "onmousemotion", ev)
 
         # Trigger sk.onhandled
         self.hover = path[0]
@@ -110,16 +114,17 @@ class EventManager:
     def handle(self, path, eventName, ev):
         "Locate and call the appropriate event handler"
         if type(path) is not list: path = path.path
+        setattr(ev, "target", path[0]) # !!!
         current = _find(path, eventName)
-        if current is None: current = path[0]
+        if current is None: current = path[0] # ???
         if hasattr(current, eventName):
             return getattr(current, eventName)(ev)
 
     def _dragRelease(self, ev):
         drag = self.drag
         if drag:
-            if hasattr(drag, "onrelease"):
-                getattr(drag, "onrelease")(ev)
+#             setattr(ev, "target", drag)
+            self.handle(drag, "onrelease", ev)
             drag = True
         else: drag = False
         self.drag = None
@@ -129,12 +134,12 @@ class EventManager:
         oldHover = self.hover.path
         obj = oldHover[0]
         while obj not in path:
-            setattr(ev, "target", obj)
+#             setattr(ev, "target", obj)
             self.handle(obj, "onmouseout", ev)
             obj = obj.canvas
         i = path.index(obj)
         for obj in reversed(path[:i]):
-            setattr(ev, "target", obj)
+#             setattr(ev, "target", obj)
             self.handle(obj, "onmouseover", ev)
 
 

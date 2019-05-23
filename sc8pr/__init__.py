@@ -328,13 +328,16 @@ class Graphic:
         sk = self.sketch
         if not sk:
             raise KeyError("Cannot focus graphic that has not been added to the sketch")
-        ev = sk.evMgr
-        gr = ev.focus
-        if trigger and gr is not self and hasattr(gr, "onblur"):
-            gr.onblur(None)
-        ev.focus = self
-        if trigger and self.focusable and hasattr(self, "onfocus"):
-            self.onfocus(None)
+        evMgr = sk.evMgr
+        gr = evMgr.focus
+        if trigger:
+            ev = pygame.event.Event(pygame.USEREVENT, target=gr, focus=self)
+            if gr is not self: gr.bubble("onblur", ev)
+        evMgr.focus = self
+        if trigger and self.focusable:
+            delattr(ev, "focus")
+            setattr(ev, "target", self)
+            self.bubble("onfocus", ev)
         return self
 
     @property
@@ -874,6 +877,9 @@ class Canvas(Graphic):
                 r += 1
         return cv
 
+    def cover(self):
+        return Image(self.size, "#ffffffc0").config(anchor=TOPLEFT)
+
 
 class Sketch(Canvas):
     capture = None
@@ -938,9 +944,6 @@ class Sketch(Canvas):
     def save(self, fn=None):
         if fn is None: fn = "save/img{:05d}.png".format(self.frameCount)
         pygame.image.save(self.image, fn)
-
-    def cover(self):
-        return Image(self.size, "#ffffffc0").config(anchor=TOPLEFT)
 
 # Resizing methods
 

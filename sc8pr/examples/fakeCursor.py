@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2019 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -19,8 +19,8 @@
 This program demonstrates how a Graphic can be used in place
 of a cursor. The program relies on the Graphic.hoverable
 property which has been added in the development version of
-sc8pr but has not been released as of v2.1.0. If used in an
-earlier sc8pr version, the "cursor" will block mouse events
+sc8pr (v2.2.dev) but has not been released as of v2.1. If used
+in an earlier sc8pr version, the "cursor" will block mouse events
 to other graphic objects.
 """
 

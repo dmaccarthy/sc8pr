@@ -1,8 +1,8 @@
 sc8pr 2.2.dev...
 
 * Fix bug where BLUR event does not fire when focus changes while the focussed graphic is being dragged
+*** Move 'cover' method from 'Sketch' class to 'Canvas'
 *** Add FOCUS event and 'Graphic.focus' method; add; 'trigger' argument to 'Graphic.blur'
-*** Add 'eventPath' to 'EventManager'
 * Add 'hoverable' property to Graphic class and add 'includeAll' argument to 'Canvas.objectAt'
 * Allow 'padding' argument of 'util.style' to be a 2-tuple with different x and y values
 * Fix delay on moving 'TextInput' cursor after CLICK
@@ -10,3 +10,4 @@ sc8pr 2.2.dev...
 *** Add 'TextInputCanvas' class
 * Add 'fakeCursor' example (depends on 'hoverable' property)
 * Normalize examples to use 'play' as name of main function
+

@@ -119,7 +119,7 @@ def play(disks=6, speed=1, record=""):
     towers = list(range(disks, 0, -1)), [], []
     printState(towers, 0)
     if speed: # Play animation
-        Hanoi(towers, speed, record).play("Towers of Hanoi").vid
+        Hanoi(towers, speed, record).play("Towers of Hanoi")
     else:     # Console only; no animation
         i = 1
         for towers in moveDisks(towers, disks):
