@@ -25,7 +25,7 @@ from sc8pr.util import style, rgba
 from sc8pr.geom import vec2d, sigma
 
 
-_ERROR = ValueError("Operation is only supported for angles of 0 or 90")
+_ANGLE_ERROR = "Operation is only supported for angles of 0 or 90"
 
 
 class TextInput(Text):
@@ -150,7 +150,7 @@ class TextInput(Text):
     def _scrollCalc(self, a):
         """Calculate how many pixels to scroll to keep the
            text insertion point visible within the canvas"""
-        if a not in (0, 90): raise _ERROR
+        if a not in (0, 90): raise ValueError(_ANGLE_ERROR)
         if a: a = 1
         cv = self.canvas
         pad = self.padding
@@ -189,7 +189,7 @@ class TextInputCanvas(Canvas):
 
     def __init__(self, ti, width, center=False):
         a = ti.angle
-        if a not in (0, 90): raise _ERROR
+        if a not in (0, 90): raise ValueError(_ANGLE_ERROR)
         sz = (ti.height, width) if a else (width, ti.height)
         super().__init__(sz)
         cfg = {"anchor":CENTER, "pos":self.center} if center \
@@ -202,6 +202,5 @@ class TextInputCanvas(Canvas):
     def refocus(ti, ev):
         return (ev.type == pygame.MOUSEBUTTONDOWN and
             getattr(ev, "hover", None) is ti.canvas)
-#             ti.canvas.sketch.evMgr.mouse is ti.canvas)
 
     def onclick(self, ev): self.ti.focus().onclick(ev)
