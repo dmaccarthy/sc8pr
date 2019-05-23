@@ -331,7 +331,7 @@ class Graphic:
         evMgr = sk.evMgr
         gr = evMgr.focus
         if trigger:
-            ev = pygame.event.Event(pygame.USEREVENT, target=gr, focus=self)
+            ev = pygame.event.Event(pygame.USEREVENT, target=gr, focus=self, hover=evMgr.hover)
             if gr is not self: gr.bubble("onblur", ev)
         evMgr.focus = self
         if trigger and self.focusable:

@@ -40,8 +40,10 @@ class EventManager:
         # Get event target and handler name
         path = sk.objectAt(sk.mouse.pos).path
         if not path: path = [sk]
-#         self.mouse = path[0]
+        self._oldHover = self.hover
+        self.hover = path[0]
         setattr(ev, "hover", path[0])
+        setattr(ev, "focus", self.focus)
         name = "on" + pygame.event.event_name(ev.type).lower()
 
         # Trigger sk.onevent
@@ -69,11 +71,11 @@ class EventManager:
                     break
             if self.drag is not None: self._dragRelease(ev)
             if self.focus is not focus:
-#                 setattr(ev, "target", self.focus)
                 setattr(ev, "focus", focus)
+#                 setattr(ev, "target", self.focus)
                 self.handle(self.focus, "onblur", ev)
 #                 setattr(ev, "target", path[0])
-                delattr(ev, "focus")
+#                 delattr(ev, "focus")
                 self.focus = focus
                 self.handle(focus, "onfocus", ev) # path -> focus
             self.handle(path, "onclick", ev)
@@ -92,7 +94,7 @@ class EventManager:
             drag = False
             if sum(ev.buttons): # Dragging
                 if self.drag is not None: hoverPath = self.drag.path
-                else: hoverPath = self.hover.path
+                else: hoverPath = self._oldHover.path
                 current = _find(hoverPath, "ondrag")
                 if current not in (None, sk):
                     if self.drag is not current:
@@ -106,7 +108,7 @@ class EventManager:
                 self.handle(path, "onmousemotion", ev)
 
         # Trigger sk.onhandled
-        self.hover = path[0]
+#         self.hover = path[0]
         if hasattr(sk, "onhandled"):
             delattr(ev, "target")
             sk.onhandled(ev)
@@ -115,8 +117,9 @@ class EventManager:
         "Locate and call the appropriate event handler"
         if type(path) is not list: path = path.path
         setattr(ev, "target", path[0]) # !!!
+        setattr(ev, "sc8prEvent", eventName)
         current = _find(path, eventName)
-        if current is None: current = path[0] # ???
+#         if current is None: current = path[0] # Unnecessary?
         if hasattr(current, eventName):
             return getattr(current, eventName)(ev)
 
@@ -131,7 +134,7 @@ class EventManager:
         return drag
 
     def _overOut(self, path, ev):
-        oldHover = self.hover.path
+        oldHover = self._oldHover.path
         obj = oldHover[0]
         while obj not in path:
 #             setattr(ev, "target", obj)
