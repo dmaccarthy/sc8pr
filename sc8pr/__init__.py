@@ -325,19 +325,19 @@ class Graphic:
 
     def focus(self, trigger=False):
         "Acquire event focus"
+        if not self.focusable:
+            raise AttributeError("Graphic instance is not focusable")
         sk = self.sketch
         if not sk:
             raise KeyError("Cannot focus graphic that has not been added to the sketch")
         evMgr = sk.evMgr
         gr = evMgr.focus
+        trigger = trigger and gr is not self
         if trigger:
-            ev = pygame.event.Event(pygame.USEREVENT, target=gr, focus=self, hover=evMgr.hover)
-            if gr is not self: gr.bubble("onblur", ev)
+            ev = pygame.event.Event(pygame.USEREVENT, focus=self, hover=evMgr.hover)
+            evMgr.handle(gr, "onblur", ev)
         evMgr.focus = self
-        if trigger and self.focusable:
-            delattr(ev, "focus")
-            setattr(ev, "target", self)
-            self.bubble("onfocus", ev)
+        if trigger: evMgr.handle(self, "onfocus", ev)
         return self
 
     @property
@@ -653,6 +653,14 @@ class Canvas(Graphic):
         self.bg = bg
         self._items = []
 
+    def call(self, methodname, seq, *args, **kwargs):
+        "Call the specified method on the canvas contents"
+        if type(seq) is bool:
+            seq = self.everything() if seq else self
+        for obj in seq:
+            fn = getattr(obj, methodname, None)
+            if fn: fn(*args, **kwargs)
+
     @property
     def border(self): return self._border
 
@@ -887,6 +895,7 @@ class Sketch(Canvas):
     frameRate = 60
     _fixedAspect = True
     dirtyRegions = []
+    resizeTrigger = False
 
     def __init__(self, size=(512,288)):
         super().__init__(size, "white")
@@ -995,6 +1004,12 @@ class Sketch(Canvas):
         self._size = self.size
         if self.dirtyRegions is not None:
             self.dirtyRegions = [pygame.Rect((0,0), self._size)]
+        evMgr = self.evMgr
+        ev = getattr(self, "_resize_ev", None)
+        self._resize_ev = None
+        if ev is None and self.resizeTrigger:
+            ev = pygame.event.Event(pygame.USEREVENT, focus=evMgr.focus, hover=evMgr.hover)
+        if ev: evMgr.handle(self, "onresize", ev)
 
 # Drawing methods
 
@@ -1058,8 +1073,8 @@ class Sketch(Canvas):
                 if ev.type != pygame.VIDEORESIZE:
                     self.evMgr.dispatch(ev)
                 elif ev.size != self.size:
+                    self._resize_ev = ev
                     self.resize(ev.size)
-                    if hasattr(self, "onresize"): self.onresize(ev)
             except: logError()
 
     def _drawDirtyRegions(self, srf):

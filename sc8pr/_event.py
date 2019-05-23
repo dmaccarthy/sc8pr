@@ -15,21 +15,22 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-
 import pygame
 
 class EventManager:
-    "A class for inspecting and dispatching events"
+    "Process events (except VIDEORESIZE) from the pygame event queue"
+    debug = False
 
     def __init__(self, sk):
         self.sk = sk
         self.focus = sk
-#         self.mouse = sk
         self.hover = sk
         self.drag = None
 
     def dispatch(self, ev):
-        # Record mouse and keyboard events
+        "Process one pygame event"
+
+        # Encapsulate mouse and keyboard events as sketch attributes
         sk = self.sk
         other = False
         key = hasattr(ev, "key")
@@ -37,78 +38,63 @@ class EventManager:
         elif hasattr(ev, "pos"): sk.mouse = ev
         else: other = True
 
-        # Get event target and handler name
+        # Determine 'hover' graphic
         path = sk.objectAt(sk.mouse.pos).path
         if not path: path = [sk]
         self._oldHover = self.hover
         self.hover = path[0]
         setattr(ev, "hover", path[0])
+    
+        # Set 'focus' graphic and handler name
         setattr(ev, "focus", self.focus)
         name = "on" + pygame.event.event_name(ev.type).lower()
 
-        # Trigger sk.onevent
+        # Call sk.onevent
         if hasattr(sk, "onevent"):
             if sk.onevent(ev): return
 
-        # Send events other than mouse or keyboard to the sketch handler
-        if other:
-            name = name.replace("event", "")
-            self.handle(sk, name, ev)
+        # Send non-mouse and non-keyboard events
+        # to the appropriate sketch event handler
+        if other: self.handle(sk, name.replace("event", ""), ev)
 
         # Send KEYDOWN and KEYUP events to the focused object
-        elif key:
-#             current = self.focus
-#             if current is None: current = sk
-#             setattr(ev, "target", current)
-            self.handle(self.focus, name, ev) # Was current
+        elif key: self.handle(self.focus, name, ev)
 
-        # Send MOUSEDOWN events to the onblur, onfocus and onclick
-        # methods of the respective objects, while setting focus
+        # Process MOUSEBUTTONDOWN events by calling as necessary:
+        # onrelease, onblur, onfocus, onclick
         elif ev.type == pygame.MOUSEBUTTONDOWN:
+            if self.drag is not None: self._dragRelease(ev)
             for p in path:
                 if p.focusable:
                     focus = p
                     break
-            if self.drag is not None: self._dragRelease(ev)
             if self.focus is not focus:
                 setattr(ev, "focus", focus)
-#                 setattr(ev, "target", self.focus)
                 self.handle(self.focus, "onblur", ev)
-#                 setattr(ev, "target", path[0])
-#                 delattr(ev, "focus")
                 self.focus = focus
-                self.handle(focus, "onfocus", ev) # path -> focus
+                self.handle(focus, "onfocus", ev)
             self.handle(path, "onclick", ev)
 
-        # Send MOUSEUP events to the object bring dragged
+        # Process MOUSEBUTTONUP events by calling onrelease or onmouseup
         elif ev.type == pygame.MOUSEBUTTONUP:
             if not self._dragRelease(ev):
-#                 setattr(ev, "target", path[0])
                 self.handle(path, "onmouseup", ev)
 
-        # Send MOUSEMOTION events to the onmouseout and onmouseover
-        # methods of the respective objects; trigger ondrag method
-        # if an object is begin dragged
+        # Process MOUSEMOTION events by calling as necessary:
+        # onmouseout, onmouseover, ondrag, onmousemotion
         elif ev.type == pygame.MOUSEMOTION:
             self._overOut(path, ev)
             drag = False
             if sum(ev.buttons): # Dragging
-                if self.drag is not None: hoverPath = self.drag.path
-                else: hoverPath = self._oldHover.path
-                current = _find(hoverPath, "ondrag")
+                current = _find(self._oldHover.path, "ondrag") \
+                    if self.drag is None else self.drag
                 if current not in (None, sk):
-                    if self.drag is not current:
-                        self.drag = current
-#                     setattr(ev, "target", current)
-#                     current.ondrag(ev)
+                    if self.drag is not current: self.drag = current
                     self.handle(current, "ondrag", ev)
                     drag = True
-            if not drag:
-#                 setattr(ev, "target", path[0])
-                self.handle(path, "onmousemotion", ev)
+            if not drag: self.handle(path, "onmousemotion", ev)
 
-        # Trigger sk.onhandled
-#         self.hover = path[0]
+        # Call sk.onhandled
         if hasattr(sk, "onhandled"):
             delattr(ev, "target")
             sk.onhandled(ev)
@@ -116,17 +102,17 @@ class EventManager:
     def handle(self, path, eventName, ev):
         "Locate and call the appropriate event handler"
         if type(path) is not list: path = path.path
-        setattr(ev, "target", path[0]) # !!!
-        setattr(ev, "sc8prEvent", eventName)
+        setattr(ev, "target", path[0])
+        setattr(ev, "handler", eventName)
         current = _find(path, eventName)
-#         if current is None: current = path[0] # Unnecessary?
-        if hasattr(current, eventName):
-            return getattr(current, eventName)(ev)
+        handle = current is not None
+        if self.debug: print("Handling  :" if handle else "No handler:", ev)
+        if handle: getattr(current, eventName)(ev)
 
     def _dragRelease(self, ev):
+        "Handle RELEASE events for graphic being dragged"
         drag = self.drag
         if drag:
-#             setattr(ev, "target", drag)
             self.handle(drag, "onrelease", ev)
             drag = True
         else: drag = False
@@ -134,15 +120,14 @@ class EventManager:
         return drag
 
     def _overOut(self, path, ev):
+        "Handle MOUSEOVER and MOUSEOUT events"
         oldHover = self._oldHover.path
         obj = oldHover[0]
         while obj not in path:
-#             setattr(ev, "target", obj)
             self.handle(obj, "onmouseout", ev)
             obj = obj.canvas
         i = path.index(obj)
         for obj in reversed(path[:i]):
-#             setattr(ev, "target", obj)
             self.handle(obj, "onmouseover", ev)
 
 
