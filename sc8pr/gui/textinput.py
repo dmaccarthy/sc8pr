@@ -145,7 +145,9 @@ class TextInput(Text):
         if not self.data: self.stale = True
         if hasattr(self, "cursorStart"): del self.cursorStart
         self.scroll(False)
-        self.bubble("onaction", ev)
+        cv = self.canvas
+        if not (ev.focus is cv and isinstance(cv, TextInputCanvas) and cv.ti is self):
+            self.bubble("onaction", ev)
 
     def _scrollCalc(self, a):
         """Calculate how many pixels to scroll to keep the
@@ -197,6 +199,7 @@ class TextInputCanvas(Canvas):
         cfg = {"anchor":CENTER, "pos":self.center} if center \
             else {"anchor":TOP, "pos":(self.center[0], 0)} if a \
             else {"anchor":LEFT, "pos":(0, self.center[1])}
-        self["Input"] = ti.config(**cfg)
+        self.ti = ti.config(**cfg)
+        self += ti
 
-    def onclick(self, ev): self["Input"].focus().onclick(ev)
+    def onclick(self, ev): self.ti.focus().onclick(ev)
