@@ -187,6 +187,8 @@ class TextInput(Text):
 class TextInputCanvas(Canvas):
     "Wrap a TextInput instance inside a Canvas"
 
+    focusable = True
+
     def __init__(self, ti, width, center=False):
         a = ti.angle
         if a not in (0, 90): raise ValueError(_ANGLE_ERROR)
@@ -195,12 +197,6 @@ class TextInputCanvas(Canvas):
         cfg = {"anchor":CENTER, "pos":self.center} if center \
             else {"anchor":TOP, "pos":(self.center[0], 0)} if a \
             else {"anchor":LEFT, "pos":(0, self.center[1])}
-        self.ti = ti.config(**cfg)
-        self += ti.bind(refocus=self.refocus)
+        self["Input"] = ti.config(**cfg)
 
-    @staticmethod
-    def refocus(ti, ev):
-        return (ev.type == pygame.MOUSEBUTTONDOWN and
-            getattr(ev, "hover", None) is ti.canvas)
-
-    def onclick(self, ev): self.ti.focus().onclick(ev)
+    def onclick(self, ev): self["Input"].focus().onclick(ev)
