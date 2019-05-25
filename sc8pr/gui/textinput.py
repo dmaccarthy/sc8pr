@@ -144,7 +144,7 @@ class TextInput(Text):
     def onblur(self, ev):
         if not self.data: self.stale = True
         if hasattr(self, "cursorStart"): del self.cursorStart
-        self.scroll(False)
+#         self.scroll(False)
         cv = self.canvas
         if not (ev.focus is cv and isinstance(cv, TextInputCanvas) and cv.ti is self):
             self.bubble("onaction", ev)

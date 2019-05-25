@@ -16,21 +16,16 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from tkinter import Tk
 import pygame 
 from sc8pr import Canvas, BOTTOM, TOP
 from sc8pr.text import Text, Font, BOLD
 from sc8pr.gui.button import Button
 from sc8pr.gui.textinput import TextInput
-
-_tk = None
+import sc8pr.gui.tk as tk
 
 def ask(dialog, allowQuit=True, **kwargs):
     "Run a tkinter dialog"
-    global _tk
-    if _tk is None:
-        _tk = Tk()
-        _tk.withdraw()
+    tk.init()
     if allowQuit is not None: pygame.event.set_blocked(pygame.QUIT)
     val = dialog(**kwargs)
     if allowQuit: pygame.event.set_allowed(pygame.QUIT)

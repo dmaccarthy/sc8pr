@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -41,6 +41,7 @@ class Slider(Canvas):
     "A numerical slider GUI control"
     focusable = True
     allowButton = 1, 4, 5
+    methodNames = ["Click", "Scroll", "Drag", "Key"]
 
     def __init__(self, size=(128,16), knob="grey", lower=0, upper=1, steps=0):
         super().__init__(size)
