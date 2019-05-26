@@ -23,6 +23,7 @@ from sc8pr import Canvas, LEFT, CENTER, TOP
 from sc8pr.text import Text, Font
 from sc8pr.util import style, rgba
 from sc8pr.geom import vec2d, sigma
+from sc8pr.gui.tk import clipboardGet
 
 
 _ANGLE_ERROR = "Operation is only supported for angles of 0 or 90"
@@ -90,19 +91,32 @@ class TextInput(Text):
             pygame.draw.line(srf, self.color, (x,p), (x,h-1-p), 2)
         return srf
 
+    def _paste(self, data, cursor):
+        "Paste the clipboard contents at the cursor location"
+        clip = clipboardGet()
+        if clip:
+            for c in "\n\r\t": clip = clip.replace(c, "")
+            data = data[:cursor] + clip + data[cursor:]
+            self.config(data=data)
+            self.cursor += len(clip)
+            return True
+
     def onkeydown(self, ev):
-        if ev.mod & (KMOD_CTRL | KMOD_ALT): return
+        d = self.data
+        cursor = self.cursor
+        k = ev.key
+        if ev.mod & (KMOD_CTRL | KMOD_ALT):
+            if ev.mod & KMOD_CTRL and k == ord("v"):
+                if self._paste(d, cursor): self.bubble("onchange", ev)
+            return
         self._startCursor()
         u = ev.unicode
         if u in ("\n", "\r", "\t"):
             self.blur(True)
             return
-        d = self.data
-        n = len(d)
-        cursor = self.cursor
-        k = ev.key
         change = True
         self.stale = True
+        n = len(d)
         if d and k == K_ESCAPE:
             self.data = ""
             cursor = 0

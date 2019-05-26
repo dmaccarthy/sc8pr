@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -45,6 +45,14 @@ def pref(latex, val, key="dpi"):
     return "\\" + key + "{" + str(val) + "}" + latex
 
 
+LATEX_URL = "https://latex.codecogs.com/png.latex?{}"
+LATEX_FMT = "png"
+
+def latex_url(latex, dpi, color):
+    if color: latex = wrap(latex, color)
+    return LATEX_URL.format(quote(pref(latex, dpi)))
+
+
 class WebRequest(Thread):
     "Thread for sending HTTP requests and processing responses "
     response = None
@@ -55,7 +63,9 @@ class WebRequest(Thread):
         self.data = None
         self.url = url
         self.save = save
-        if image is True: image = _fext(url)
+        if image is True:
+            save = _fext(save)
+            image = save if save else _fext(url)
         self._image = image
 
     def _convertImage(self, data):
@@ -125,7 +135,7 @@ class WebCache:
         self.imageData(False)
         try:
             with open(self._indexFile, encoding="utf-8") as f:
-                if WebCache.log: WebCache.log("Reading index file")
+                if self.log: self.log("Reading index file")
                 isKey = True
                 for line in f:
                     if isKey: key = line.strip()
@@ -161,15 +171,17 @@ class WebCache:
 
         # Get URL and save name
         if dpi: # Render LaTeX using codecogs.com
-            if color: key = wrap(key, color)
-            key = pref(key, dpi)
-            url = "https://latex.codecogs.com/png.latex?" + quote(key)
-            if filename in (None, True): filename = self._randName(key, "png")
+            url = latex_url(key, dpi, color)
+            if filename in (None, True): filename = self._randName(LATEX_FMT)
         else:
             url = key
             if filename is True: filename = _fname(url)
-            elif filename is None: filename = self._randName(key, _fext(url))
+            elif filename is None: filename = self._randName(_fext(url))
         filename = filename.replace("\\", "/").split("/")[-1]
+        if isfile(self._file(filename)) and (url, filename) not in self.index.items():
+            if self.log: self.log("File name conflict: {} -> ".format(filename), end="")
+            filename = self._randName(_fext(filename))
+            if self.log: self.log(filename)
 
         # Load from cache
         r = None
@@ -195,7 +207,7 @@ class WebCache:
 
     def _setkey(self, key, val, log=True):
         "Add item to index after removing conflicting entries"
-        if log and WebCache.log: WebCache.log("Updating index")
+        if log and self.log: self.log("Updating index")
         absSave = self._file(val)
         dupl = []
         for k, v in self.index.items():
@@ -240,7 +252,7 @@ class WebCache:
             except: pass
             yield item
 
-    def _randName(self, key, ext=None):
+    def _randName(self, ext=None):
         "Create a random file name"
         a = None
         v = self.index.values()
@@ -258,6 +270,6 @@ class WebCache:
             if not isfile(filename): del index[key]
         index = self.index
         with open(self._indexFile, "w", encoding="utf-8") as f:
-            if WebCache.log: WebCache.log("Saving index")
+            if self.log: self.log("Saving index")
             for key in index:
                 for b in (key, "\n", index[key], "\n"): f.write(b)
