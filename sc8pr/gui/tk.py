@@ -33,6 +33,7 @@ def clipboardPut(text):
 
 def clipboardGet():
     init()
+    root.update()
     try: s = root.clipboard_get()
     except: s = None
     return s

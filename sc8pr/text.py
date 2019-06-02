@@ -115,13 +115,13 @@ class Text(Renderable):
         return self
 
     def config(self, **kwargs):
-        keys = ("data", "color", "bg", "font", "fontSize", "fontStyle",
-            "height", "width", "align", "padding", "spacing", "weight",
-            "border", "promptColor")
+        keys = ("bg", "color", "border", "promptColor", "data",
+            "font", "fontSize", "fontStyle", "height", "width",
+            "align", "padding", "spacing", "weight")
         if hasAny(kwargs, keys): self.stale = True
         for a in kwargs:
             v = kwargs[a]
-            if v and a in ("bg", "color", "border", "promptColor"): v = rgba(v)
+            if v and a in keys[:4]: v = rgba(v)
             setattr(self, a, v)
         return self
 
