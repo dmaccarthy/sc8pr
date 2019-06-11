@@ -50,7 +50,8 @@ LATEX_FMT = "png"
 
 def latex_url(latex, dpi, color):
     if color: latex = wrap(latex, color)
-    return LATEX_URL.format(quote(pref(latex, dpi)))
+    key = pref(latex, dpi)
+    return key, LATEX_URL.format(quote(key))
 
 
 class WebRequest(Thread):
@@ -171,7 +172,7 @@ class WebCache:
 
         # Get URL and save name
         if dpi: # Render LaTeX using codecogs.com
-            url = latex_url(key, dpi, color)
+            key, url = latex_url(key, dpi, color)
             if filename in (None, True): filename = self._randName(LATEX_FMT)
         else:
             url = key

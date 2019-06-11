@@ -88,7 +88,8 @@ class EventManager:
             if sum(ev.buttons): # Dragging
                 current = _find(self._oldHover.path, "ondrag") \
                     if self.drag is None else self.drag
-                if current not in (None, sk):
+                if current is not None:
+#                 if current not in (None, sk):
                     if self.drag is not current: self.drag = current
                     self.handle(current, "ondrag", ev)
                     drag = True
@@ -112,7 +113,7 @@ class EventManager:
     def _dragRelease(self, ev):
         "Handle RELEASE events for graphic being dragged"
         drag = self.drag
-        if drag:
+        if drag is not None:
             self.handle(drag, "onrelease", ev)
             drag = True
         else: drag = False
