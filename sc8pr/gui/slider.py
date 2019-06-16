@@ -16,9 +16,11 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
+import pygame
 from pygame.constants import K_LEFT, K_RIGHT, K_UP, K_DOWN
 from sc8pr import Canvas, Image, Graphic
 from sc8pr.util import tall
+from sc8pr.geom import sigma, delta
 
 CLICK = 0
 SCROLL = 1
@@ -28,13 +30,19 @@ KEY = 3
 def _knobDrag(knob, ev):
     "Handle drag events on the slider's 'knob' object"
     slider = knob.canvas
+    if knob._dragRel is None:
+        knob._dragRel = delta(knob.rect.center, ev.pos)
     if slider._lastButton in slider.allowButton:
-        x = slider._eventValue(ev)
+        x = pygame.event.Event(pygame.USEREVENT, pos=sigma(ev.pos, knob._dragRel))
+        v = slider._val
+        slider.val = slider._eventValue(x)
+        x = slider.val
         setattr(ev, "target", slider)
-        if x != slider._val:
-            slider.val = x
+        if x != v:
             setattr(ev, "method", DRAG)
             slider.bubble("onchange", ev)
+
+def _knobRelease(knob, ev): knob._dragRel = None
 
 
 class Slider(Canvas):
@@ -45,12 +53,10 @@ class Slider(Canvas):
 
     def __init__(self, size=(128,16), knob="grey", lower=0, upper=1, steps=0):
         super().__init__(size)
-        if not isinstance(knob, Graphic): knob = Image(bg=knob)
-        w, h = size
-        kwargs = {"width":w} if h > w else {"height":h}
-        self += knob.bind(ondrag=_knobDrag).config(**kwargs)
-        self.knob = knob
         self.steps = steps
+        if not isinstance(knob, Graphic): knob = Image(self._knobSize(), knob)
+        self += knob.bind(ondrag=_knobDrag, onrelease=_knobRelease)
+        self.knob = knob.config(_dragRel=None)
         if upper < lower:
             self._flip = True
             upper, lower = lower, upper
@@ -58,6 +64,16 @@ class Slider(Canvas):
         self.lower = lower
         self.upper = upper
         self.val = lower
+
+    def _knobSize(self):
+        w, h = self.size
+        a = min(w, h)
+        if self.steps:
+            b = round(max(w, h) / (1 + self.steps)) 
+            b = max(a, b)
+            w, h = (a, b) if h > w else (b, a)
+        else: w = h = a
+        return w, h
 
     @property
     def val(self): return self._val

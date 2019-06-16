@@ -151,6 +151,7 @@ class Graphic:
     pos = 0, 0
     anchor = CENTER
     angle = 0
+    scrollable = True
     hoverable = True
     focusable = False
     ondraw = None
@@ -227,6 +228,17 @@ class Graphic:
         size = self.size
         return (size[0] - 1) / 2, (size[1] - 1) / 2
 
+    @property
+    def spos(self):
+        "Position relative to scroll origin"
+        sx, sy = self.canvas._scroll
+        return self.pos[0] + sx, self.pos[1] + sy
+
+    @spos.setter
+    def spos(self, pos):
+        sx, sy = self.canvas._scroll
+        self.pos = pos[0] - sx, pos[1] - sy
+
     def blitPosition(self, offset, blitSize):
         "Return the position (top left) to which the graphic is drawn"
         x, y = self.pos
@@ -262,7 +274,7 @@ class Graphic:
         else: r = self.rect
         return bool(r.collidepoint(pos))
 
-    def scaleVectors(self, fx, fy, attr=("pos", "vel", "acc")):
+    def scaleVectors(self, fx, fy, attr=("pos", "vel", "acc", "_scrollSize")):
         "Scale one or more 2-vectors"
         for a in attr:
             try: # Skip undefined attributes
@@ -646,6 +658,7 @@ class Image(Graphic):
 class Canvas(Graphic):
     _border = rgba("black")
     weight = 0
+    _scroll = 0, 0
 
     def __init__(self, image, bg=None):
         if type(image) is str: bg = Image(image, bg)
@@ -760,7 +773,7 @@ class Canvas(Graphic):
                 x, y = gr.pos
                 gr.pos = x + dx, y + dy
         if resize:
-            self._size = self._size[0] + dx,self._size[1] + dy
+            self._size = self._size[0] + dx, self._size[1] + dy
         return self
 
     def resize(self, size, resizeContent=True):
@@ -768,6 +781,8 @@ class Canvas(Graphic):
         size = max(1, round(size[0])), max(1, round(size[1]))
         fx, fy = size[0] / self._size[0], size[1] / self._size[1]
         self._size = size
+        sx, sy = self._scroll
+        if sx or sy: self.scrollTo()
 
         # Resize content
         if resizeContent:
@@ -775,6 +790,7 @@ class Canvas(Graphic):
                 if g.autoPositionOnResize: g.scaleVectors(fx, fy)
                 w, h = g.size
                 g.resize((w * fx, h * fy))
+        if sx or sy: self.scrollTo(fx*sx, fy*sy)
 
     def draw(self, srf=None, mode=3):
         "Draw the canvas to a surface"
@@ -884,6 +900,19 @@ class Canvas(Graphic):
                 c = 0
                 r += 1
         return cv
+
+    def scroll(self, dx=0, dy=0):
+        x, y = self._scroll
+        self._scroll = x + dx, y + dy
+        for gr in self:
+            if gr.scrollable:
+                x, y = gr.pos
+                gr.config(pos=(x-dx,y-dy))
+        return self
+
+    def scrollTo(self, x=0, y=0):
+        dx, dy = self._scroll
+        return self.scroll(x-dx, y-dy)
 
     def cover(self):
         return Image(self.size, "#ffffffc0").config(anchor=TOPLEFT)
