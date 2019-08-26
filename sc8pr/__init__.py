@@ -914,6 +914,10 @@ class Canvas(Graphic):
         dx, dy = self._scroll
         return self.scroll(x-dx, y-dy)
 
+    def dpos(self, x, y):
+        w, h = self.size
+        return x * (w - 1), y * (h - 1)
+
     def cover(self):
         return Image(self.size, "#ffffffc0").config(anchor=TOPLEFT)
 

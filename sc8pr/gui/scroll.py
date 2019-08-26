@@ -97,6 +97,10 @@ class _SCanvas:
         self._layerSliders()
         return super().draw(srf, mode)
 
+    def dpos(self, x, y):
+        w, h = self._scrollSize
+        return x * (w - 1), y * (h - 1)
+
 
 class ScrollCanvas(_SCanvas, Canvas):
 
