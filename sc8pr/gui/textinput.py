@@ -85,13 +85,21 @@ class TextInput(Text):
         font = Font.get(self.font, self.fontSize, self.fontStyle)
         try: focus = self is self.sketch.evMgr.focus
         except: focus = False
-        if self.prompt and not self.data and not focus:
+        prompt = self.prompt and not self.data and not focus
+        if prompt:
             color = self.promptColor
             text = self.prompt
         else:
             color = self.color
             text = self.data
-        srf = font.render(text, True, color)
+        try: srf = font.render(text, True, color)
+        except:
+            text = "[Unable to render!]"
+            srf = font.render(text, True, color)
+            if prompt: self.prompt = text
+            else:
+                self.data = text
+                self.cursor = 0
         srf = style(srf, self.bg, self.border, self.weight, self.padding)
 
         # Highlight selection and draw cursor
