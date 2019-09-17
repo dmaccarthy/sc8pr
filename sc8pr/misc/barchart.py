@@ -51,8 +51,8 @@ class BarChart(Canvas):
 
         # Add labels to canvas and determine maximum label height
         labelHeight = i = 0
-        for bar in data:
-            label, h = bar[:2]
+        for item in data:
+            label = item["label"]
             if type(label) is str:
                 label = Text(label).config(**self.txtConfig)
             self["Label{}".format(i)] = label
@@ -64,24 +64,23 @@ class BarChart(Canvas):
         mx1, mx2, my1, my2 = self._margin
         dx = (self.width - mx1 - mx2) / (2 * i + 1)
         x = mx1 + 1.5 * dx
-        h = labelHeight / 2
         y = self.height - my2 - labelHeight - self.space
         if scale is False: scale = self.scale
-        elif scale is True: scale = 1.1 * max(b[1] for b in data)
+        elif scale is True: scale = 1.1 * max(item["value"] for item in data)
         self.scale = scale
         scale /= y - my1
 
         # Add bars; position bars and labels
         i = 0
-        for bar in data:
-            label, val = bar[:2]
+        for item in data:
+            label, val = [item[key] for key in ("label", "value")]
             self[i].config(pos=(x, y + self.space), anchor=TOP)
             h = round(val / scale)
             if h > 0:
-                c = bar[2] if len(bar) > 2 else "#ff3030"
+                c = item.get("bar", "#ff3030")
                 self["Bar{}".format(i)] = Image((dx, h), c).config(pos=(x,y), anchor=BOTTOM)
-            txt = self.format.format(val)
             if self.showValues:
+                txt = self.format.format(val)
                 self["Value{}".format(i)] = Text(txt).config(pos=(x, y - h), anchor=BOTTOM, **self.txtConfig)
             i += 1
             x += 2 * dx
