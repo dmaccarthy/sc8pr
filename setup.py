@@ -22,7 +22,7 @@ setup(
     install_requires = ["pygame>=1.9.1,<2"],
     
     # URLs
-    url = "http://dmaccarthy.github.io/sc8pr",
+    url = "https://dmaccarthy.github.io/sc8pr",
     download_url = "https://github.com/dmaccarthy/sc8pr/archive/{}.zip".format(archive),
 
     # Details
