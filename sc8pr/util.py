@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -25,6 +25,16 @@ from pathlib import Path
 scale = pygame.transform.smoothscale
 
 def nothing(*args): pass
+
+# from pygame.constants import K_LSHIFT, K_RSHIFT, K_LALT, K_RALT, K_LCTRL, K_RCTRL 
+
+def modKeys():
+    key = pygame.key.get_pressed()
+    m = 0
+    if key[pygame.K_LALT] or key[pygame.K_RALT]: m += 1
+    if key[pygame.K_LCTRL] or key[pygame.K_RCTRL]: m += 2
+    if key[pygame.K_LSHIFT] or key[pygame.K_RSHIFT]: m += 4
+    return m
 
 def resolvePath(rel, start=__file__, isDir=False):
     "Return an absolute path relative to a starting file or folder"

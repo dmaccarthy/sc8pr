@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2020 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -19,6 +19,7 @@
 import os, struct, pygame
 from zipfile import ZipFile
 from json import loads, dumps
+from time import time
 from sc8pr import Image, PixelData, version
 from sc8pr.sprite import Sprite
 from sc8pr.util import hasAlpha, fileExt
@@ -37,6 +38,7 @@ def _b2j(b): return loads(str(b, encoding="utf-8"))
 class Video(Sprite):
     "A class for storing and retrieving sequences of compressed images"
     _autoSave = False
+    frameTimes = None
 
     def __init__(self, data=None, alpha=False, progress=None, start=0, end=None):
         self.purge()
@@ -187,7 +189,27 @@ class Video(Sprite):
         "Capture the current frame of the sketch"
         try: n = self.interval
         except: self.interval = n = 1
-        if sk.frameCount % n == 0: self += sk
+        if sk.frameCount % n == 0:
+            self += sk
+            if self.frameTimes is not None:
+                t = time()
+                if len(self.frameTimes) == 0: self._start = t
+                self.frameTimes.append(t - self._start)
+
+    def sync(self, fps=30, original=None):
+        "Use frameTimes data to correct for dropped frames"
+        vid = Video()
+        vid.meta["frameRate"] = fps
+        if original is None and self.frameTimes:
+            ft = self.frameTimes
+        else:
+            if original is None: original = self.meta.get("frameRate", 30)
+            ft = [n/original for n in range(len(self))]
+        for f in range(len(ft)):
+            i = round(fps * ft[f])
+            for n in range(1 + i - len(vid)):
+                vid._costumes.append(self._costumes[f])
+        return vid
 
     def scaleFrames(self, size=None, inPlace=False):
         "Ensure all frame images have the same size"
