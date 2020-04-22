@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2020 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -87,7 +87,10 @@ class VideoPlayer(Sketch):
             if n == len(vid) - 1: vid.costumeTime = 0
         else: msg = "Type 'o' to Open Video"
         txt = self["Text"]
-        if txt.data != msg: txt.config(data=msg)
+        if txt.data != msg:
+            txt.config(data=msg)
+            w = 0.98 * self.width
+            if txt.width > w: txt.config(width=w)
 
     def onkeydown(self, ev):
         u = ev.unicode.upper()

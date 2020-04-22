@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -48,6 +48,7 @@ except Exception as e:
     exit()
 from sys import argv
 from datetime import datetime
+from time import time
 from threading import Thread
 from tkinter.filedialog import askdirectory
 
@@ -101,12 +102,16 @@ class Recorder(Sketch):
 
     def ondraw(self):
         "Capture screen if recording"
-        if self.grab: self.rec.append(self.grab.pil)
+        if self.grab:
+            self.rec.append(self.grab.pil)
+            f = self.frameTimes
+            f.append(time() - (f[0] if len(f) else 0))
 
     def record(self):
         "Begin screen recording"
         self.rec = []
         self.recTime = datetime.now()
+        self.frameTimes = []
         try:
             param = self["Param"].data.split(" ")
             param = [abs(int(c)) for c in param if c]
@@ -130,6 +135,7 @@ class SaveThread(Thread):
         super().__init__()
         self.output = rec.output
         self.frames = rec.rec
+        self.frameTimes = rec.frameTimes
         self.fps = rec.frameRate
         t = (datetime.now() - rec.recTime).total_seconds()
         n = len(self.frames)
@@ -140,7 +146,7 @@ class SaveThread(Thread):
         rec.grab = None
 
     def run(self):
-        if self.output == "s8v" or ImageIO is None: self.s8v(self.fn, self.frames, self.fps)
+        if self.output == "s8v" or ImageIO is None: self.s8v(self.fn, self.frames, self.fps, self.frameTimes)
         else:
             with im.get_writer(self.fn, fps=self.fps) as writer:
                 for img in self.frames:
@@ -148,17 +154,19 @@ class SaveThread(Thread):
         print("Done!")
 
     @staticmethod
-    def s8v(fn, data, fps):
+    def s8v(fn, data, fps, t):
         "Convert frames to compressed bytes; save recording in S8V format"
-        vid = Video().config(size=data[0].size)
-        vid.meta["frameRate"] = fps
+        t[0] = 0
+        vid = Video().config(size=data[0].size, frameTimes=t)
+#         vid.meta["frameRate"] = fps
         print("Compressing...")
         i = 0
         for frame in data:
             vid._costumes.append(PixelData(frame, True))
             i += 1
             if i % 50 == 0: print(i)
-        vid.save(fn)
+        fps = 30
+        vid.removeGaps(2*0.3, 1/fps).sync(fps).save(fn)
 
 
 def main():

@@ -253,7 +253,7 @@ class Graphic:
     def calcBlitRect(self, blitSize):
         cv = self.canvas
         offset = cv.rect.topleft if cv else (0,0)
-        return pygame.Rect(self.blitPosition(offset, blitSize) + blitSize) 
+        return pygame.Rect(self.blitPosition(offset, blitSize), blitSize) ## !!!
 
     def relXY(self, pos):
         "Calculate coordinates relative to the graphic object"

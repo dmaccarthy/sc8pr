@@ -64,6 +64,7 @@ class Video(Sprite):
 
     def __iadd__(self, img):
         "Append a frame to the video"
+        if isinstance(img, Video): return self.extend(img._costumes)
         if not isinstance(img, PixelData):
             img = PixelData(img, True)
         self._costumes.append(img)
@@ -222,6 +223,17 @@ class Video(Sprite):
                 if inPlace: self._costumes[i] = px
             if not inPlace: vid._costumes.append(px)
         return vid
+
+    def removeGaps(self, gap, repl):
+        "Remove large gaps between frame times"
+        data = self.frameTimes
+        n = len(data)
+        for i in range(1, n):
+            x = data[i] - data[i-1]
+            if x > gap:
+                dt = x - repl
+                for j in range(i, n): data[j] -= dt
+        return self
 
 
 class Grabber:
