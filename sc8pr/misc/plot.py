@@ -38,7 +38,7 @@ def _lrbt(lrbt, w, h):
     else: lrbt = lrbt[:4]
     return lrbt
 
-def coordTr(lrbt, size):
+def coordTr(lrbt, size, invert=False):
     "Create a transformation for the given coordinate system"
     l, r = lrbt[:2]
     sx = size[0] / (r - l)
@@ -46,7 +46,10 @@ def coordTr(lrbt, size):
     b, t = lrbt[2:]
     sy = size[1] / (b - t)
     dy = sy * t
-    return lambda p: (sx * p[0] - dx, sy * p[1] - dy)
+    if invert:
+        return lambda p: ((p[0] + dx) / sx, (p[1] + dy) / sy)
+    else:
+        return lambda p: (sx * p[0] - dx, sy * p[1] - dy)
 
 def locus(func, param, **kwargs):
     "Generate a parameterized sequence of 2D points"
@@ -233,6 +236,7 @@ class Plot(Renderable):
         self._coords = _lrbt(lrbt, *self._size)
         w, h = self._size
         self.pixelCoords = coordTr(self._coords, [w-1, h-1])
+        self.plotCoords = coordTr(self._coords, [w-1, h-1], True)
         self.stale = True
 
     def __len__(self): return len(self._keys)
