@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2020 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -736,9 +736,14 @@ class Canvas(Graphic):
         t = type(key)
         if not key.__hash__:
             raise KeyError("Type '{}' cannot be used as a key".format(t.__name__))
-        elif t in (int, slice):
+        elif t is slice:
             raise KeyError("Assignment by layer is not supported")
-        if gr not in self: gr.setCanvas(self, key)
+        if gr not in self:
+            if t is int:
+                n = key
+                key = None
+            gr.setCanvas(self, key)
+            if t is int: gr.config(layer=n)
 
     def __iadd__(self, gr):
         "Add a Graphics instance(s) to the Canvas"
