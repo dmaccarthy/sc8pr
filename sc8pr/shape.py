@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -383,6 +383,14 @@ class Arrow(Polygon):
         return Arrow(r, width, head, flatness).config(pos=tip, angle=a)
 
 
+class ArrowSprite(Arrow, BaseSprite):
+
+    @staticmethod
+    def between(tail, tip, width=0.1, head=0.1, flatness=2):
+        r, a = polar2d(*delta(tip, tail))
+        return ArrowSprite(r, width, head, flatness).config(pos=tip, angle=a)
+
+
 class CircleSprite(Circle, BaseSprite): pass
 class PolygonSprite(Polygon, BaseSprite): pass
-class ArrowSprite(Arrow, BaseSprite): pass
+
