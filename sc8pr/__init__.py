@@ -851,8 +851,10 @@ class Canvas(Graphic):
         # Draw objects
         for g in self:
             if g.snapshot is not None:
-                xy = g.blitPosition((0,0), g.size)
-                srf.blit(g.snapshot().image, xy)
+                img = g.snapshot().image
+                srf.blit(img, g.blitPosition((0,0), img.get_size()))
+#                 xy = g.blitPosition((0,0), g.size)
+#                 srf.blit(g.snapshot().image, xy)
             else: g.draw(srf, snapshot=True)
 
         # Draw border
