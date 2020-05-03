@@ -1,5 +1,9 @@
 sc8pr 2.2.dev...
 
+*   = Change documented
+**  = No documentation required
+*** = Not added to documentation
+
 * Fix bug where BLUR event does not fire when focus changes while the focussed graphic is being dragged
 *** Move 'cover' method from 'Sketch' class to 'Canvas'
 *** Add FOCUS event and 'Graphic.focus' method; add; 'trigger' argument to 'Graphic.blur'
@@ -8,13 +12,13 @@ sc8pr 2.2.dev...
 * Add 'hoverable' property to Graphic class and add 'includeAll' argument to 'Canvas.objectAt'
 * Allow 'padding' argument of 'util.style' to be a 2-tuple with different x and y values
 * Fix delay on moving 'TextInput' cursor after CLICK
-*** Allow clipboard paste into text input
+** Allow clipboard paste into text input
 * Add 'TextInput.scroll' method as default 'ondraw' event handler
-*** Add 'TextInputCanvas' class
-*** Add support for selection, copy, cut, and paste operations in 'TextInput'
+*** Add 'TextInputCanvas' class and call 'tk.getClipboard'
+** Add support for selection, copy, cut, and paste operations in 'TextInput'
 *** Add 'Slider.methodNames'
-*** Drag slider knob from any point rather than only the center
-*** Default knob size based on number of steps
+** Drag slider knob from any point rather than only the center
+** Default knob size based on number of steps
 *** Add 'Canvas.call', 'Canvas.scroll' and 'Canvas.scrollTo' methods
 *** Add 'scrollable' and 'spos' properties to 'Graphic' class
 *** Add 'dpos' method to 'Canvas' and 'sc8pr.gui._SCanvas' classes
@@ -24,3 +28,11 @@ sc8pr 2.2.dev...
 *** 'WebCache' does not overwrite existing cache file if URL is different
 * Add 'fakeCursor' example (depends on 'hoverable' property)
 * Normalize examples to use 'play' as name of main function
+*** Experimental module 'misc.barchart'
+** Fix blit location bug in 'Canvas.snapshot'
+* Sync video capture when sketch does not run at nominal frame rate
+* Add 'invert' parameter to 'misc.plot.coordTr'
+* Allow assignment to canvas by layer: cv[layer] = gr
+*** Add 'util.borderRadius' (incomplete)
+*** Deprecate 'misc.effect.Remove' in favour of 'QueueRemove'
+** Fix minor bug with 'Sketch.caption' getter
