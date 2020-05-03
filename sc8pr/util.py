@@ -109,7 +109,7 @@ def setAlpha(srf, a):
     srf.fill((255,255,255,a), special_flags=pygame.BLEND_RGBA_MIN)
     return srf
 
-def style(srf, bg=None, border=(0,0,0), weight=0, padding=0):
+def style(srf, bg=None, border=(0,0,0), weight=0, padding=0, borderradius=None):
     "Create a new surface with padding, background color, and/or border"
     w, h = srf.get_size()
 
@@ -124,8 +124,21 @@ def style(srf, bg=None, border=(0,0,0), weight=0, padding=0):
     if bg: img.fill(rgba(bg))
     img.blit(srf, (px, py))
     if weight: drawBorder(img, border, weight)
+    if borderradius: img = borderRadius(img, borderradius)
 
     return img
+
+def borderRadius(srf, r=True):
+    w, h = srf.get_size()
+    if r is True: r = round(h / 6)
+    size = r, r
+    stamp = pygame.Surface(size, pygame.SRCALPHA)
+    pygame.draw.circle(stamp, (255,255,255), (0,0), r)
+    for p in [(w-r, h-r), (w-r, 0), (0, 0), (0, h-r)]:
+        srf.blit(stamp, p, special_flags=pygame.BLEND_RGBA_MIN)
+        stamp = pygame.transform.rotate(stamp, 90)
+    return srf
+# circle(surface, color, center, radius, width=0, draw_top_right=None, draw_top_left=None, draw_bottom_left=None, draw_bottom_right=None) -> Rect
 
 def drawBorder(srf, color=(0,0,0), weight=1, r=None):
     "Draw a border around the edges of the surface or specified rectangle"

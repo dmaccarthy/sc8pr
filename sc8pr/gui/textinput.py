@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2020 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -323,3 +323,6 @@ class TextInputCanvas(Canvas):
         self += ti
 
     def onclick(self, ev): self.ti.focus().onclick(ev)
+
+
+clipboardGet()

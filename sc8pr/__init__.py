@@ -956,7 +956,7 @@ class Sketch(Canvas):
     def anchor(self): 0
 
     @property
-    def caption(self): return _pd.get_caption()
+    def caption(self): return _pd.get_caption()[0]
 
     @caption.setter
     def caption(self, caption):
