@@ -306,21 +306,51 @@ class TextInput(Text):
     ondraw = scroll
 
 
+# class TextInputCanvas(Canvas):
+#     "Wrap a TextInput instance inside a Canvas"
+# 
+#     focusable = True
+# 
+#     def __init__(self, ti, width, center=False):
+#         a = ti.angle
+#         if a not in (0, 90): raise ValueError(_ANGLE_ERROR)
+#         sz = (ti.height, width) if a else (width, ti.height)
+#         super().__init__(sz)
+#         cfg = {"anchor":CENTER, "pos":self.center} if center \
+#             else {"anchor":TOP, "pos":(self.center[0], 0)} if a \
+#             else {"anchor":LEFT, "pos":(0, self.center[1])}
+#         self.ti = ti.config(**cfg)
+#         self += ti
+# 
+#     def onclick(self, ev): self.ti.focus().onclick(ev)
+
+
 class TextInputCanvas(Canvas):
-    "Wrap a TextInput instance inside a Canvas"
+    "Create a text input inside a canvas"
 
     focusable = True
 
-    def __init__(self, ti, width, center=False):
-        a = ti.angle
-        if a not in (0, 90): raise ValueError(_ANGLE_ERROR)
-        sz = (ti.height, width) if a else (width, ti.height)
-        super().__init__(sz)
+    def __init__(self, width, data="", prompt=None, center=False, vertical=False, **text):
+#         cfg = text.copy()
+#         cfg["angle"] = a = 90 if vertical else 0
+#         ti = TextInput(data, prompt).config(**cfg)
+        ti = self._ti(vertical, data, prompt, **text)
+        super().__init__((width, ti.height))
         cfg = {"anchor":CENTER, "pos":self.center} if center \
-            else {"anchor":TOP, "pos":(self.center[0], 0)} if a \
+            else {"anchor":TOP, "pos":(self.center[0], 0)} if vertical \
             else {"anchor":LEFT, "pos":(0, self.center[1])}
         self.ti = ti.config(**cfg)
         self += ti
+
+    def _ti(self, v, data, prompt=None, **text):
+        ti = data if isinstance(data, TextInput) else TextInput(data, prompt).config(**text)
+        return ti.config(angle=90 if v else 0)
+
+    @property
+    def data(self): return self.ti.data
+
+    @data.setter
+    def data(self, data): self.ti.data.config(data=data)
 
     def onclick(self, ev): self.ti.focus().onclick(ev)
 
