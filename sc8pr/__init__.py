@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2020 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -809,8 +809,10 @@ class Canvas(Graphic):
         # Draw objects
         for g in self:
             if g.snapshot is not None:
-                xy = g.blitPosition((0,0), g.size)
-                srf.blit(g.snapshot().image, xy)
+                img = g.snapshot().image
+                srf.blit(img, g.blitPosition((0,0), img.get_size()))
+#                xy = g.blitPosition((0,0), g.size)
+#                srf.blit(g.snapshot().image, xy)
             else: g.draw(srf, snapshot=True)
 
         # Draw border
@@ -880,7 +882,7 @@ class Sketch(Canvas):
         self.evMgr = EventManager(self)
 
     @property
-    def caption(self): return _pd.get_caption()
+    def caption(self): return _pd.get_caption()[0]
 
     @caption.setter
     def caption(self, caption):
