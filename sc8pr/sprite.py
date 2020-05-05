@@ -25,6 +25,7 @@ class Sprite(BaseSprite):
     "Sprite animation with one or more costumes"
     costumeTime = 0
     _costumeNumber = 0
+    onreset = None
 
     def __init__(self, image, cols=1, rows=1, flip=0, padding=0):
         # Clone costumes images from existing list
@@ -80,6 +81,8 @@ class Sprite(BaseSprite):
         n = self.costumeTime
         if n and self.sketch.frameCount % n == 0:
             self.costumeNumber = self._costumeNumber + 1
+            if self._costumeNumber == 0 and self.onreset: 
+                self.onreset()
         super().ondraw()
 
 

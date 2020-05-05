@@ -56,14 +56,17 @@ class QueueRemove(Effect):
 
     def apply(self, img, n=0):
         if n <= 0:
-            if self._complete: QueueRemove._pending.append(self._gr)
-            else: self._gr.effects = None
+            gr = self._gr
+            if self._complete:
+                p = QueueRemove._pending
+                if gr not in p: p.append(gr)
+            else: gr.effects = None
         return img
 
     @classmethod
     def flush(cls):
         for gr in cls._pending:
-            if gr.canvas: gr.remove()
+            if gr in gr.canvas: gr.remove()
         cls._pending = []
 
 

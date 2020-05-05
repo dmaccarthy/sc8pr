@@ -39,5 +39,6 @@ sc8pr 2.2.dev...
 *** Deprecate 'misc.effect.Remove' in favour of 'QueueRemove'
 ** Fix minor bug with 'Sketch.caption' getter
 *** Add 'Ellipse' and 'Arc' classes to 'sc8pr.shape'
+*** Add 'sprite.onreset' event, called by 'sprite.ondraw'
 
 !!! Add 'util.borderRadius'
