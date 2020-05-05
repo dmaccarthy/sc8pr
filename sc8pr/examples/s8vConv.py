@@ -110,6 +110,10 @@ class VideoPlayer(Sketch):
                 vid.costumeTime = 1 - vid.costumeTime 
             elif ev.key == K_HOME:
                 vid.costumeTime = vid.costumeNumber = 0
+            elif u == "N":
+                vid.costumeTime = 0
+                try: vid.costumeNumber = int(input("Go to frame? "))
+                except: pass
             elif ev.key in (K_LEFT, K_RIGHT):
                 vid.costumeTime = 0
                 n = vid.costumeNumber + (1 if ev.key == K_RIGHT else -1)
@@ -123,7 +127,7 @@ class VideoPlayer(Sketch):
     def menu():
         m = {'O': "Open Video", 'S': "Save Clip", 'G': "Grab Frame",
             "SPACE":"Pause/Resume", 'LEFT': "Previous Frame",
-            'RIGHT': "Next Frame", "HOME": "Rewind", '[': "Clip Start",
+            'RIGHT': "Next Frame", "HOME": "Rewind", 'N': "Frame Number", '[': "Clip Start",
             ']': "Clip End", 'F': "Frame Rate", "TAB": "Display Color",
             '?': "Show Menu"}
         print("\nKeyboard Commands:")

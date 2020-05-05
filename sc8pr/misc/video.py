@@ -85,6 +85,12 @@ class Video(Sprite):
             self._current = n, img
         return img.config(size=self.size, angle=self.angle)
 
+    def splice(self, i, n=0, vid=None):
+        "Insert and/or remove a clip"
+        c = self._costumes
+        if i == len(c): self += vid
+        else: c[i:i+n] = vid._costumes if vid else []
+
     def autoSave(self, fn=True, size=None):
         "Turn auto save on/off, or perform an auto save"
         if fn is True:
