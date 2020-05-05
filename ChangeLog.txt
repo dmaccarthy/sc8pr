@@ -3,6 +3,7 @@ sc8pr 2.2.dev...
 *   = Change documented
 **  = No documentation required
 *** = Not added to documentation
+!!! = In progress
 
 * Fix bug where BLUR event does not fire when focus changes while the focussed graphic is being dragged
 *** Move 'cover' method from 'Sketch' class to 'Canvas'
@@ -32,8 +33,11 @@ sc8pr 2.2.dev...
 *** Experimental module 'misc.barchart'
 ** Fix blit location bug in 'Canvas.snapshot'
 * Sync video capture when sketch does not run at nominal frame rate
+* Add 'util.modKeys'
 * Add 'invert' parameter to 'misc.plot.coordTr'
 * Allow assignment to canvas by layer: cv[layer] = gr
-*** Add 'util.borderRadius' (incomplete)
 *** Deprecate 'misc.effect.Remove' in favour of 'QueueRemove'
 ** Fix minor bug with 'Sketch.caption' getter
+*** Add 'Ellipse' and 'Arc' classes to 'sc8pr.shape'
+
+!!! Add 'util.borderRadius'

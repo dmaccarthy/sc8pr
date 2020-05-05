@@ -19,9 +19,9 @@
 from random import random
 from math import hypot, ceil, sqrt
 import pygame
-from sc8pr import Graphic, BaseSprite
+from sc8pr import Graphic, BaseSprite, CENTER, Image
 from sc8pr.util import rgba, hasAny
-from sc8pr.geom import transform2dGen, dist, delta, polar2d
+from sc8pr.geom import transform2dGen, dist, delta, polar2d, DEG
 
 
 class Shape(Graphic):
@@ -394,3 +394,61 @@ class ArrowSprite(Arrow, BaseSprite):
 class CircleSprite(Circle, BaseSprite): pass
 class PolygonSprite(Polygon, BaseSprite): pass
 
+
+class Ellipse(Shape):
+    anchor = CENTER
+
+    def resize(self, size):
+        self._size = size
+        self._srf = None
+
+    __init__ = resize
+
+    def config(self, **kwargs):
+        keys = "fill", "stroke", "weight", "size", "arc"
+        if hasAny(kwargs, keys): self._srf = None
+        return super().config(**kwargs)
+
+    @property
+    def image(self):
+        if self._srf: return self._srf
+        srf = pygame.Surface(self._size, pygame.SRCALPHA)
+        w = self.weight
+        f = self._fill
+        r = (0, 0), self._size
+        if w:
+            if isinstance(self, Arc):
+                a = self.arc
+                a = [-x * DEG for x in a]
+                pygame.draw.arc(srf, self._stroke, r, a[0], a[1], w)
+            else:
+                pygame.draw.ellipse(srf, self._stroke, r)
+        if f:
+            r = w / 2, w / 2, self.width - w, self.height - w
+            if not f: f = 0, 0, 0, 0
+            pygame.draw.ellipse(srf, f, r)
+        if self.angle:
+            srf = pygame.transform.rotate(srf, -self.angle)
+        self._srf = srf
+        return srf
+
+    def containsPoint(self, pos):
+        a, b = [x/2 for x in self.size]
+        x, y = self.relXY(pos)
+        return ((x - a) / a) ** 2 + ((y - b) / b) ** 2 <= 1
+
+
+class Arc(Ellipse):
+    arc = 0, 360
+    
+    @property
+    def fill(self): return None
+
+    @fill.setter
+    def fill(self, f): raise NotImplementedError("Arc class does not support fill operation")
+
+    def __init__(self, size):
+        if type(size) in (int, float): size = size, size
+        super().__init__(size)
+
+    contains = Image.contains
