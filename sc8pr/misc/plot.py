@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -40,6 +40,7 @@ def _lrbt(lrbt, w, h):
 
 def coordTr(lrbt, size, invert=False):
     "Create a transformation for the given coordinate system"
+    if len(lrbt) != 4: lrbt = _lrbt(lrbt, *size)
     l, r = lrbt[:2]
     sx = size[0] / (r - l)
     dx = sx * l
@@ -211,10 +212,17 @@ class Plot(Renderable):
 #    contains = Image.contains
 
     def __init__(self, size, lrbt):
-        self._size = size
+        self._size = size.size if hasattr(size, "size") else size
         self.coords = _lrbt(lrbt, *size)
         self._keys = []
         self._series = {}
+
+    @property
+    def clockwise(self):
+        l, r, b, t = self._coords
+        x = 1 if r > l else -1
+        y = 1 if t > b else -1
+        return x * y < 0
 
     @property
     def size(self): return self._size

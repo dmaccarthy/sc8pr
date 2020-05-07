@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -23,6 +23,10 @@ DEG = pi / 180
 def positiveAngle(a):
     "Return an angle between 0 and 360"
     return a - 360 * floor(a / 360)
+
+def smallAngle(a):
+    "Return an angle between -180 and 180"
+    return positiveAngle(a + 180) - 180
 
 def angleDifference(a2, a1=0):
     "Difference between 2 directions; [-180,180)"
