@@ -95,14 +95,14 @@ class Vector(Renderable):
         self.tail = tx + dx, ty + dy
 
     @property
-    def center(self):
+    def middle(self):
         tx, ty = self.tail
         x, y = self.xy
         return tx + x/2, ty + y/2
 
-    @center.setter
-    def center(self, xy):
-        cx, cy = self.center
+    @middle.setter
+    def middle(self, xy):
+        cx, cy = self.middle
         self.shift(xy[0] - cx, xy[1] - cy)
 
     @property
@@ -131,14 +131,14 @@ class Vector(Renderable):
 
     @property
     def pos(self):
-        c = self.center
+        c = self.middle
         p = self.plot
         return c if p is None else p.pixelCoords(c)
 
     @pos.setter
     def pos(self, xy):
         p = self.plot
-        self.center = xy if p is None else p.plotCoords(xy)
+        self.middle = xy if p is None else p.plotCoords(xy)
 
     def render(self):
         l = self.mag * self.unit
