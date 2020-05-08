@@ -223,6 +223,11 @@ class Graphic:
     def height(self, height):
         self.resize((height * self.aspectRatio, height))
 
+    def scale(self, sx, sy=None):
+        w, h = self.size
+        self.size = sx * w, (sx if sy is None else sy) * h
+        return self
+
     @property
     def center(self):
         size = self.size

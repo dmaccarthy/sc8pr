@@ -45,6 +45,7 @@ sc8pr 2.2.dev...
 *** 'Plot.clockwise' property
 *** Add 'sc8pr.geom.smallAngle'
 *** Add 'sc8pr.misc.vector2d'
+*** Add 'Graphic.scale'
 
 
 !!! Add 'util.borderRadius'
