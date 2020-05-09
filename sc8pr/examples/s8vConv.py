@@ -44,7 +44,7 @@ class VideoPlayer(Sketch):
     def setup(self):
         self.caption = "sc8pr Video Converter"
         self.menu()
-        attr = dict(anchor=BOTTOMRIGHT, color="red", font=Font.mono(), fontSize=18)
+        attr = dict(anchor=BOTTOMRIGHT, color="red", bg="#a0a0a080", font=Font.mono(), fontSize=18)
         self["Text"] = Text().config(pos=(self.width-4, self.height-4), **attr) 
 
     @staticmethod

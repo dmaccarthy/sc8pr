@@ -40,7 +40,7 @@ sc8pr 2.2.dev...
 ** Fix minor bug with 'Sketch.caption' getter
 *** Add 'Ellipse' and 'Arc' classes to 'sc8pr.shape'
 *** Add 'sprite.onreset' event, called by 'sprite.ondraw'
-*** Add 'Video.splice'
+*** Add 'Video.splice' and 'Video.info'
 *** 'Plot' constructor can take an object with 'size' attribute in place of a size literal
 *** 'Plot.clockwise' property
 *** Add 'sc8pr.geom.smallAngle'

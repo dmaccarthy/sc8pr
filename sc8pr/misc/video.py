@@ -122,6 +122,13 @@ class Video(Sprite):
         for img in imgs: self += img
         return self
 
+    @staticmethod
+    def info(f):
+        with ZipFile(f) as zf:
+            meta = _b2j(zf.read("metadata"))
+            meta["len"] = len(zf.namelist()) - 1
+            return meta
+    
     def _loadMeta(self, zf):
         try: self.meta = _b2j(zf.read("metadata"))
         except: pass
@@ -205,7 +212,7 @@ class Video(Sprite):
 
     def sync(self, fps=30, original=None):
         "Use frameTimes data to correct for dropped frames"
-        vid = Video()
+        vid = Video().config(_size=self.size)
         vid.meta["frameRate"] = fps
         if original is None and self.frameTimes:
             ft = self.frameTimes
