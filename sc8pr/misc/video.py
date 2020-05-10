@@ -34,6 +34,12 @@ def _j2b(obj):
 
 def _b2j(b): return loads(str(b, encoding="utf-8"))
 
+def _indx(obj, i):
+    n = len(obj)
+    if i is None: i = n
+    elif i < 0: i += n
+    return i
+    
 
 class Video(Sprite):
     "A class for storing and retrieving sequences of compressed images"
@@ -74,6 +80,12 @@ class Video(Sprite):
             if n > self._autoSave: self.autoSave(True, n)
         return self
 
+    def __add__(self, other):
+        "Concatenate another video"
+        c = self.clip()
+        c += other
+        return c
+
     def __getitem__(self, n):
         "Return a frame as an Image instance"
         if n != self._current[0]:
@@ -87,9 +99,36 @@ class Video(Sprite):
 
     def splice(self, i, n=0, vid=None):
         "Insert and/or remove a clip"
+        i = _indx(self, i)
         c = self._costumes
         if i == len(c): self += vid
-        else: c[i:i+n] = vid._costumes if vid else []
+        else:
+            c[i:i+n] = [] is vid if None else vid._costumes if isinstance(vid, Video) else vid
+            if not hasattr(self, "_size") and len(self):
+                self._size = c[0].size
+        return self
+
+    def effect(self, effect, out=False):
+        "Apply a transition effect to a Video and return a new Video instance"
+        dest = Video()
+        n = len(self)
+        dn = 1 / n
+        if out:
+            n = 1 - dn
+            dn = -dn
+        else: n = 0
+        for frame in self:
+            dest += effect.apply(frame, n)
+            n += dn
+        return dest
+
+    def effectInPlace(self, effect, start=0, end=None, out=False):
+        "Apply a transition effect in place"
+        start = _indx(self, start)
+        end = _indx(self, end)
+        vid = self.clip(start, end).effect(effect, out)
+        self.splice(start, len(vid), vid)
+        return self        
 
     def autoSave(self, fn=True, size=None):
         "Turn auto save on/off, or perform an auto save"
@@ -176,7 +215,8 @@ class Video(Sprite):
         vid._size = self.size
         costumes = self._costumes
         if type(start) is int:
-            if end is None: end = len(costumes)
+            start = _indx(self, start)
+            end = _indx(self, end)
             start = range(start, end, 1 if end > start else -1)
         vid._costumes = [costumes[i] for i in start]
         return vid
