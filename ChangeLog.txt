@@ -43,10 +43,11 @@ sc8pr 2.2.dev...
 *** Add 'Video' methods 'splice', 'info', '__add__', 'effect', 'effectInPlace'
 *** 'Video.clip' accepts negative 'start' and 'end' arguments
 *** 'Plot' constructor can take an object with 'size' attribute in place of a size literal
-*** 'Plot.clockwise' property
+*** 'Plot.clockwise' and 'Plot.units' properties
 *** Add 'sc8pr.geom.smallAngle'
 *** Add 'sc8pr.misc.vector2d'
 *** Add 'Graphic.scale'
+** Fix bug in 'Canvas.__init__'
 
 
 !!! Add 'util.borderRadius'

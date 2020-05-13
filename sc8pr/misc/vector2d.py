@@ -17,7 +17,7 @@
 
 from math import cos, sin, hypot, sqrt
 from sc8pr import Renderable, Graphic, Canvas, CENTER
-from sc8pr.geom import sigma, polar2d, smallAngle, DEG
+from sc8pr.geom import sigma, polar2d, transform2d, smallAngle, DEG
 from sc8pr.shape import Arrow, Line
 
 
@@ -57,6 +57,11 @@ class Vector(Renderable):
     def angle(self, a):
         p = self.plot
         self.dir = smallAngle(a if (p is None or p.clockwise) else -a)
+
+    def rotate(self, angle, xy=None):
+        if xy is None: xy = self.middle
+        self.tail = transform2d(self.tail, rotate=angle, shift=xy, preShift=True)
+        self.dir += angle
 
     @property
     def xy(self): return self.x, self.y
@@ -120,11 +125,7 @@ class Vector(Renderable):
     def units(self):
         "Calculate plot scales"
         plot = self.plot
-        if plot is None: return 1, 1
-        tr = plot.pixelCoords
-        p0 = tr((0, 0))
-        p1 = tr((1, 1))
-        return p1[0] - p0[0], p1[1] - p0[1] 
+        return (1, 1) if plot is None else plot.units
 
     @property
     def unit(self): return hypot(*self.units) / sqrt(2)

@@ -247,6 +247,14 @@ class Plot(Renderable):
         self.plotCoords = coordTr(self._coords, [w-1, h-1], True)
         self.stale = True
 
+    @property
+    def units(self):
+        "Calculate plot scales"
+        px = self.pixelCoords
+        p0 = px((0, 0))
+        p1 = px((1, 1))
+        return p1[0] - p0[0], p1[1] - p0[1] 
+
     def __len__(self): return len(self._keys)
 
     def __setitem__(self, k, s):

@@ -667,6 +667,8 @@ class Canvas(Graphic):
 
     def __init__(self, image, bg=None):
         if type(image) is str: bg = Image(image, bg)
+        elif isinstance(image, Image):
+            bg = image if bg is None else Image(image, bg)
         self._size = bg.size if isinstance(bg, Image) else image
         self.bg = bg
         self._items = []
