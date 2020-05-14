@@ -666,12 +666,22 @@ class Canvas(Graphic):
     _scroll = 0, 0
 
     def __init__(self, image, bg=None):
-        if type(image) is str: bg = Image(image, bg)
-        elif isinstance(image, Image):
-            bg = image if bg is None else Image(image, bg)
-        self._size = bg.size if isinstance(bg, Image) else image
-        self.bg = bg
+        mode = 0 if type(image) is str else 1 if isinstance(image, Image) else 2
+        if mode == 2: # tuple or list
+            size = image
+        elif bg:
+            bg = Image(image, bg)
+            size = bg.size
+        else: # str or Image
+            bg = image if mode else Image(image)
+            size = bg.size
+#         if type(image) is str: bg = Image(image, bg)
+#         elif isinstance(image, Image):
+#             bg = image if bg is None else Image(image, bg)
+#         self._size = bg.size if isinstance(bg, Image) else image
+        self._size = size
         self._items = []
+        self.bg = bg
 
     def call(self, methodname, seq, *args, **kwargs):
         "Call the specified method on the canvas contents"

@@ -47,7 +47,8 @@ sc8pr 2.2.dev...
 *** Add 'sc8pr.geom.smallAngle'
 *** Add 'sc8pr.misc.vector2d'
 *** Add 'Graphic.scale'
-** Fix bug in 'Canvas.__init__'
+*** Fix bug in 'Canvas.__init__'
+*** Add 'sc8pr.misc.plotcanvas'
 
 
 !!! Add 'util.borderRadius'
