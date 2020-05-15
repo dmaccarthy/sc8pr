@@ -45,7 +45,6 @@ sc8pr 2.2.dev...
 *** 'Plot' constructor can take an object with 'size' attribute in place of a size literal
 *** 'Plot.clockwise' and 'Plot.units' properties
 *** Add 'sc8pr.geom.smallAngle'
-*** Add 'sc8pr.misc.vector2d'
 *** Add 'Graphic.scale'
 *** Fix bug in 'Canvas.__init__'
 *** Add 'sc8pr.misc.plotcanvas'
