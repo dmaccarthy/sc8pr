@@ -25,12 +25,14 @@ from sc8pr.geom import rotatedSize, transform2dGen
 from sc8pr.text import Text
 
 
+_adj = 0
+
 def _lrbt(lrbt, w, h):
     "Calculate coordinate system limits"
     n = len(lrbt)
     if n < 4:
         if not isinstance(lrbt, list): lrbt = list(lrbt)
-        dy = h * (lrbt[1] - lrbt[0]) / w
+        dy = (h - _adj) * (lrbt[1] - lrbt[0]) / (w - _adj)
         if n == 2:
             dy /= 2
             lrbt = lrbt + [-dy, dy]
@@ -42,10 +44,10 @@ def coordTr(lrbt, size, invert=False):
     "Create a transformation for the given coordinate system"
     if len(lrbt) != 4: lrbt = _lrbt(lrbt, *size)
     l, r = lrbt[:2]
-    sx = size[0] / (r - l)
+    sx = (size[0] - _adj) / (r - l)
     dx = sx * l
     b, t = lrbt[2:]
-    sy = size[1] / (b - t)
+    sy = (size[1] - _adj) / (b - t)
     dy = sy * t
     if invert:
         return lambda p: ((p[0] + dx) / sx, (p[1] + dy) / sy)

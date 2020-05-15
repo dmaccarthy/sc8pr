@@ -48,6 +48,7 @@ sc8pr 2.2.dev...
 *** Add 'Graphic.scale'
 *** Fix bug in 'Canvas.__init__'
 *** Add 'sc8pr.misc.plotcanvas'
+*** Add 'util.mix'
 
 
 !!! Add 'util.borderRadius'

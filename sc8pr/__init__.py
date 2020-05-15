@@ -436,6 +436,10 @@ class Renderable(Graphic):
     def refresh(self):
         if self.stale: self.image
 
+    def remove(self, deleteRect=True):
+        super().remove(deleteRect)
+        self.stale = True
+
     @property
     def avgColor(self):
         self.refresh()
@@ -675,10 +679,6 @@ class Canvas(Graphic):
         else: # str or Image
             bg = image if mode else Image(image)
             size = bg.size
-#         if type(image) is str: bg = Image(image, bg)
-#         elif isinstance(image, Image):
-#             bg = image if bg is None else Image(image, bg)
-#         self._size = bg.size if isinstance(bg, Image) else image
         self._size = size
         self._items = []
         self.bg = bg

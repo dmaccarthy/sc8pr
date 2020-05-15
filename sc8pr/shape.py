@@ -324,9 +324,9 @@ class Polygon(Shape):
         dx = w - dx
         dy = w - dy
         size = self.size
-        size = 2 * w + size[0], 2 * w + size[1] 
+        size = 2 * w + size[0] + 1, 2 * w + size[1] + 1 
         srf = pygame.Surface(size, pygame.SRCALPHA)
-        pts = [(round(x+dx), round(y+dy)) for (x,y) in self.vertices]
+        pts = [(ceil(x+dx), ceil(y+dy)) for (x,y) in self.vertices] # round -> ceil
         if f: pygame.draw.polygon(srf, f, pts)
         if w and s: pygame.draw.polygon(srf, s, pts, w)
         return srf
