@@ -182,6 +182,17 @@ def fileExt(fn, ext):
         fn += "." + ext[0]
     return fn
 
+def mix(x, y):
+    "Generate a sequence of ordered pairs from two sequences"
+    try:
+        for i in x:
+            try:
+                for j in y: yield i, j
+            except:
+                for p in mix(i, [y]): yield p
+    except:
+        for p in mix([x], y): yield p
+
 
 class CachedSurface:
     "A class for caching scaled and rotated surfaces"
