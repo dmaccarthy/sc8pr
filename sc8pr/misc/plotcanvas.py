@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-
 from math import cos, sin, sqrt
 import pygame
 from sc8pr import Sketch, Renderable, Graphic, Canvas, Image, CENTER
@@ -23,9 +22,8 @@ from sc8pr.text import Text
 from sc8pr.geom import sigma, polar2d, transform2d, smallAngle, DEG
 from sc8pr.shape import Arrow, Line, Polygon
 from sc8pr.misc import plot as oldPlot
-from sc8pr.misc.plot import coordTr, _lrbt, locus
+from sc8pr.misc.plot import _lrbt, locus
 from sc8pr.util import mix
-
 
 calc_lrbt = _lrbt
 
@@ -61,6 +59,19 @@ def _str2gr(text, x, y, **kwargs):
     xy = dict(x=x, y=y)
     return Text(text.format(**xy)).config(**kwargs)
 
+def _coord(lrbt, size, invert=False):
+    "Create a transformation for the given coordinate system"
+    if len(lrbt) != 4: lrbt = _lrbt(lrbt, *size)
+    l, r = lrbt[:2]
+    sx = size[0] / (r - l)
+    dx = sx * l
+    b, t = lrbt[2:]
+    sy = size[1] / (b - t)
+    dy = sy * t
+    if invert:
+        return lambda *p: ((p[0] + dx) / sx, (p[1] + dy) / sy)
+    else:
+        return lambda *p: (sx * p[0] - dx, sy * p[1] - dy)
 
 class CoordinateSystem:
 
@@ -74,16 +85,16 @@ class CoordinateSystem:
             lrbt = self._lrbt
             size = self.size
 
-        self.pix = px = coordTr(lrbt, size)
-        self.unpix = ux = coordTr(lrbt, size, True)
-        p0 = px((0, 0))
-        p1 = px((1, 1))
+        self.pix = px = _coord(lrbt, size)
+        self.unpix = ux = _coord(lrbt, size, True)
+        p0 = px(0, 0)
+        p1 = px(1, 1)
         p0, p1 = p1[0] - p0[0], p1[1] - p0[1]
         self._units = p0, p1, sqrt(abs(p0 * p1)), p0 * p1 > 0
 
         if first:
-            x0, y1 = ux((0, 0))
-            x1, y0 = ux(size)
+            x0, y1 = ux(0, 0)
+            x1, y0 = ux(*size)
             self._lrbt = x0, x1, y0, y1
         elif isinstance(self, Canvas):
             for gr in self.instOf(Renderable): gr.stale = True
@@ -92,7 +103,7 @@ class CoordinateSystem:
 
     def transform(self, pts, **kwargs):
         tr = self.unpix if kwargs.get("invert") else self.pix
-        for pt in pts: yield(tr(pt))
+        for pt in pts: yield(tr(*pt))
 
     @property
     def left(self): return self._lrbt[0]
@@ -140,9 +151,8 @@ class CoordinateSystem:
     @property
     def unit(self): return self._units[2]
 
-    def flatten(self):
-        self.config(bg=self.snapshot())
-        return self.purge()
+    @property
+    def origin(self): return self.pix(0, 0)
 
     def gridlines(self, lrbt, interval, **kwargs):
         style = {"weight":1, "stroke":"lightgrey"}
@@ -153,11 +163,11 @@ class CoordinateSystem:
         if dx:
             x = x0
             while x < x1 + dx / 2:
-                self += Line(px((x, y0)), px((x, y1))).config(**style)
+                self += Line(px(x, y0), px(x, y1)).config(**style)
                 x += dx
         if dy:
             while y0 < y1 + dy / 2:
-                self += Line(px((x0, y0)), px((x1, y0))).config(**style)
+                self += Line(px(x0, y0), px(x1, y0)).config(**style)
                 y0 += dy
         return self
 
@@ -165,8 +175,8 @@ class CoordinateSystem:
         style = {"weight":2, "stroke":"black"}
         style.update(kwargs)
         px = self.pix
-        if x: self += Line(px((x[0], 0)), px((x[1], 0))).config(**style)
-        if y: self += Line(px((0, y[0])), px((0, y[1]))).config(**style)
+        if x: self += Line(px(x[0], 0), px(x[1], 0)).config(**style)
+        if y: self += Line(px(0, y[0]), px(0, y[1])).config(**style)
         return self
 
     def graph(self, points, markers, shift=(0, 0), **kwargs):
@@ -186,13 +196,9 @@ class CoordinateSystem:
                         gr = markers[i]
                         if type(gr) is str: gr = _str2gr(gr, x, y, **kwargs)
                     except: gr = Image(markers)
-                self += gr.config(pos=px((x + dx, y + dy)))
+                self += gr.config(pos=px(x + dx, y + dy))
             i += 1
         return self
-
-# Labeling axes...
-# plot.mix(range(2, 11, 2), -0.5, "{x:d}", **font)
-# plot.mix(-0.1, range(-4, 5, 2), "{y:d}", anchor=RIGHT, **font)
 
     def mix(self, x, y, markers, shift=(0, 0), **kwargs):
         return self.graph(mix(x, y), markers, shift, **kwargs)
@@ -242,7 +248,7 @@ class Locus(oldPlot.Locus, _Plotable):
         px = getattr(self.plot, "pix", None)
         d = self.data
         pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.vars)
-        if px: pts = (px(p) for p in pts)
+        if px: pts = (px(*p) for p in pts)
         pts = [(x + x0, y + y0) for (x, y) in pts]
         if len(pts) > 1:
             wt = self.weight
@@ -359,7 +365,7 @@ class Vector(Renderable, _Plotable):
     def pos(self):
         c = self.middle
         p = self.plot
-        return c if p is None else p.pix(c)
+        return c if p is None else p.pix(*c)
 
     @pos.setter
     def pos(self, xy):
