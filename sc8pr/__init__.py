@@ -878,6 +878,16 @@ class Canvas(Graphic):
         if self.weight: drawBorder(srf, self.border, self.weight)
         return Image(srf)
 
+    def flatten(self, keep=()):
+        "Draw graphics onto background and remove"
+        keep = [(gr.name, gr) for gr in keep]
+        for gr in keep: gr[1].remove()
+        self.config(bg=self.snapshot()).purge()
+        for name, gr in keep:
+            if name: self[name] = gr
+            else: self += gr
+        return self
+
     def objectAt(self, pos, includeAll=False):
         obj = self
         for g in self:
