@@ -49,6 +49,7 @@ sc8pr 2.2.dev...
 *** Fix bug in 'Canvas.__init__'
 *** Add 'sc8pr.misc.plotcanvas' and 'sc8pr.misc.table'
 *** Add 'util.mix'
+*** Replace 'Canvas.grid' by 'Table.grid'
 
 
 !!! Add 'util.borderRadius'

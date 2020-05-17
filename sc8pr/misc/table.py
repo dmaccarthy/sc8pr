@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 import pygame
-from sc8pr import Canvas
+from sc8pr import Canvas, Image, Graphic, CENTER
 from sc8pr.shape import Polygon
 
 class Table(Canvas):
@@ -58,3 +58,23 @@ class Table(Canvas):
             pts = rect.topleft, rect.topright, rect.bottomright, rect.bottomleft
             self += Polygon(pts).config(**kwargs)
         return self
+
+    @staticmethod
+    def grid(*args, cols=None, size=None, fit=True):
+        n = len(args)
+        if cols is None: cols = n
+        rows = (n - 1) // cols + 1
+        args = [(a if isinstance(a, Graphic) else Image(a)) for a in args]
+        w, h = size if size else args[0].size
+        cv = Table(cols*[w], rows*[h])
+        r = c = 0
+        for a in args:
+            cv += a.config(pos=cv.cell(c, r).center, anchor=CENTER)
+            if fit:
+                f = min(w/a.width, h/a.height)
+                if f < 1: a.scale(f)
+            c += 1
+            if c == cols:
+                c = 0
+                r += 1
+        return cv

@@ -916,24 +916,24 @@ class Canvas(Graphic):
         for gr in (self.everything() if recursive else self):
             if criteria(gr): yield gr
 
-    @staticmethod
-    def grid(*args, cols=None, size=None):
-        "Arrange graphics in a grid"
-        n = len(args)
-        if cols is None: cols = n
-        rows = n // cols
-        if rows * cols < n: rows += 1
-        args = [(a if isinstance(a, Graphic) else Image(a)) for a in args]
-        w, h = size if size else args[0].size 
-        cv = Canvas((w*cols, h*rows))
-        r = c = 0
-        for i in range(n):
-            cv += args[i].config(anchor=TOPLEFT, pos=(c*w, r*h), size=(w, h))
-            c += 1
-            if c == cols:
-                c = 0
-                r += 1
-        return cv
+#     @staticmethod
+#     def grid(*args, cols=None, size=None):
+#         "Arrange graphics in a grid"
+#         n = len(args)
+#         if cols is None: cols = n
+#         rows = n // cols
+#         if rows * cols < n: rows += 1
+#         args = [(a if isinstance(a, Graphic) else Image(a)) for a in args]
+#         w, h = size if size else args[0].size 
+#         cv = Canvas((w*cols, h*rows))
+#         r = c = 0
+#         for i in range(n):
+#             cv += args[i].config(anchor=TOPLEFT, pos=(c*w, r*h), size=(w, h))
+#             c += 1
+#             if c == cols:
+#                 c = 0
+#                 r += 1
+#         return cv
 
     def scroll(self, dx=0, dy=0):
         x, y = self._scroll
