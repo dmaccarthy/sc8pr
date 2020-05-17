@@ -17,11 +17,11 @@
 
 
 from random import random
-from math import hypot, ceil, sqrt
+from math import hypot, ceil
 import pygame
 from sc8pr import Graphic, BaseSprite, CENTER, Image
 from sc8pr.util import rgba, hasAny
-from sc8pr.geom import transform2dGen, dist, delta, polar2d, DEG
+from sc8pr.geom import transform2dGen, dist, delta, polar2d, circle_intersect, DEG
 
 
 class Shape(Graphic):
@@ -95,20 +95,21 @@ class Circle(Shape):
 
     def intersect(self, other):
         "Find the intersection(s) of two circles as list of points"
-        R = self.radius
-        r = other.radius
-        d = dist(self.pos, other.pos)
-        if d > r + R or d == 0 or d < abs(r - R): return []
-        r2 = r * r
-        x = (d*d + r2 - R*R) / (2*d)
-        ux, uy = delta(self.pos, other.pos, 1)
-        x0, y0 = other.pos
-        x0 += x * ux
-        y0 += x * uy
-        if x < r:
-            y = sqrt(r2 - x*x)
-            return [(x0 - y * uy, y0 + y * ux), (x0 + y * uy, y0 - y * ux)]
-        else: return [(x0, y0)]
+        return circle_intersect(self.pos, self.radius, other.pos, other.radius)
+#         R = self.radius
+#         r = other.radius
+#         d = dist(self.pos, other.pos)
+#         if d > r + R or d == 0 or d < abs(r - R): return []
+#         r2 = r * r
+#         x = (d*d + r2 - R*R) / (2*d)
+#         ux, uy = delta(self.pos, other.pos, 1)
+#         x0, y0 = other.pos
+#         x0 += x * ux
+#         y0 += x * uy
+#         if x < r:
+#             y = sqrt(r2 - x*x)
+#             return [(x0 - y * uy, y0 + y * ux), (x0 + y * uy, y0 - y * ux)]
+#         else: return [(x0, y0)]
 
 
 class Line(Shape):

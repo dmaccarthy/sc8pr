@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from math import hypot, pi, sin, cos, asin, atan2, floor
+from math import hypot, pi, sin, cos, asin, atan2, floor, sqrt
 
 DEG = pi / 180
 
@@ -110,3 +110,18 @@ def rotatedSize(w, h, angle):
     w = max(abs(pt[0]) for pt in pts)
     h = max(abs(pt[1]) for pt in pts)
     return w, h
+
+def circle_intersect(c1, r1, c2, r2):
+    "Find the intersection(s) of two circles as list of points"
+    d = dist(c1, c2)
+    if d > r2 + r1 or d == 0 or d < abs(r2 - r1): return []
+    r_sq = r2 * r2
+    x = (d*d + r_sq - r1 * r1) / (2*d)
+    ux, uy = delta(c1, c2, 1)
+    x0, y0 = c2
+    x0 += x * ux
+    y0 += x * uy
+    if x < r2:
+        y = sqrt(r_sq - x*x)
+        return [(x0 - y * uy, y0 + y * ux), (x0 + y * uy, y0 - y * ux)]
+    else: return [(x0, y0)]
