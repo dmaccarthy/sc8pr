@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -140,3 +140,6 @@ class Slider(Canvas):
             if self._val != cur:
                 setattr(ev, "method", KEY)
                 self.bubble("onchange", ev)
+
+    def resize(self, size):
+        super().resize((16, size[1]))
