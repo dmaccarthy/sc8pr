@@ -23,9 +23,8 @@ import pygame
 import pygame.display as _pd
 from pygame.transform import flip as _pyflip
 from sc8pr._event import EventManager
-from sc8pr.geom import transform2d, positiveAngle, delta
-from sc8pr.util import CachedSurface, style, logError, sc8prData,\
-    tile, rgba, drawBorder, hasAlpha
+from sc8pr.geom import transform2d, positiveAngle, delta, sigma
+from sc8pr.util import CachedSurface, style, logError, sc8prData, tile, rgba, drawBorder, hasAlpha
 
 # Anchor point constants
 TOPLEFT = 0
@@ -190,6 +189,32 @@ class Graphic:
     @property
     def avgColor(self): return self._avgColor
 
+# Properties for PCanvas (plotting, scrollable)
+
+    def _warn(self):
+        print("Warning: {} has no canvas while setting cvPos or theta".format(str(self)), file=sys.stderr)
+
+    @property
+    def theta(self):
+        cv = self.canvas
+        return self.angle if cv is None or cv.clockwise else -self.angle
+
+    @theta.setter
+    def theta(self, t):
+        cv = self.canvas
+        if cv is None: self._warn()
+        self.angle = t if cv is None or cv.clockwis else -t
+
+    @property
+    def csPos(self):
+        cv = self.canvas
+        return self.pos if cv is None else cv.cs(*self.pos)
+
+    @csPos.setter
+    def csPos(self, pos):
+        cv = self.canvas
+        if cv is None: self._warn()
+        self.pos = pos if cv is None else cv.px(*pos)
 
 # Metrics
 
@@ -232,17 +257,6 @@ class Graphic:
     def center(self):
         size = self.size
         return (size[0] - 1) / 2, (size[1] - 1) / 2
-
-    @property
-    def spos(self):
-        "Position relative to scroll origin"
-        sx, sy = self.canvas._scroll
-        return self.pos[0] + sx, self.pos[1] + sy
-
-    @spos.setter
-    def spos(self, pos):
-        sx, sy = self.canvas._scroll
-        self.pos = pos[0] - sx, pos[1] - sy
 
     def blitPosition(self, offset, blitSize):
         "Return the position (top left) to which the graphic is drawn"
@@ -667,7 +681,13 @@ class Image(Graphic):
 class Canvas(Graphic):
     _border = rgba("black")
     weight = 0
+    resizeContent = True
     _scroll = 0, 0
+
+    @staticmethod
+    def _px(x): return x
+
+    _cs = _px
 
     def __init__(self, image, bg=None):
         mode = 0 if type(image) is str else 1 if isinstance(image, Image) else 2
@@ -682,6 +702,18 @@ class Canvas(Graphic):
         self._size = size
         self._items = []
         self.bg = bg
+
+    @property
+    def clockwise(self): return True
+
+    @property
+    def units(self): return 1, 1
+
+    @property
+    def unit(self): return 1
+
+    def px(self, *pt): return delta(self._px(pt), self._scroll)
+    def cs(self, *pt): return self._cs(sigma(pt, self._scroll))
 
     def call(self, methodname, seq, *args, **kwargs):
         "Call the specified method on the canvas contents"
@@ -798,21 +830,18 @@ class Canvas(Graphic):
             self._size = self._size[0] + dx, self._size[1] + dy
         return self
 
-    def resize(self, size, resizeContent=True):
+    def resize(self, size): # !!!, resizeContent=True):
         "Resize the canvas contents"
         size = max(1, round(size[0])), max(1, round(size[1]))
         fx, fy = size[0] / self._size[0], size[1] / self._size[1]
         self._size = size
-        sx, sy = self._scroll
-        if sx or sy: self.scrollTo()
 
         # Resize content
-        if resizeContent:
+        if self.resizeContent:
             for g in self:
                 if g.autoPositionOnResize: g.scaleVectors(fx, fy)
                 w, h = g.size
                 g.resize((w * fx, h * fy))
-        if sx or sy: self.scrollTo(fx*sx, fy*sy)
 
     def draw(self, srf=None, mode=3):
         "Draw the canvas to a surface"
@@ -916,41 +945,8 @@ class Canvas(Graphic):
         for gr in (self.everything() if recursive else self):
             if criteria(gr): yield gr
 
-#     @staticmethod
-#     def grid(*args, cols=None, size=None):
-#         "Arrange graphics in a grid"
-#         n = len(args)
-#         if cols is None: cols = n
-#         rows = n // cols
-#         if rows * cols < n: rows += 1
-#         args = [(a if isinstance(a, Graphic) else Image(a)) for a in args]
-#         w, h = size if size else args[0].size 
-#         cv = Canvas((w*cols, h*rows))
-#         r = c = 0
-#         for i in range(n):
-#             cv += args[i].config(anchor=TOPLEFT, pos=(c*w, r*h), size=(w, h))
-#             c += 1
-#             if c == cols:
-#                 c = 0
-#                 r += 1
-#         return cv
-
     def scroll(self, dx=0, dy=0):
-        x, y = self._scroll
-        self._scroll = x + dx, y + dy
-        for gr in self:
-            if gr.scrollable:
-                x, y = gr.pos
-                gr.config(pos=(x-dx,y-dy))
-        return self
-
-    def scrollTo(self, x=0, y=0):
-        dx, dy = self._scroll
-        return self.scroll(x-dx, y-dy)
-
-    def dpos(self, x, y):
-        w, h = self.size
-        return x * (w - 1), y * (h - 1)
+        raise NotImplementedError("Use PCanvas class to scroll.")
 
     def cover(self):
         return Image(self.size, "#ffffffc0").config(anchor=TOPLEFT)
@@ -1067,7 +1063,7 @@ class Sketch(Canvas):
         if self.fixedAspect: size = self._aspectSize(size, initSize)
         if self.fixedAspect and sum(abs(x-y) for (x,y) in (zip(size, self.size))) > 1:
             return self.resize(size)
-        super().resize(self.size)
+        super().resize(self.size) # !!!
         self._size = self.size
         if self.dirtyRegions is not None:
             self.dirtyRegions = [pygame.Rect((0,0), self._size)]
@@ -1104,6 +1100,9 @@ class Sketch(Canvas):
 
         # Run setup
         try:
+            if hasattr(self, "_defer_coords"):
+                self.setCoords(*self._defer_coords)
+                del self._defer_coords
             if hasattr(self, "setup"): self.setup()
             else:
                 main = sys.modules["__main__"]
@@ -1140,8 +1139,12 @@ class Sketch(Canvas):
                 if ev.type != pygame.VIDEORESIZE:
                     self.evMgr.dispatch(ev)
                 elif ev.size != self.size:
+                    setattr(ev, "originalSize", self.size)
                     self._resize_ev = ev
+                    s = hasattr(self, "_scrollSize")
+                    if s: self.scrollTo()
                     self.resize(ev.size)
+                    if s: self.resizeCoords(ev)
             except: logError()
 
     def _drawDirtyRegions(self, srf):

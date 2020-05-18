@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2020 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -15,153 +15,29 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-from math import cos, sin, sqrt, ceil
-import pygame
-from sc8pr import Sketch, Renderable, Canvas, Image #, Graphic, CENTER
-from sc8pr.text import Text
-from sc8pr.geom import smallAngle #, sigma, polar2d, transform2d, dist, DEG
-from sc8pr.shape import Line, Polygon #, Shape, Arrow
-from sc8pr.misc.plot import _lrbt #, locus, Locus
+from math import sqrt
+from sc8pr import Image, Canvas, Sketch
 from sc8pr.util import mix
+from sc8pr.text import Text
+from sc8pr.shape import Line, Polygon
+from sc8pr.misc.plot import _lrbt
+from sc8pr.plot.scroll import ScrollBars
+import pygame
 
-calc_lrbt = _lrbt
-
-
-class Plotable:
-    _plot = True
-    autoPositionOnResize = False
-
-    @property
-    def plot(self):
-        p = self._plot
-        if p is True:
-            p = getattr(self, "canvas", None)
-            if not isinstance(p, CoordinateSystem): p = None
-        return p
-
-    @plot.setter
-    def plot(self, p): self._plot = p
-
-    @property
-    def angle(self):
-        p = self.plot
-        return self.dir if (p is None or p.clockwise) else -self.dir
-
-    @angle.setter
-    def angle(self, a):
-        p = self.plot
-        self.dir = smallAngle(a if (p is None or p.clockwise) else -a)
-
-    @property
-    def unit(self):
-        p = self.plot
-        return 1 if p is None else p.unit
-
-    @property
-    def pos(self):
-        c = self.plotPos
-        p = self.plot
-        return c if p is None else p.pix(*c)
-
-    @pos.setter
-    def pos(self, xy):
-        p = self.plot
-        self.plotPos = xy if p is None else p.unpix(*xy)
-
-
-def _autoSize(lrbt, width):
-    return width, round(width * (lrbt[3] - lrbt[2]) / (lrbt[1] - lrbt[0]))
 
 def _str2gr(text, x, y, **kwargs):
     xy = dict(x=x, y=y)
     return Text(text.format(**xy)).config(**kwargs)
 
-def _coord(lrbt, size, invert=False):
-    "Create a transformation for the given coordinate system"
-    if len(lrbt) != 4: lrbt = _lrbt(lrbt, *size)
-    l, r = lrbt[:2]
-    sx = size[0] / (r - l)
-    dx = sx * l
-    b, t = lrbt[2:]
-    sy = size[1] / (b - t)
-    dy = sy * t
-    if invert:
-        return lambda *p: ((p[0] + dx) / sx, (p[1] + dy) / sy)
-    else:
-        return lambda *p: (sx * p[0] - dx, sy * p[1] - dy)
+def _autoH(lrbt, width):
+    return round(width * (lrbt[3] - lrbt[2]) / (lrbt[1] - lrbt[0]))
 
 
-class CoordinateSystem:
-
-    def coords(self, lrbt=None, size=None):
-        first = not hasattr(self, "_lrbt")
-        if first:
-            if size is None: size = self.size
-            elif type(size) is int: size = _autoSize(lrbt, size)
-            lrbt = calc_lrbt(lrbt, *size)
-        else:
-            lrbt = self._lrbt
-            size = self.size
-
-        self.pix = px = _coord(lrbt, size)
-        self.unpix = ux = _coord(lrbt, size, True)
-        p0 = px(0, 0)
-        p1 = px(1, 1)
-        p0, p1 = p1[0] - p0[0], p1[1] - p0[1]
-        self._units = p0, p1, sqrt(abs(p0 * p1)), p0 * p1 > 0
-
-        if first:
-            x0, y1 = ux(0, 0)
-            x1, y0 = ux(*size)
-            self._lrbt = x0, x1, y0, y1
-        elif isinstance(self, Canvas):
-            for gr in self.instOf(Renderable): gr.stale = True
-
-    __init__ = coords
-
-    def transform(self, pts, **kwargs):
-        tr = self.unpix if kwargs.get("invert") else self.pix
-        for pt in pts: yield(tr(*pt))
-
-    @property
-    def left(self): return self._lrbt[0]
-
-    @property
-    def right(self): return self._lrbt[1]
-
-    @property
-    def bottom(self): return self._lrbt[2]
-
-    @property
-    def top(self): return self._lrbt[3]
-
-    @property
-    def bottomleft(self):
-        c = self._lrbt
-        return c[0], c[2]
-
-    @property
-    def bottomright(self):
-        c = self._lrbt
-        return c[1], c[2]
-
-    @property
-    def topright(self):
-        c = self._lrbt
-        return c[1], c[3]
-
-    @property
-    def topleft(self):
-        c = self._lrbt
-        return c[0], c[3]
-
-    @property
-    def middle(self):
-        c = self._lrbt
-        return (c[0] + c[1]) / 2, (c[2] + c[3]) / 2
-
-    @property
-    def clockwise(self): return self._units[3]
+class _PCanvas:
+    _lrbt = None
+    _scrollSize = None
+    _scrollbars = None
+    _units = 1, 1, 1, True
 
     @property
     def units(self): return self._units[:2]
@@ -170,14 +46,114 @@ class CoordinateSystem:
     def unit(self): return self._units[2]
 
     @property
-    def origin(self): return self.pix(0, 0)
+    def clockwise(self): return self._units[3]
+
+    @property
+    def middle(self):
+        l, r, b, t = self.lrbt
+        return (l + r) / 2, (b + t) / 2
+
+    @property
+    def topleft(self): return self.cs(0, 0)
+
+    @property
+    def top(self): return self.topleft[1]
+
+    @property
+    def left(self): return self.topleft[0]
+
+    @property
+    def bottomright(self):
+        w, h = self.scrollSize
+        return self.cs(w-1, h-1)
+
+    @property
+    def bottom(self): return self.bottomright[1]
+
+    @property
+    def right(self): return self.bottomright[0]
+
+    @property
+    def topright(self):
+        return tuple(self.lrbt[i] for i in (3, 1))
+
+    @property
+    def bottomleft(self):
+        return tuple(self.lrbt[i] for i in (2, 0))
+
+    @property
+    def lrbt(self):
+        l, t = self.topleft
+        r, b = self.bottomright
+        return l, r, b, t
+
+    @property
+    def scrollSize(self):
+        return self.size if self._scrollSize is None else self._scrollSize
+
+    def setCoords(self, lrbt=None, scrollSize=None):
+#         if scrollSize:
+#             s = self.size, scrollSize
+#             self._scrollSize = tuple(max(x[i] for x in s) for i in (0, 1))
+#         else: self._scrollSize = None
+        self._scrollSize = scrollSize
+        w, h = self.scrollSize 
+        if lrbt:
+            if len(lrbt) != 4: lrbt = _lrbt(lrbt, w, h)
+            self._lrbt = lrbt
+            l, r = lrbt[:2]
+            sx = (w - 1) / (r - l)
+            dx = sx * l
+            b, t = lrbt[2:]
+            sy = (h - 1) / (b - t)
+            dy = sy * t
+            self._cs = lambda p: ((p[0] + dx) / sx, (p[1] + dy) / sy)
+            self._px = lambda p: (sx * p[0] - dx, sy * p[1] - dy)
+            p0 = self.px(0, 0)
+            p1 = self.px(1, 1)
+            p0, p1 = p1[0] - p0[0], p1[1] - p0[1]
+            self._units = p0, p1, sqrt(abs(p0 * p1)), p0 * p1 > 0
+        if self._scrollbars: self -= self._scrollbars
+        self._scrollbars = ScrollBars(self)
+        return self
+
+    def draw(self, srf=None, mode=3):
+        s = self._scrollbars
+        if s: self += s 
+        return super().draw(srf, mode)
+
+    def transform(self, pts, **kwargs):
+        tr = self.cs if kwargs.get("invert") else self.px
+        for pt in pts: yield(tr(*pt))
+
+    def scroll(self, dx, dy):
+        x, y = self._scroll
+        self._scroll = x + dx, y + dy
+        for gr in self:
+            if gr.scrollable:
+                x, y = gr.pos
+                gr.pos = x -dx, y - dy
+
+    def scrollTo(self, x=0, y=0):
+        dx, dy = self._scroll
+        return self.scroll(x-dx, y-dy)
+
+    def scrollSnapshot(self):
+        "Take a snapshot of the entire scroll region"
+        cv = PCanvas(self.scrollSize, self.lrbt, bg=self.bg)
+        cv.config(weight=self.weight, border=self.border)        
+        for gr in list(self): gr.setCanvas(cv)
+        img = cv.snapshot()
+        for gr in list(cv): gr.setCanvas(self)
+        return img
 
     def gridlines(self, lrbt, interval, axis=None, **kwargs):
+        "Draw gridlines and optional coordinate axes"
         style = {"weight":1, "stroke":"lightgrey"}
         style.update(kwargs)
         dx, dy = interval
         x0, x1, y0, y1 = lrbt
-        px = self.pix
+        px = self.px
         if dx:
             x = x0
             while x < x1 + dx / 2:
@@ -189,11 +165,13 @@ class CoordinateSystem:
                 y0 += dy
         return self if axis is None else self.axis(lrbt, **axis)
 
-    def axis(self, lrbt, **kwargs):
+    def axis(self, x=None, y=None, **kwargs):
+        "Draw coordinate axes"
         style = {"weight":2, "stroke":"black"}
         style.update(kwargs)
-        px = self.pix
-        x, y = lrbt[:2], lrbt[2:]
+        px = self.px
+        if y is None and len(x) == 4:
+            x, y = x[:2], x[2:]
         if x: self += Line(px(x[0], 0), px(x[1], 0)).config(**style)
         if y: self += Line(px(0, y[0]), px(0, y[1])).config(**style)
         return self
@@ -201,7 +179,7 @@ class CoordinateSystem:
     def graph(self, points, markers, shift=(0, 0), **kwargs):
         i = 0
         dx, dy = shift
-        px = self.pix
+        px = self.px
         for x, y in points:
             t = type(markers)
             if t in (int, float):
@@ -229,30 +207,36 @@ class CoordinateSystem:
         return self.graph(zip(x, y), markers, shift, **kwargs)
 
 
-class PCanvas(Canvas, CoordinateSystem):
-
-    def __init__(self, size, lrbt, bg=None):
-        if type(size) is int: size = _autoSize(lrbt, size)
+class PCanvas(_PCanvas, Canvas):
+    
+    def __init__(self, size, lrbt=None, scrollSize=None, bg=None):
+        if type(size) is int:
+            size = size, _autoH(lrbt, size)
         super().__init__(size, bg)
-        CoordinateSystem.coords(self, lrbt)
+        if lrbt: self.setCoords(lrbt, scrollSize)
 
     def resize(self, size):
+        self.scrollTo()
         super().resize(size)
-        CoordinateSystem.coords(self)
+        self.setCoords(self._lrbt, self._scrollSize)
 
-    def coords(self, lrbt):
-        delattr(self, "_lrbt")
-        CoordinateSystem.coords(self, lrbt, self.size)
-        
 
-class PSketch(Sketch, CoordinateSystem):
-    coords = PCanvas.coords
-
-    def __init__(self, size, lrbt):
-        if type(size) is int: size = _autoSize(lrbt, size)
+class PSketch(_PCanvas, Sketch):
+    
+    def __init__(self, size=(512, 288), lrbt=None, scrollSize=None):
+        if type(size) is int:
+            size = size, _autoH(lrbt, size)
+        if lrbt or scrollSize:
+            self._defer_coords = lrbt, scrollSize
         super().__init__(size)
-        CoordinateSystem.coords(self, lrbt, size)
 
-    def resize(self, size, mode=None):
-        super().resize(size, mode)
-        CoordinateSystem.coords(self, size=size)
+    def resizeCoords(self, ev):
+        scrollSize = None
+        if self._scrollSize:
+            if self.resizeContent:
+                w, h = ev.originalSize 
+                f = (self.width / w + self.height / h) / 2
+                w, h = self._scrollSize
+                scrollSize = f * w, f * h
+            else: scrollSize = self._scrollSize
+        self.setCoords(self._lrbt, scrollSize)
