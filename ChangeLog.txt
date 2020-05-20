@@ -20,7 +20,7 @@ sc8pr 2.2.dev...
 *** Add 'Slider.methodNames'
 ** Drag slider knob from any point rather than only the center
 ** Default knob size based on number of steps
-*** Add 'Canvas.call', 'Canvas.flatten', 'Canvas.scroll' and 'Canvas.scrollTo' methods
+*** Add 'Canvas.call', 'Canvas.flatten', 'Canvas.scroll' and 'Canvas.scrollTo' methods, SCROLL event
 *** Standardize attributes (target, focus, hover, handler) for sc8pr events
 *** Add 'scrollable' and 'spos' properties to 'Graphic' class
 *** Add 'dpos' method to 'Canvas' and 'sc8pr.gui._SCanvas' classes
@@ -48,6 +48,7 @@ sc8pr 2.2.dev...
 *** Add 'Graphic.scale'
 *** Fix bug in 'Canvas.__init__'
 *** Add 'sc8pr.plot' package and 'sc8pr.misc.table' module
+*** Add additional 'Graphic' and 'Canvas' methods to support new plotting/scrolling package
 *** Add 'util.mix'
 *** Replace 'Canvas.grid' by 'Table.grid'
 *** Create 'util.circle_intersect'

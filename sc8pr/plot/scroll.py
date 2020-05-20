@@ -51,9 +51,12 @@ class ScrollBars:
         return gr
     
     @staticmethod
-    def sliderChange(gr, ev):
-        s = ev.target
+    def sliderChange(s, ev):
         cv = s.canvas
         x, y = cv._scroll
-        if s.dim: cv.scrollTo(x, -s.val)
-        else: cv.scrollTo(-s.val, y)
+        z = round(-s.val)
+        if s.dim: cv.scrollTo(x, z)
+        else: cv.scrollTo(z, y)
+        setattr(ev, "dim", "xy"[s.dim])
+        setattr(ev, "handler", "onscroll")
+        cv.bubble("onscroll", ev)

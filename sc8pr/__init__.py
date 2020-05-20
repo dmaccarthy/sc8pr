@@ -484,7 +484,7 @@ class Renderable(Graphic):
         return self._srf.get_size()
 
     def resize(self, size):
-        self._size = size
+        self._size = size # ???
         self.stale = True
 
     @size.setter
