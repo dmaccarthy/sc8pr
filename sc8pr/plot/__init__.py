@@ -15,14 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-from math import sqrt
-from sc8pr import Image, Canvas, Sketch
+from math import sqrt, floor, ceil
+import pygame
+from sc8pr import Image, Canvas, Sketch, Renderable, Graphic, BOTTOM, TOP, CENTER
 from sc8pr.util import mix
 from sc8pr.text import Text
 from sc8pr.shape import Line, Polygon
 from sc8pr.misc.plot import _lrbt
 from sc8pr.plot.scroll import ScrollBars
-import pygame
 
 
 def _str2gr(text, x, y, **kwargs):
@@ -92,10 +92,6 @@ class _PCanvas:
         return self.size if self._scrollSize is None else self._scrollSize
 
     def setCoords(self, lrbt=None, scrollSize=None):
-#         if scrollSize:
-#             s = self.size, scrollSize
-#             self._scrollSize = tuple(max(x[i] for x in s) for i in (0, 1))
-#         else: self._scrollSize = None
         self._scrollSize = scrollSize
         w, h = self.scrollSize 
         if lrbt:
@@ -134,6 +130,13 @@ class _PCanvas:
                 x, y = gr.pos
                 gr.pos = x -dx, y - dy
 
+    @property
+    def scrollPos(self): return self._scroll
+
+    @scrollPos.setter
+    def scrollPos(self, pt):
+        self.scrollTo(*pt)
+
     def scrollTo(self, x=0, y=0):
         dx, dy = self._scroll
         return self.scroll(x-dx, y-dy)
@@ -147,11 +150,12 @@ class _PCanvas:
         for gr in list(cv): gr.setCanvas(self)
         return img
 
-    def gridlines(self, lrbt, interval, axis=None, **kwargs):
+    def gridlines(self, lrbt, step=1, axis=None, **kwargs):
         "Draw gridlines and optional coordinate axes"
         style = {"weight":1, "stroke":"lightgrey"}
         style.update(kwargs)
-        dx, dy = interval
+        if type(step) in (int, float): dx = dy = step
+        else: dx, dy = step
         x0, x1, y0, y1 = lrbt
         px = self.px
         if dx:
@@ -176,18 +180,15 @@ class _PCanvas:
         if y: self += Line(px(0, y[0]), px(0, y[1])).config(**style)
         return self
 
-    def graph(self, points, markers, shift=(0, 0), **kwargs):
+    def series(self, points, markers=1, shift=(0, 0), **kwargs):
         i = 0
         dx, dy = shift
         px = self.px
+        items = []
         for x, y in points:
             t = type(markers)
             if t in (int, float):
-                if True or y > 0:
-                    dx = markers / 2
-                    pts = [(x-dx, 0), (x-dx, y), (x+dx, y), (x+dx, 0)]
-                    bar = Polygon(self.transform(pts)).config(**kwargs)
-                    if bar.height >= 1: self += bar
+                items.append(PBar(x, y, markers).config(**kwargs))
             else:
                 if t is str: gr = _str2gr(markers, x, y, **kwargs)
                 else:
@@ -195,16 +196,22 @@ class _PCanvas:
                         gr = markers[i]
                         if type(gr) is str: gr = _str2gr(gr, x, y, **kwargs)
                     except: gr = Image(markers)
-                self += gr
-                gr.config(pos=px(x + dx, y + dy))
+                items.append(gr.config(pos=px(x + dx, y + dy)))
             i += 1
-        return self
+        return items
 
-    def mix(self, x, y, markers, shift=(0, 0), **kwargs):
-        return self.graph(mix(x, y), markers, shift, **kwargs)
+    def data(self, series, data, shift=(0, 0)):
+        sx, sy = shift
+        for gr, (x, y) in zip(series, data):
+            if isinstance(gr, _PObject): gr.update(x, y)
+            else: gr.config(pos=self.px(x + sx, y + sy))
 
-    def zip(self, x, y, markers, shift=(0, 0), **kwargs):
-        return self.graph(zip(x, y), markers, shift, **kwargs)
+    def _scrollEvent(self):
+        if self._scrollbars.bars:
+            sk = self.sketch
+            evMgr = sk.evMgr
+            ev = pygame.event.Event(pygame.USEREVENT, focus=evMgr.focus, hover=evMgr.hover, target=sk, handler="onscroll")
+            self.bubble("onscroll", ev)
 
 
 class PCanvas(_PCanvas, Canvas):
@@ -219,6 +226,7 @@ class PCanvas(_PCanvas, Canvas):
         self.scrollTo()
         super().resize(size)
         self.setCoords(self._lrbt, self._scrollSize)
+        self._scrollEvent()
 
 
 class PSketch(_PCanvas, Sketch):
@@ -240,3 +248,75 @@ class PSketch(_PCanvas, Sketch):
                 scrollSize = f * w, f * h
             else: scrollSize = self._scrollSize
         self.setCoords(self._lrbt, scrollSize)
+        self._scrollEvent()
+
+
+class _PObject:
+    scrollable = False
+    theta = 0
+
+    @property
+    def anchor(self): return CENTER
+
+    @property
+    def pos(self):
+        cv = self.canvas
+        return cv.px(*self.csPos) if cv else self.csPos
+
+    @pos.setter
+    def pos(self, pos):
+        cv = self.canvas
+        if cv: pos = cv.cs(*pos)
+        self.csPos = pos
+        
+    @property
+    def angle(self):
+        cv = self.canvas
+        return self.theta if cv is None or cv.clockwise else -self.theta
+
+    @angle.setter
+    def angle(self, a):
+        cv = self.canvas
+        self.theta = a if cv is None or cv.clockwise else -a   
+
+
+class PBar(_PObject, Renderable):
+    fill = "blue"
+    stroke = "black"
+    weight = 1
+    contains = Graphic.contains
+
+    @property
+    def anchor(self):
+        return BOTTOM if self._xy[1] >= 0 else TOP
+
+    @property
+    def csPos(self): return self._xy[0], 0
+
+    @property
+    def pos(self):
+        x, y = self._xy
+        x1, y1 = self.canvas.px(x, 0)
+        return x1, floor(y1) if y < 0 else ceil(y1)
+
+    @pos.setter
+    def pos(self, xy): pass
+
+    @csPos.setter
+    def csPos(self, xy): pass
+
+    def __init__(self, x, y, barWidth=1):
+        self._xy = x, y
+        self._barWidth = barWidth
+
+    def update(self, x, y): self._xy = x, y
+
+    def render(self):
+        y = self._xy[1]
+        cv = self.canvas
+        u = cv.units
+        w = round(abs(u[0] * self._barWidth))
+        h = round(abs(u[1] * y))
+        wt = round(self.weight)
+        img = Canvas((w, h + 1), self.fill).config(weight=wt, border=self.stroke)
+        return img.snapshot().original
