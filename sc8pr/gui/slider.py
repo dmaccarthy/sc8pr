@@ -120,7 +120,8 @@ class Slider(Canvas):
             s = (self.upper - self.lower) / s
             v = self._val
             if x != v:
-                if x < v: self.val -= s
+                if btn == 1 and ev.target is self: self.val = x
+                elif x < v: self.val -= s
                 else: self.val += s
                 setattr(ev, "method", SCROLL if btn in (4,5) else CLICK)
                 if ev: self.bubble("onchange", ev)
