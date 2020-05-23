@@ -16,7 +16,7 @@ For more information, please see the [documentation](http://dmaccarthy.github.io
 
 # Installation
 
-Latest relase (2.1.0):
+Latest relase (2.1.2):
 ```
 pip3 install sc8pr
 ```
