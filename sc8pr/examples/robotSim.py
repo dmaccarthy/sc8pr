@@ -25,21 +25,13 @@ try:
     from sc8pr.robot import Robot, RobotThread
     from sc8pr.sprite import physics, Collisions
     from sc8pr.misc.plot import Plot, Series
-    from sc8pr.gui.dialog import MessageBox
+    from sc8pr.gui.robot import gui
 except Exception as e:
     print(e)
     print("Try running 'pip3 install sc8pr' on command line")
     exit()
 from math import sin, pi
 from random import randint, uniform, choice, shuffle
-
-def ask(robot, prompt, title="User Input", allowCancel=False):
-    "Synchronous input to the robot brain"
-    sk = robot.sketch
-    btns = None if allowCancel else ["Okay"]
-    sk["User"] = mb = MessageBox(prompt, "", btns, title).config(pos=sk.center)
-    while not mb.command: robot.updateSensors()
-    return None if mb.command.name == "Button_Cancel" else mb["Input"].data
 
 def circles(sk, n=50):
     "Draw random circles for arena floor"
@@ -74,9 +66,9 @@ class BrainSketch(Sketch):
         if brain is None:
             self.bind(onkeydown=Robot.remoteControl).config(remoteRobot=robot)
             brain = self.sensorBrain
-        return robot.bind(brain=brain)
+        return gui(robot.bind(brain=brain))
 
-        
+
 class Arena(BrainSketch):
     "Empty arena for robot challenges"
 
