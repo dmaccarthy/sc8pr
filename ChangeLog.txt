@@ -16,6 +16,7 @@ sc8pr 2.2.dev...
 ** Allow clipboard paste into text input
 * Add 'TextInput.scroll' method as default 'ondraw' event handler
 ** Add support for selection, copy, cut, and paste operations in 'TextInput'
+*** Add 'TextInput.blurAction'
 *** Add 'TextInputCanvas' class and call 'tk.getClipboard'
 *** Change 'MessageBox' text input to 'TextInputCanvas'
 *** Add 'Slider.methodNames'
@@ -48,7 +49,7 @@ sc8pr 2.2.dev...
 *** Fix bug in 'Canvas.__init__'
 *** Add 'sc8pr.plot' package and 'sc8pr.misc.table' module
 *** Add additional 'Graphic' and 'Canvas' methods to support new plotting/scrolling package
-*** Add 'Canvas.clipArea'
+*** Add 'Canvas.clipArea' and 'Canvas.resizeContent'
 *** Add 'util.mix'
 *** Replace 'Canvas.grid' by 'Table.grid'
 *** Create 'util.circle_intersect'

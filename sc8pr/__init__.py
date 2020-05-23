@@ -832,14 +832,15 @@ class Canvas(Graphic):
             self._size = self._size[0] + dx, self._size[1] + dy
         return self
 
-    def resize(self, size): # !!!, resizeContent=True):
+    def resize(self, size, resizeContent=None):
         "Resize the canvas contents"
         size = max(1, round(size[0])), max(1, round(size[1]))
         fx, fy = size[0] / self._size[0], size[1] / self._size[1]
         self._size = size
 
         # Resize content
-        if self.resizeContent:
+        if resizeContent is None: resizeContent = self.resizeContent  
+        if resizeContent:
             for g in self:
                 if g.autoPositionOnResize: g.scaleVectors(fx, fy)
                 w, h = g.size
