@@ -27,7 +27,7 @@ from sc8pr.plot.scroll import ScrollBars
 
 def _str2gr(text, x, y, **kwargs):
     xy = dict(x=x, y=y)
-    return Text(text.format(**xy)).config(**kwargs)
+    return PText(text.format(**xy)).config(**kwargs)
 
 def _autoH(lrbt, width):
     return round(width * (lrbt[3] - lrbt[2]) / (lrbt[1] - lrbt[0]))
@@ -126,7 +126,7 @@ class _PCanvas:
         x, y = self._scroll
         self._scroll = x + dx, y + dy
         for gr in self:
-            if gr.scrollable:
+            if gr._scrollAdjust:
                 x, y = gr.pos
                 gr.pos = x -dx, y - dy
 
@@ -181,6 +181,7 @@ class _PCanvas:
         return self
 
     def series(self, points, markers=1, shift=(0, 0), **kwargs):
+        "Create a list of graphics items from a data series"
         i = 0
         dx, dy = shift
         px = self.px
@@ -195,18 +196,28 @@ class _PCanvas:
                     try:
                         gr = markers[i]
                         if type(gr) is str: gr = _str2gr(gr, x, y, **kwargs)
-                    except: gr = Image(markers)
-                items.append(gr.config(pos=px(x + dx, y + dy)))
+                    except: gr = PImage(markers)
+                pos = x + dx, y + dy
+                if isinstance(gr, _PObject): gr.update(*pos)
+                else: gr.config(pos=px(*pos))
+                items.append(gr)
             i += 1
         return items
 
     def data(self, series, data, shift=(0, 0)):
-        sx, sy = shift
-        for gr, (x, y) in zip(series, data):
-            if isinstance(gr, _PObject): gr.update(x, y)
-            else: gr.config(pos=self.px(x + sx, y + sy))
+        "Modify the data for a data series"
+        dx, dy = shift
+        px = self.px
+        series = iter(series)
+        for x, y in data:
+            gr = next(series)
+            pos = x + dx, y + dy
+            if isinstance(gr, _PObject): gr.update(*pos)
+            else: gr.config(pos=px(*pos))
+        return self
 
     def _scrollEvent(self):
+        "Send SCROLL event to Canvas after resizing"
         if self._scrollbars.bars:
             sk = self.sketch
             evMgr = sk.evMgr
@@ -220,7 +231,7 @@ class PCanvas(_PCanvas, Canvas):
         if type(size) is int:
             size = size, _autoH(lrbt, size)
         super().__init__(size, bg)
-        if lrbt: self.setCoords(lrbt, scrollSize)
+        if lrbt or scrollSize: self.setCoords(lrbt, scrollSize)
 
     def resize(self, size):
         self.scrollTo()
@@ -252,11 +263,9 @@ class PSketch(_PCanvas, Sketch):
 
 
 class _PObject:
-    scrollable = False
+    autoPositionOnResize = _scrollAdjust = False
     theta = 0
-
-    @property
-    def anchor(self): return CENTER
+    csPos = 0, 0
 
     @property
     def pos(self):
@@ -268,7 +277,6 @@ class _PObject:
         cv = self.canvas
         if cv: pos = cv.cs(*pos)
         self.csPos = pos
-        
     @property
     def angle(self):
         cv = self.canvas
@@ -277,7 +285,9 @@ class _PObject:
     @angle.setter
     def angle(self, a):
         cv = self.canvas
-        self.theta = a if cv is None or cv.clockwise else -a   
+        self.theta = a if cv is None or cv.clockwise else -a
+    
+    def update(self, x, y): self.csPos = x, y
 
 
 class PBar(_PObject, Renderable):
@@ -320,3 +330,7 @@ class PBar(_PObject, Renderable):
         wt = round(self.weight)
         img = Canvas((w, h + 1), self.fill).config(weight=wt, border=self.stroke)
         return img.snapshot().original
+
+
+class PImage(_PObject, Image): pass
+class PText(_PObject, Text): pass

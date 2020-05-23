@@ -17,7 +17,7 @@
 
 from math import sin, cos
 import pygame
-from sc8pr import Canvas, Graphic, Renderable
+from sc8pr import Canvas, Graphic, Renderable, CENTER
 from sc8pr.shape import Line, Arrow
 from sc8pr.geom import sigma, DEG, transform2d, smallAngle, polar2d
 from sc8pr.misc.plot import locus, Locus
@@ -25,7 +25,7 @@ from sc8pr.plot import _PObject
 
 
 class PLocus(Locus):
-    scrollable = False
+    _scrollAdjust = False
 
     def __init__(self, data, param=None, **kwargs):
         self.data = data
@@ -49,7 +49,6 @@ class PLocus(Locus):
 
 
 class PVector(_PObject, Renderable):
-    autoPositionOnResize = scrollable = False
     tail = 0, 0
     stroke = "red"
     weight = 3
@@ -77,6 +76,9 @@ class PVector(_PObject, Renderable):
         if xy is None: xy = self.csPos
         self.tail = transform2d(self.tail, rotate=angle, shift=xy, preShift=True)
         self.theta += angle
+
+    @property
+    def anchor(self): return CENTER
 
     @property
     def xy(self): return self.x, self.y
