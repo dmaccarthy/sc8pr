@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2020 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -20,20 +20,14 @@ import pygame
 from sc8pr import Canvas, BOTTOM, TOP
 from sc8pr.text import Text, Font, BOLD
 from sc8pr.gui.button import Button
-from sc8pr.gui.textinput import TextInput, TextInputCanvas
+from sc8pr.gui.textinput import TextInputCanvas
 import sc8pr.gui.tk as tk
-
-def ask(dialog, allowQuit=True, **kwargs):
-    "Run a tkinter dialog"
-    tk.init()
-    if allowQuit is not None: pygame.event.set_blocked(pygame.QUIT)
-    val = dialog(**kwargs)
-    if allowQuit: pygame.event.set_allowed(pygame.QUIT)
-    return val
+from sc8pr.util import ondrag
 
 
 class MessageBox(Canvas):
     "Create simple GUI dialogs"
+    ondrag = ondrag
 
     def __init__(self, text, userInput=None, buttons=None, title=None, size=(1,1), **kwargs):
         super().__init__(size)
@@ -65,7 +59,8 @@ class MessageBox(Canvas):
         if userInput is not None:
             self["Input"] = TextInputCanvas(None, userInput,
                 "Click to enter your response", **txtConfig).config(anchor=TOP,
-                bg="white").bind(onaction=_tiAction)
+                bg="white")
+            self["Input"].ti.config(blurAction=False, mb=self).bind(onaction=_tiAction)
         self["Text"] = Text(text).config(anchor=TOP, **txtConfig)
 
         # Position controls and add title bar
@@ -145,7 +140,12 @@ def _btnClick(gr, ev):
 
 def _tiAction(gr, ev):
     "Event handler for text input action"
-    try:
-        if ev.unicode == "\r":
-            gr.canvas.config(command=gr).bubble("onaction", ev)
-    except: pass
+    gr.mb.config(command=gr).bubble("onaction", ev)
+
+def ask(dialog, allowQuit=True, **kwargs):
+    "Run a tkinter dialog"
+    tk.init()
+    if allowQuit is not None: pygame.event.set_blocked(pygame.QUIT)
+    val = dialog(**kwargs)
+    if allowQuit: pygame.event.set_allowed(pygame.QUIT)
+    return val
