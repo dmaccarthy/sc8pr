@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = 2, 1, 2
+version = 2, 1, "dev3"
 ver = "{}.{}.{}".format(*version)
 archive = "master" if version[-1] == "dev" else "v" + ver
 with open("README.txt", encoding="utf8") as f: readme = f.read()
@@ -22,7 +22,7 @@ setup(
     install_requires = ["pygame>=1.9.1,<2"],
     
     # URLs
-    url = "http://dmaccarthy.github.io/sc8pr",
+    url = "https://dmaccarthy.github.io/sc8pr",
     download_url = "https://github.com/dmaccarthy/sc8pr/archive/{}.zip".format(archive),
 
     # Details
