@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -19,7 +19,7 @@
 
 try:
     from sc8pr import Sketch, Canvas, Image, BOTTOM, TOPRIGHT, TOPLEFT
-    from sc8pr.shape import Circle, Line
+    from sc8pr.shape import QCircle, Line
     from sc8pr.text import Text, Font, BOLD
     from sc8pr.geom import delta
     from sc8pr.util import ondrag
@@ -53,7 +53,7 @@ class Simulation(Sketch):
         pivot = x, y - 200
         self["string"] = Line(pivot, (x, y)).config(weight=3)
         self += Charge().config(pos=(x, y))
-        self["blue"] = Circle(12).bind(ondrag).config(pos=(40,y), fill="blue")
+        self["blue"] = QCircle(60).config(fill="blue").snapshot().bind(ondrag).config(pos=(40,y), height=24)
         self["angle"] = Text().config(pos=pivot, anchor=TOPRIGHT,
             font=MONO, color="red").config(height=24).bind(ondrag)
         self += Ruler(self.scale).config(pos=self.center)
@@ -68,12 +68,12 @@ class Simulation(Sketch):
         if self.evMgr.hover is self: self.cursor = True
 
 
-class Charge(Circle):
+class Charge(Image):
 
     def __init__(self):
-        super().__init__(12)
-        self.vel = 0, 0
-        self.config(fill="red")
+        img = QCircle(60).config(fill="red").snapshot()
+        super().__init__(img)
+        self.config(height=24, vel=(0, 0))
 
     def ondraw(self):
 
