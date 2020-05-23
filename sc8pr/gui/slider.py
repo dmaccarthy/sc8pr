@@ -47,6 +47,7 @@ def _knobRelease(knob, ev): knob._dragRel = None
 
 class Slider(Canvas):
     "A numerical slider GUI control"
+    _lastButton = None
     focusable = True
     allowButton = 1, 4, 5
     methodNames = ["Click", "Scroll", "Drag", "Key"]

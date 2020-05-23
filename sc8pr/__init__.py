@@ -146,11 +146,11 @@ class Graphic:
     provide a 'image' property which gives a surface that Graphic.draw can use."""
     autoPositionOnResize = True
     _avgColor = None
+    _scrollAdjust = True
     canvas = None
     pos = 0, 0
     anchor = CENTER
     angle = 0
-    scrollable = True
     hoverable = True
     focusable = False
     ondraw = None
@@ -680,9 +680,10 @@ class Image(Graphic):
 
 class Canvas(Graphic):
     _border = rgba("black")
+    _scroll = 0, 0
+    clipArea = None
     weight = 0
     resizeContent = True
-    _scroll = 0, 0
 
     @staticmethod
     def _px(x): return x
@@ -734,6 +735,7 @@ class Canvas(Graphic):
         "Calculate the clipping rect so as not to draw outside of the canvas"
         cv = self.canvas
         r = self.rect
+        if self.clipArea: r = r.clip(self.clipArea.move(*r.topleft))
         return r.clip(cv.clipRect) if cv else r # cv.rect
 
     @property
