@@ -21,7 +21,8 @@ from math import hypot, ceil
 import pygame
 from sc8pr import Graphic, BaseSprite, CENTER, Image
 from sc8pr.util import rgba, hasAny
-from sc8pr.geom import transform2dGen, dist, delta, polar2d, circle_intersect, DEG
+from sc8pr.geom import transform2dGen, dist, delta, polar2d, circle_intersect, DEG,\
+    sigma
 
 
 class Shape(Graphic):
@@ -53,27 +54,13 @@ class Shape(Graphic):
         return self.containsPoint(cvPos)
 
 
-class Circle(Shape):
+class QCircle(Shape):
     radius = None # Override Graphic.radius
 #    shape = None
-    
+
     def __init__(self, r):
         self.radius = r
         self._srf = None
-
-    @property
-    def size(self):
-        d = ceil(2 * self.radius)
-        return d, d
-
-    def resize(self, size):
-        self.radius = min(size) / 2
-        self._srf = None
-
-    def config(self, **kwargs):
-        keys = "fill", "stroke", "weight", "radius"
-        if hasAny(kwargs, keys): self._srf = None
-        return super().config(**kwargs)
 
     @property
     def image(self):
@@ -88,6 +75,20 @@ class Circle(Shape):
             pygame.draw.circle(srf, f, (r,r), r-w)
         self._srf = srf
         return srf
+
+    @property
+    def size(self):
+        d = ceil(2 * self.radius)
+        return d, d
+
+    def resize(self, size):
+        self.radius = min(size) / 2
+        self._srf = None
+
+    def config(self, **kwargs):
+        keys = "fill", "stroke", "weight", "radius"
+        if hasAny(kwargs, keys): self._srf = None
+        return super().config(**kwargs)
 
     def containsPoint(self, pos):
         "Determine if the point is within the circle; do not account for canvas offset"
@@ -110,6 +111,21 @@ class Circle(Shape):
 #             y = sqrt(r2 - x*x)
 #             return [(x0 - y * uy, y0 + y * ux), (x0 + y * uy, y0 - y * ux)]
 #         else: return [(x0, y0)]
+
+
+class Circle(QCircle):
+
+    def draw(self, srf):
+        c = self.canvas.rect.topleft
+        pos = [round(x) for x in sigma(c, self.pos)]
+        r = round(self.radius)
+        wt = self.weight
+        f = self._fill
+        s = self._stroke
+        rect = None
+        if f: rect = pygame.draw.circle(srf, f, pos, r)
+        if s: rect = pygame.draw.circle(srf, s, pos, r, wt).inflate(wt, wt)
+        return pygame.Rect((0, 0), (0, 0)) if rect is None else rect
 
 
 class Line(Shape):
