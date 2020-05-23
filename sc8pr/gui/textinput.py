@@ -39,10 +39,12 @@ class TextInput(Text):
     promptColor = rgba("#d0d0d0")
     padding = 4
     allowButton = 1,
+    blurAction = True
     _cursorX = 0
     _scrollX = 0
     _selection = None
     _highlight = None
+    _submit = False
 
     def __init__(self, data="", prompt=None):
         super().__init__(str(data).split("\n")[0])
@@ -161,7 +163,9 @@ class TextInput(Text):
         # Process 'submit' action
         u = ev.unicode
         if u in ("\n", "\r", "\t"):
+            self._submit = True
             self.blur(True)
+            self._submit = False
             return
 
         # Ignore keys with Ctrl or Alt modifier (except Ctrl+[ACVX])
@@ -259,7 +263,7 @@ class TextInput(Text):
         if not self.data: self.stale = True
         if hasattr(self, "cursorStart"): del self.cursorStart
         cv = self.canvas
-        if not (ev.focus is cv and isinstance(cv, TextInputCanvas) and cv.ti is self):
+        if (self._submit or self.blurAction) and not (ev.focus is cv and isinstance(cv, TextInputCanvas) and cv.ti is self):
             self.bubble("onaction", ev)
 
     def _scrollCalc(self, a):
@@ -331,18 +335,6 @@ class TextInputCanvas(Canvas):
     def data(self, data): self.ti.data.config(data=data)
 
     def onclick(self, ev): self.ti.focus().onclick(ev)
-
-# FIRST DRAFT...
-#     def __init__(self, ti, width, center=False):
-#         a = ti.angle
-#         if a not in (0, 90): raise ValueError(_ANGLE_ERROR)
-#         sz = (ti.height, width) if a else (width, ti.height)
-#         super().__init__(sz)
-#         cfg = {"anchor":CENTER, "pos":self.center} if center \
-#             else {"anchor":TOP, "pos":(self.center[0], 0)} if a \
-#             else {"anchor":LEFT, "pos":(0, self.center[1])}
-#         self.ti = ti.config(**cfg)
-#         self += ti
 
 
 clipboardGet()
