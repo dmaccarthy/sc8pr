@@ -20,7 +20,7 @@ import pygame
 from sc8pr import Canvas, BOTTOM, TOP
 from sc8pr.text import Text, Font, BOLD
 from sc8pr.gui.button import Button
-from sc8pr.gui.textinput import TextInput
+from sc8pr.gui.textinput import TextInput, TextInputCanvas
 import sc8pr.gui.tk as tk
 
 def ask(dialog, allowQuit=True, **kwargs):
@@ -62,9 +62,10 @@ class MessageBox(Canvas):
         for b in self.buttons: b.bind(onaction=_btnClick)
 
         # Add text label and text input
-        if userInput is not None: self["Input"] = TextInput(userInput,
-                "Click to enter your response").config(anchor=TOP,
-                bg="white", **txtConfig).bind(onaction=_tiAction)
+        if userInput is not None:
+            self["Input"] = TextInputCanvas(None, userInput,
+                "Click to enter your response", **txtConfig).config(anchor=TOP,
+                bg="white").bind(onaction=_tiAction)
         self["Text"] = Text(text).config(anchor=TOP, **txtConfig)
 
         # Position controls and add title bar

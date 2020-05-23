@@ -311,9 +311,9 @@ class TextInputCanvas(Canvas):
 
     focusable = True
 
-    def __init__(self, width, data="", prompt=None, center=False, vertical=False, **text):
+    def __init__(self, width=None, data="", prompt=None, center=False, vertical=False, **text):
         ti = self._ti(vertical, data, prompt, **text)
-        super().__init__((width, ti.height))
+        super().__init__((width if width else ti.width, ti.height))
         cfg = {"anchor":CENTER, "pos":self.center} if center \
             else {"anchor":TOP, "pos":(self.center[0], 0)} if vertical \
             else {"anchor":LEFT, "pos":(0, self.center[1])}
