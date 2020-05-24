@@ -15,17 +15,19 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-from math import sin, cos
+# from math import sin, cos
 import pygame
+from pygame.math import Vector2
 from sc8pr import Canvas, Graphic, Renderable, CENTER
-from sc8pr.shape import Line, Arrow
-from sc8pr.geom import sigma, DEG, transform2d, smallAngle, polar2d
-from sc8pr.misc.plot import locus, Locus
+from sc8pr.shape import Line, Arrow, Shape
+from sc8pr.geom import transform2d
+from sc8pr.misc.plot import locus
 from sc8pr.plot import _PObject
 
 
-class PLocus(Locus):
+class PLocus(Shape):
     _scrollAdjust = False
+    snapshot = None
 
     def __init__(self, data, param=None, **kwargs):
         self.data = data
@@ -33,6 +35,12 @@ class PLocus(Locus):
             self.param = list(param)
             if len(param) < 3: self.param.append(100)
         self.vars = kwargs
+
+    def contains(self, pos): return False
+
+    @property
+    def size(self):
+        return self.rect.size if hasattr(self, "rect") else (0,0)
 
     def draw(self, srf, snapshot=False):
         if snapshot: x0, y0 = 0, 0
@@ -48,103 +56,106 @@ class PLocus(Locus):
         else: return pygame.Rect(0,0,0,0)
 
 
-class PVector(_PObject, Renderable):
+class PVector(_PObject, Renderable, Vector2):
+    "Represent and draw 2D vectors"
     tail = 0, 0
     stroke = "red"
     weight = 3
     arrowShape = 16, 10
     contains = Graphic.contains
-    _plot = None
 
-    def __init__(self, mag=None, theta=0, xy=None):
-        if mag is None:
-            self.mag, self.theta = polar2d(*xy)
-        else:
+    def __init__(self, mag=None, theta=0, xy=(0,0)):
+        if isinstance(mag, Vector2):
+            xy = mag
+            if isinstance(mag, PVector): self.tail = mag.tail
+            mag = None
+        super().__init__(xy)
+        if mag is not None:
             if mag < 0:
-                self.theta = theta + 180
-                self.mag = -mag
-            else:
-                self.theta = theta
-                self.mag = mag
-            self.theta = smallAngle(self.theta)
+                mag = -mag
+                theta += 180
+            self.from_polar((mag, theta))
 
     def __str__(self):
-        x, y = self.xy
-        return "<{} {:.3g} @ {:.1f} ({:.3g}, {:.3g})>".format(type(self).__name__, self.mag, self.theta, x, y)
-
-    def rotate(self, angle, xy=None):
-        if xy is None: xy = self.csPos
-        self.tail = transform2d(self.tail, rotate=angle, shift=xy, preShift=True)
-        self.theta += angle
+        r, t = self.as_polar()
+        return "<{} {:.3g} @ {:.1f} ({:.3g}, {:.3g})>".format(type(self).__name__, r, t, *self)
 
     @property
     def anchor(self): return CENTER
 
     @property
-    def xy(self): return self.x, self.y
-
-    @property
-    def x(self): return self.mag * cos(self.theta * DEG)
-
-    @property
-    def y(self): return self.mag * sin(self.theta * DEG)
-
-    def proj(self, u):
-        "Return projection onto a vector or direction"
-        u = PVector(1, u.theta if isinstance(u, PVector) else u)
-        return (u * (self * u))#.config(_plot=self._plot)
-
-    def components(self, **kwargs):
-        x = self.proj(0).config(tail=self.tail, **kwargs)
-        y = self.proj(90).config(tip=self.tip, **kwargs)
-        return [x, y]
-
-    def __add__(self, other):
-        xy = sigma(self.xy, other.xy)
-        return PVector(xy=xy)#.config(_plot=self._plot)
-
-    def __sub__(self, other):
-        return self + other * -1
-
-    def __mul__(self, other):
-        if isinstance(other, PVector):
-            x1, y1 = self.xy
-            x2, y2 = other.xy
-            return x1 * x2 + y1 * y2
-        else:
-            return PVector(other * self.mag, self.theta)#.config(_plot=self._plot)
-
-    def __truediv__(self, x):
-        return PVector(self.mag / x, self.theta)#.config(_plot=self._plot)
-
-    def shift(self, dx=0, dy=0):
-        tx, ty = self.tail
-        self.tail = tx + dx, ty + dy
-
-    @property
     def csPos(self):
-        tx, ty = self.tail
-        x, y = self.xy
-        return tx + x/2, ty + y/2
+        "Midpoint of tail and tip"
+        return tuple(Vector2(self.tail) + self / 2)
 
     @csPos.setter
     def csPos(self, xy):
-        cx, cy = self.csPos
-        self.shift(xy[0] - cx, xy[1] - cy)
+        self.tail = tuple(Vector2(xy) - self / 2)
 
     @property
     def tip(self):
-        tx, ty = self.tail
-        x, y = self.xy
-        return tx + x, ty + y
+        return tuple(Vector2(self.tail) + self)
 
     @tip.setter
     def tip(self, xy):
-        tx, ty = self.tip
-        self.shift(xy[0] - tx, xy[1] - ty)
+        self.tail = tuple(Vector2(xy) - self)
+
+    @property
+    def mag(self): return self.length()
+
+    @mag.setter
+    def mag(self, r): self.scale_to_length(r)
+
+    @property
+    def theta(self): return self.as_polar()[1]
+
+    @theta.setter
+    def theta(self, t): self.from_polar((self.length(), t))
+
+    def rotate(self, angle, xy=None):
+        "Rotate around an arbitrary point"
+        if xy is None: xy = self.csPos
+        self.tail = transform2d(self.tail, rotate=angle, shift=xy, preShift=True)
+        self.rotate_ip(angle)
+
+    def proj(self, u):
+        "Return projection onto a vector or direction"
+        if not isinstance(u, PVector): u = PVector(1, u)
+        else: u.normalize_ip()
+        return (u * (u * self)).config(tail=self.tail)
+
+    def components(self, **kwargs):
+        "Return x and y components as a list"
+        x = self.proj(0).config(**kwargs)
+        y = self.proj(90).config(tip=self.tip, **kwargs)
+        return [x, y]
+
+    @staticmethod
+    def sum(args):
+        s = Vector2()
+        for v in args: s += v
+        return PVector(xy=s)
+
+    def __add__(self, other):
+        return PVector(xy=Vector2.__add__(self, other))
+
+    def __sub__(self, other):
+        return PVector(xy=Vector2.__sub__(self, other))
+
+    def __mul__(self, other):
+        v = Vector2.__mul__(self, other)
+        return PVector(xy=v) if isinstance(v, Vector2) else v
+
+    def __rmul__(self, other):
+        v = Vector2.__rmul__(self, other)
+        return PVector(xy=v) if isinstance(v, Vector2) else v
+
+    def __truediv__(self, x):
+        return PVector(xy=Vector2.__truediv__(self, x))
 
     def render(self):
-        l = self.mag * self.canvas.unit
+        "Render the vector as an arrow on a pygame.Surface"
+        l = self.length() * self.canvas.unit
         shape = self.arrowShape
         if type(shape) is dict:
             if shape["fixed"]:
