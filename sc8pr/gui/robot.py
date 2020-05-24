@@ -18,44 +18,44 @@
 "GUI methods for robot-user interaction"
 
 from sc8pr.util import nothing
-from sc8pr.gui.dialog import MessageBox
+from sc8pr.gui.dialog import MessageBox, NumInputBox
+import sc8pr.robot
 
-def _title(robot, title):
-    if not title:
-        name = robot.name
-        if name is None: name = "Robot"
-        title = "{} says...".format(name)
-    return title
 
-def confirm(robot, prompt, title=None, response=True):
-    "Synchronous input to the robot brain"
-    sk = robot.sketch
-    btns = ["Yes", "No"] if response else ["Okay"]
-    mb = MessageBox(prompt, None, btns, _title(robot, title))
-    mb.config(pos=sk.center).setCanvas(sk)
-    while not mb.command: robot.updateSensors()
-    if response: return mb.command.name != "Button_No"
+class Robot(sc8pr.robot.Robot):
 
-def textinput(robot, prompt, title=None, allowCancel=False, dataType=None):
-    "Synchronous input to the robot brain"
-    sk = robot.sketch
-    btns = None if allowCancel else ["Okay"]
-    mb = MessageBox(prompt, "", btns, _title(robot, title))
-    mb.config(pos=sk.center).setCanvas(sk).bind(onaction=nothing)
-    asking = True
-    while asking:
-        while not mb.command: robot.updateSensors()
-        cancel = mb.command.name == "Button_Cancel"
-        data = mb["Input"].data
-        try:
-            if dataType: data = dataType(data)
-            asking = False
-        except:
-            mb.command = None
-    mb.remove()
-    return None if cancel else data
+    def _title(self, title):
+        if not title:
+            name = self.name
+            if name is None: name = "Robot"
+            title = "{} says...".format(name)
+        return title
+    
+    def confirm(self, prompt, title=None, response=True):
+        "Synchronous input to the robot brain"
+        sk = self.sketch
+        btns = ["Yes", "No"] if response else ["Okay"]
+        mb = MessageBox(prompt, None, btns, self._title(title))
+        mb.config(pos=sk.center).setCanvas(sk)
+        while mb.result is None: self.updateSensors()
+        return mb.result
+    
+    def textinput(self, prompt, title=None, allowCancel=False, num=False):
+        "Synchronous input to the robot brain"
+        sk = self.sketch
+        btns = None if allowCancel else ["Okay"]
+        cls = NumInputBox if num else MessageBox
+        mb = cls(prompt, "", btns, self._title(title))
+        mb.config(pos=sk.center).setCanvas(sk).bind(onaction=nothing)
+        while mb.result is None: self.updateSensors()
+        return mb.remove().result
+    
+    def numinput(self, prompt, title=None, allowCancel=False):
+        return self.textinput(prompt, title, allowCancel, True)
 
-def numinput(robot, prompt, title=None, allowCancel=False):
-    return textinput(robot, prompt, title, allowCancel, float)
 
-def gui(robot): return robot.bind(confirm, numinput, textinput)
+# Robot.confirm = confirm
+# Robot.numinput = numinput
+# Robot.textinput = textinput
+
+# def gui(robot): return robot.bind(confirm, numinput, textinput)

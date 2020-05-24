@@ -22,10 +22,10 @@ try:
     from sc8pr.geom import dist 
     from sc8pr.shape import Circle 
     from sc8pr.util import rgba, randPixel
-    from sc8pr.robot import Robot, RobotThread
+    from sc8pr.robot import RobotThread
+    from sc8pr.gui.robot import Robot
     from sc8pr.sprite import physics, Collisions
     from sc8pr.misc.plot import Plot, Series
-    from sc8pr.gui.robot import gui
 except Exception as e:
     print(e)
     print("Try running 'pip3 install sc8pr' on command line")
@@ -66,7 +66,7 @@ class BrainSketch(Sketch):
         if brain is None:
             self.bind(onkeydown=Robot.remoteControl).config(remoteRobot=robot)
             brain = self.sensorBrain
-        return gui(robot.bind(brain=brain))
+        return robot.bind(brain=brain)
 
 
 class Arena(BrainSketch):
