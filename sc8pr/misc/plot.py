@@ -57,9 +57,10 @@ def coordTr(lrbt, size, invert=False):
 def locus(func, param, **kwargs):
     "Generate a parameterized sequence of 2D points"
     t0, t1, steps = param
+    dt = (t1 - t0) / steps
     for i in range(steps + 1):     
         try:
-            x = t0 + i * (t1 - t0) / steps
+            x = t0 + i * dt
             try: y = func(x, **kwargs)
             except: y = func(x)
             yield y if type(y) in (list, tuple) else (x, y)
