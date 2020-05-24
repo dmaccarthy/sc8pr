@@ -277,6 +277,7 @@ class _PObject:
         cv = self.canvas
         if cv: pos = cv.cs(*pos)
         self.csPos = pos
+
     @property
     def angle(self):
         cv = self.canvas

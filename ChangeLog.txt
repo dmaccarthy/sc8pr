@@ -6,7 +6,7 @@ sc8pr 2.2.dev...
 !!! = In progress
 
 * Fix bug where BLUR event does not fire when focus changes while the focussed graphic is being dragged
-*** Move 'cover' method from 'Sketch' class to 'Canvas'
+* Move 'cover' method from 'Sketch' class to 'Canvas'
 *** Add FOCUS event and 'Graphic.focus' method; add; 'trigger' argument to 'Graphic.blur'
 *** DRAG and RELEASE events apply to Sketch
 *** Add 'Sketch.resizeTrigger' to trigger 'onresize' handler for programmatic resizing
@@ -18,19 +18,18 @@ sc8pr 2.2.dev...
 ** Add support for selection, copy, cut, and paste operations in 'TextInput'
 *** Add 'TextInput.blurAction'
 *** Add 'TextInputCanvas' class and call 'tk.getClipboard'
-*** Change 'MessageBox' text input to 'TextInputCanvas'
+* Change 'MessageBox' text input to 'TextInputCanvas'
 *** Add 'Slider.methodNames'
 ** Drag slider knob from any point rather than only the center
 ** Default knob size based on number of steps
 *** Add 'Canvas.call', 'Canvas.flatten', 'Canvas.scroll' and 'Canvas.scrollTo' methods, SCROLL event
 *** Standardize attributes (target, focus, hover, handler) for sc8pr events
-*** Add 'scrollable' and 'spos' properties to 'Graphic' class
-*** Add 'sc8pr.gui.scroll', 'sc8pr.gui.tk' modules and 'sc8pr.gui.robot' module
+*** Add 'scrollable' property to 'Graphic' class
+*** Add 'sc8pr.gui.scroll', 'sc8pr.gui.tk' and 'sc8pr.gui.robot' modules
 *** Add 'LATEX_URL', 'LATEX_FMT', 'latex_url' to 'sc8pr.misc.webcache'
 *** 'WebCache' does not overwrite existing cache file if URL is different
 * Add 'fakeCursor' example (depends on 'hoverable' property)
 * Normalize examples to use 'play' as name of main function
-*** Experimental module 'misc.barchart'
 ** Fix blit location bug in 'Canvas.snapshot'
 * Sync video capture when sketch does not run at nominal frame rate
 * Add 'util.modKeys'
@@ -54,6 +53,9 @@ sc8pr 2.2.dev...
 *** Replace 'Canvas.grid' by 'Table.grid'
 *** Create 'util.circle_intersect'
 *** Add 'QCircle' and make 'Circle' faster drawing
+* Modify 'sc8pr.gui.dialog'
+*** Add 'sc8pr.gui.robot'
+*** Add 'Image.autocrop' and 'util.autocrop'
 
 
 !!! Add 'util.borderRadius'
