@@ -21,19 +21,18 @@ from sc8pr import Canvas, BOTTOM, TOP
 from sc8pr.text import Text, Font, BOLD
 from sc8pr.gui.button import Button
 from sc8pr.gui.textinput import TextInputCanvas
-import sc8pr.gui.tk as tk
 from sc8pr.util import ondrag
+import sc8pr.gui.tk as tk
 
 
 class MessageBox(Canvas):
     "Create simple GUI dialogs"
-    ondrag = ondrag
 
-    def __init__(self, text, userInput=None, buttons=None, title=None, size=(1,1), **kwargs):
+    def __init__(self, text, userInput=None, buttons=None, title=None, size=(1,1), inputWidth=None, **kwargs):
         super().__init__(size)
         self.command = None
 
-        # Collect text options
+        # Text options
         txtConfig = {"font":Font.sans(), "fontSize":15}
         txtConfig.update(kwargs)
 
@@ -56,12 +55,16 @@ class MessageBox(Canvas):
         for b in self.buttons: b.bind(onaction=_btnClick)
 
         # Add text label and text input
+        self["Text"] = text = Text(text).config(anchor=TOP, **txtConfig)
+        if userInput is None and isinstance(self, NumInputBox):
+            userInput = ""
         if userInput is not None:
-            self["Input"] = TextInputCanvas(None, userInput,
+            if inputWidth and inputWidth < text.width:
+                inputWidth = text.width
+            self["Input"] = TextInputCanvas(inputWidth, userInput,
                 "Click to enter your response", **txtConfig).config(anchor=TOP,
                 bg="white")
             self["Input"].ti.config(blurAction=False, mb=self).bind(onaction=_tiAction)
-        self["Text"] = Text(text).config(anchor=TOP, **txtConfig)
 
         # Position controls and add title bar
         self._arrange().config(bg="#f0f0f0", weight=2, border="blue")
@@ -112,8 +115,7 @@ class MessageBox(Canvas):
         self.shiftContents((0, gr.height + padding), *tb)
         y = padding + (tb[0].height if tb else 0) # + self.weight
         gr.config(anchor=TOP, pos=(self.center[0], y))
-        if name: self[name] = gr
-        else: self += gr
+        gr.setCanvas(self, name)
         return self
 
     def title(self, title, padding=4, **kwargs):
@@ -129,18 +131,63 @@ class MessageBox(Canvas):
 
     def resize(self, size): pass
 
+    @property
+    def data(self):
+        "Get the data from the text input"
+        try: ti = self["Input"].ti.data
+        except: ti = None
+        return ti
+
+    @property
+    def result(self):
+        cmd = self.command
+        btn = self.buttons
+        if len(btn) > 1 and cmd == btn[1]: # Cancel button
+            return False
+        if cmd is None or not self.valid: # Not finished
+            return None
+        return True if self.data is None else self.data
+
+    @property
+    def valid(self): return True
+
     def onaction(self, ev):
         "Remove dialog when dismissed"
-        self.remove()
+        if self.result is None:
+            self.command = None
+        else:
+            self.remove().canvas.bubble("onaction", ev)
+
+    def ondrag(self, ev):
+        if self["Input"] not in ev.hover.path:
+            ondrag(self, ev)
+
+
+class NumInputBox(MessageBox):
+
+    @property
+    def data(self):
+        try: ti = float(self["Input"].ti.data)
+        except: ti = None
+        return ti
+
+    @property
+    def valid(self):
+        return self.data is not None
 
 
 def _btnClick(gr, ev):
     "Event handler for button clicks"
-    gr.canvas.config(command=gr).bubble("onaction", ev)
+    _attemptSubmit(gr.canvas, gr, ev)
 
 def _tiAction(gr, ev):
     "Event handler for text input action"
-    gr.mb.config(command=gr).bubble("onaction", ev)
+    _attemptSubmit(gr.mb, gr, ev)
+
+def _attemptSubmit(mb, gr, ev):
+    mb.command = gr
+    if mb.result is not None: mb.bubble("onaction", ev)
+    else: mb.command = None
 
 def ask(dialog, allowQuit=True, **kwargs):
     "Run a tkinter dialog"
