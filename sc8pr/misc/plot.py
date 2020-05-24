@@ -25,34 +25,18 @@ from sc8pr.geom import rotatedSize, transform2dGen
 from sc8pr.text import Text
 
 
-_adj = 0
-
 def _lrbt(lrbt, w, h):
     "Calculate coordinate system limits"
     n = len(lrbt)
     if n < 4:
         if not isinstance(lrbt, list): lrbt = list(lrbt)
-        dy = (h - _adj) * (lrbt[1] - lrbt[0]) / (w - _adj)
+        dy = h * (lrbt[1] - lrbt[0]) / w
         if n == 2:
             dy /= 2
             lrbt = lrbt + [-dy, dy]
         else: lrbt = lrbt + [lrbt[2] + dy]
     else: lrbt = lrbt[:4]
     return lrbt
-
-def coordTr(lrbt, size, invert=False):
-    "Create a transformation for the given coordinate system"
-    if len(lrbt) != 4: lrbt = _lrbt(lrbt, *size)
-    l, r = lrbt[:2]
-    sx = (size[0] - _adj) / (r - l)
-    dx = sx * l
-    b, t = lrbt[2:]
-    sy = (size[1] - _adj) / (b - t)
-    dy = sy * t
-    if invert:
-        return lambda p: ((p[0] + dx) / sx, (p[1] + dy) / sy)
-    else:
-        return lambda p: (sx * p[0] - dx, sy * p[1] - dy)
 
 def locus(func, param, **kwargs):
     "Generate a parameterized sequence of 2D points"
@@ -90,6 +74,24 @@ def expon(x, y):
     y = [log(xi) for xi in y]
     b, a = [exp(a) for a in leastSq(x, y)[1]]
     return (lambda x:a * b**x), (a, b)
+
+
+
+### Functions and classes below are deprecated from v2.2
+
+def coordTr(lrbt, size, invert=False):
+    "Create a transformation for the given coordinate system"
+    if len(lrbt) != 4: lrbt = _lrbt(lrbt, *size)
+    l, r = lrbt[:2]
+    sx = size[0] / (r - l)
+    dx = sx * l
+    b, t = lrbt[2:]
+    sy = size[1] / (b - t)
+    dy = sy * t
+    if invert:
+        return lambda p: ((p[0] + dx) / sx, (p[1] + dy) / sy)
+    else:
+        return lambda p: (sx * p[0] - dx, sy * p[1] - dy)
 
 def _isZero(x, fmt):
     "Check is text is formatted 0"

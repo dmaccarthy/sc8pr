@@ -162,7 +162,7 @@ class TextInput(Text):
 
         # Process 'submit' action
         u = ev.unicode
-        if u in ("\n", "\r", "\t"):
+        if u in ("\n", "\r"): #, "\t"):
             self._submit = True
             self.blur(True)
             self._submit = False
