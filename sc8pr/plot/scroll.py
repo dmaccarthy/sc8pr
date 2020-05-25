@@ -30,16 +30,16 @@ class ScrollBars:
         if sw > vw:
             self.bars.append(self.makeSlider(cv, 0, vw, sw, vh, sh > vh).config(dim=0, pos=(0, cv.height)))
         if sh > vh:
-            self.bars.append(self.makeSlider(cv, 1, vh, sh, vw, False).config(dim=1, pos=(cv.width, 0)))
+            self.bars.append(self.makeSlider(cv, 1, vh, sh, vw).config(dim=1, pos=(cv.width, 0)))
         self.canvas = cv
 
     def __iter__(self):
         for b in self.bars: yield b
 
-    def makeSlider(self, cv, dim, ch, sh, cw, other):
+    def makeSlider(self, cv, dim, ch, sh, cw, other=False):
         "Create a vertical or horizontal scroll bar"
         w = min(self.sliderWidth, ch - 1, cw // 12)
-        h = ch + 1 - (w if other and dim == 0 else 0)
+        h = ch + 1 - (w if other and dim == 0 else 0) 
         knob = round(ch * (h - 1) / sh)
         knob = Image((w, knob) if dim else (knob, w), self.knobColor)
         size = (w, h) if dim else (h, w)

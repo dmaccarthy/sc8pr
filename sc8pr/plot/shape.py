@@ -76,6 +76,10 @@ class PVector(_PObject, Renderable, Vector2):
                 theta += 180
             self.from_polar((mag, theta))
 
+    def __repr__(self):
+        r, t = self.as_polar()
+        return "<{}({:.5g}, {:.5g})>".format(type(self).__name__, r, t)
+
     def __str__(self):
         r, t = self.as_polar()
         return "<{} {:.3g} @ {:.1f} ({:.3g}, {:.3g})>".format(type(self).__name__, r, t, *self)
