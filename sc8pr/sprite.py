@@ -18,11 +18,10 @@
 
 from math import hypot
 from pygame.sprite import collide_mask, collide_rect, collide_circle
-from sc8pr import BaseSprite, Image
+from sc8pr import BaseSprite, Image, Graphic
 
 
-class Sprite(BaseSprite):
-    "Sprite animation with one or more costumes"
+class CostumeImage(Graphic):
     costumeTime = 0
     _costumeNumber = 0
     onreset = None
@@ -76,14 +75,23 @@ class Sprite(BaseSprite):
         img.rect = self.rect
         return img.contains(pos)
 
-    def ondraw(self):
-        "Update sprite after drawing"
+    def updateCostume(self):
+        "Change sprite costume"
         n = self.costumeTime
         if n and self.sketch.frameCount % n == 0:
             self.costumeNumber = self._costumeNumber + 1
             if self._costumeNumber == 0 and self.onreset: 
                 self.onreset()
-        super().ondraw()
+
+    ondraw = updateCostume
+
+
+class Sprite(CostumeImage, BaseSprite):
+    "Sprite animation with one or more costumes"
+
+    def ondraw(self):
+        BaseSprite.ondraw(self)
+        self.updateCostume()
 
 
 def collide_rect_mask(left, right):
