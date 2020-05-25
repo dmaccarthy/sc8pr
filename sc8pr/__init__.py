@@ -327,7 +327,9 @@ class Graphic:
         return self
 
     @property
-    def layer(self): return self.canvas._items.index(self)
+    def layer(self):
+        try: return self.canvas._items.index(self)
+        except: pass
 
     @layer.setter
     def layer(self, n):
@@ -738,7 +740,7 @@ class Canvas(Graphic):
         cv = self.canvas
         r = self.rect
         if self.clipArea: r = r.clip(self.clipArea.move(*r.topleft))
-        return r.clip(cv.clipRect) if cv else r # cv.rect
+        return r.clip(cv.clipRect) if cv else r
 
     @property
     def angle(self): return 0
@@ -870,6 +872,7 @@ class Canvas(Graphic):
         if mode & 2:
             br = isSketch and self.dirtyRegions is not None
             if br: self.dirtyRegions = []
+            ondrawList = self.sketch.ondrawList
             for g in list(self):
                 srf.set_clip(self.clipRect)
                 if not hasattr(g, "image") and g.effects:
@@ -880,7 +883,7 @@ class Canvas(Graphic):
                 else: grect = g.draw(srf)
                 g.rect = grect
                 if br: self.dirtyRegions.append(grect)
-                if g.ondraw: g.ondraw()
+                if g.ondraw: ondrawList.append(g) # g.ondraw()
 
         # Draw border
         if mode & 1 and self.weight:
@@ -1120,6 +1123,7 @@ class Sketch(Canvas):
                 self.frameCount += 1
                 br = self.dirtyRegions
                 flip = br is None
+                self.ondrawList = []
                 self.draw()
                 if not flip:
                     br += self.dirtyRegions
@@ -1128,6 +1132,9 @@ class Sketch(Canvas):
                 if flip: _pd.flip()
                 else: _pd.update(br)
                 if self.capture is not None: self.capture.capture(self)
+                for gr in self.ondrawList:
+                    try: gr.ondraw()
+                    except: logError()
                 if self.ondraw: self.ondraw()
                 self._evHandle()
             except: logError()
