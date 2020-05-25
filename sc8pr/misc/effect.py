@@ -18,7 +18,7 @@
 
 from random import uniform, random
 from math import sqrt, tan, pi, sin, cos, hypot
-from sys import stderr
+# from sys import stderr
 import pygame
 from pygame.pixelarray import PixelArray
 from sc8pr.util import rgba, style
@@ -46,28 +46,28 @@ class Effect:
         return (srf, srf.get_size()) if size else srf
 
 
-class QueueRemove(Effect):
-    "Remove a graphic, or its effects lists, at the specified frame"
-    _pending = []
-
-    def __init__(self, gr, complete=True):
-        self._gr = gr
-        self._complete = complete
-
-    def apply(self, img, n=0):
-        if n <= 0:
-            gr = self._gr
-            if self._complete:
-                p = QueueRemove._pending
-                if gr not in p: p.append(gr)
-            else: gr.effects = None
-        return img
-
-    @classmethod
-    def flush(cls):
-        for gr in cls._pending:
-            if gr in gr.canvas: gr.remove()
-        cls._pending = []
+# class QueueRemove(Effect):
+#     "Remove a graphic, or its effects lists, at the specified frame"
+#     _pending = []
+# 
+#     def __init__(self, gr, complete=True):
+#         self._gr = gr
+#         self._complete = complete
+# 
+#     def apply(self, img, n=0):
+#         if n <= 0:
+#             gr = self._gr
+#             if self._complete:
+#                 p = QueueRemove._pending
+#                 if gr not in p: p.append(gr)
+#             else: gr.effects = None
+#         return img
+# 
+#     @classmethod
+#     def flush(cls):
+#         for gr in cls._pending:
+#             if gr in gr.canvas: gr.remove()
+#         cls._pending = []
 
 
 class Remove(Effect):
@@ -76,11 +76,12 @@ class Remove(Effect):
     def __init__(self, gr, complete=False):
         self._gr = gr
         self._complete = complete
-        print("sc8pr.misc.effect.Remove is deprecated. Use QueueRemove instead", file=stderr)
 
     def apply(self, img, n=0):
         if n <= 0:
-            if self._complete: self._gr.remove()
+            if self._complete:
+#                 self._gr.remove()
+                self._gr.bind(ondraw=lambda gr:gr.remove())
             else: self._gr.effects = None
         return img
 
