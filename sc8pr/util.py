@@ -111,23 +111,27 @@ def setAlpha(srf, a):
 
 def autocrop(srf):
     "Remove transparency from edges"
-    sa = pygame.surfarray.pixels_alpha(srf)
+    try:
+        sa = pygame.surfarray.pixels_alpha(srf)
 
-    i = 0
-    cols = len(sa)
-    while max(sa[i]) == 0 and i < cols: i += 1
-    x = i
-    i = cols - 1
-    while max(sa[i]) == 0 and i > x: i -= 1
-    w = i - x + 1
+        i = 0
+        cols = len(sa)
+        while max(sa[i]) == 0 and i < cols: i += 1
+        x = i
+        i = cols - 1
+        while max(sa[i]) == 0 and i > x: i -= 1
+        w = i - x + 1
 
-    i = y = 0
-    rows = len(sa[0])
-    if w:
-        while max(sa[n][i] for n in range(x, x + w)) == 0 and i < rows: i += 1
-        y = i
-        i = rows - 1
-        while max(sa[n][i] for n in range(x, x + w)) == 0 and i > y: i -= 1
+        i = y = 0
+        rows = len(sa[0])
+        if w:
+            while max(sa[n][i] for n in range(x, x + w)) == 0 and i < rows: i += 1
+            y = i
+            i = rows - 1
+            while max(sa[n][i] for n in range(x, x + w)) == 0 and i > y: i -= 1
+    except:
+        logError()
+        return srf
 
     return srf.subsurface((x, y, w, i - y + 1))
 

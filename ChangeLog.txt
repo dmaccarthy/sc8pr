@@ -35,7 +35,6 @@ sc8pr 2.2.dev...
 * Add 'util.modKeys'
 * Add 'invert' parameter to 'misc.plot.coordTr'
 * Allow assignment to canvas by layer: cv[layer] = gr
-*** Deprecate 'misc.effect.Remove' in favour of 'QueueRemove'
 ** Fix minor bug with 'Sketch.caption' getter
 *** Add 'Ellipse' and 'Arc' classes to 'sc8pr.shape'
 *** Add 'sprite.onreset' event, called by 'sprite.ondraw'
@@ -55,7 +54,8 @@ sc8pr 2.2.dev...
 *** Add 'QCircle' and make 'Circle' faster drawing
 * Modify 'sc8pr.gui.dialog'
 *** Add 'sc8pr.gui.robot'
-*** Add 'Image.autocrop' and 'util.autocrop'
+*** Add 'Image.autocrop' and 'util.autocrop' (depends on pygame.surfarray -> numpy)
+* Fire all DRAW events after drawing the entire sketch is complete.
 
 
 !!! Add 'util.borderRadius'
