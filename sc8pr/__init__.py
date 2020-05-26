@@ -326,6 +326,13 @@ class Graphic:
         except: pass
         return self
 
+    def toggle(self, name=None):
+        cv = self.canvas
+        if cv is not None:
+            if self in cv: self.remove()
+            else: self.setCanvas(cv, name)
+        return self
+
     @property
     def layer(self):
         try: return self.canvas._items.index(self)
@@ -663,7 +670,7 @@ class Image(Graphic):
             tiles += [Image(_pyflip(s.image, False, True)) for s in tiles]
         return tiles
 
-    def autocrop(self): return Image(autocrop(self.image))
+    def autocrop(self, bg=None): return Image(autocrop(self.image, bg))
 
     @property
     def image(self):
