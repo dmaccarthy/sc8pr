@@ -21,6 +21,7 @@ from random import randint
 from traceback import format_exc
 from zipfile import ZipFile
 from pathlib import Path
+from sc8pr.geom import sigma, delta
 
 scale = pygame.transform.smoothscale
 
@@ -109,11 +110,13 @@ def setAlpha(srf, a):
     srf.fill((255,255,255,a), special_flags=pygame.BLEND_RGBA_MIN)
     return srf
 
-def autocrop(srf):
-    "Remove transparency from edges"
+def autocrop(srf, bg=None):
+    "Remove transparency or background from edges"
     try:
+        if bg:
+            if bg is True: bg = srf.get_at((0, 0))
+            pygame.PixelArray(srf).replace(rgba(bg), (0, 0, 0, 0))
         sa = pygame.surfarray.pixels_alpha(srf)
-
         i = 0
         cols = len(sa)
         while max(sa[i]) == 0 and i < cols: i += 1
@@ -197,9 +200,22 @@ def tile(srf, tile=0, cols=1, rows=1, padding=0):
 
 def ondrag(gr, ev):
     "Move a Graphic instance while dragging"
-    pos = gr.pos
-    dp = ev.rel
-    gr.pos = pos[0] + dp[0], pos[1] + dp[1]
+    gr.pos = sigma(gr.pos, ev.rel)
+
+def dragDrop(gr, ev):
+    "Drag a Graphic, possibly into a different canvas"
+    gr.hoverable = False
+    pos = sigma(gr.pos, ev.rel)
+    drop = False
+    try:
+        cv = [gr for gr in gr.sketch.objectAt(ev.pos).path if getattr(gr, "allowDrop", False)][0]
+        if cv is not gr.canvas:
+            pos = sigma(pos, delta(gr.canvas.rect.topleft, cv.rect.topleft))
+            drop = True
+            gr.setCanvas(cv)
+    except: pass
+    gr.config(pos=pos, hoverable=True)
+    if drop: gr.bubble("ondrop", ev)
 
 def fileExt(fn, ext):
     "Force file extension"
