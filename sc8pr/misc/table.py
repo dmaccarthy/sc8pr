@@ -46,11 +46,11 @@ class Table(Canvas):
         xy = sum(cols[:c]) + p, sum(rows[:r]) + p
         return pygame.Rect(xy, (sum(cols[c:c1]), sum(rows[r:r1])))
 
-    def border(self, c=None, r=None, **kwargs):
+    def box(self, c=None, r=None, **kwargs):
         if c is True:
             for c in range(self.cols):
                 for r in range(self.rows):
-                    self.border(c, r, **kwargs)
+                    self.box(c, r, **kwargs)
         else:
             if c is None: c = 0, self.cols
             if r is None: r = 0, self.rows
