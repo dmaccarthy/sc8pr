@@ -24,7 +24,7 @@ import pygame.display as _pd
 from pygame.transform import flip as _pyflip
 from sc8pr._event import EventManager
 from sc8pr.geom import transform2d, positiveAngle, delta, sigma
-from sc8pr.util import CachedSurface, style, logError, sc8prData, tile, rgba, drawBorder, hasAlpha, autocrop
+from sc8pr.util import CachedSurface, style, logError, sc8prData, tile, rgba, drawBorder, hasAlpha
 
 # Anchor point constants
 TOPLEFT = 0
@@ -669,8 +669,6 @@ class Image(Graphic):
         if flip & VERTICAL:
             tiles += [Image(_pyflip(s.image, False, True)) for s in tiles]
         return tiles
-
-    def autocrop(self, bg=None): return Image(autocrop(self.image, bg))
 
     @property
     def image(self):

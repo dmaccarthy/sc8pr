@@ -110,34 +110,6 @@ def setAlpha(srf, a):
     srf.fill((255,255,255,a), special_flags=pygame.BLEND_RGBA_MIN)
     return srf
 
-def autocrop(srf, bg=None):
-    "Remove transparency or background from edges"
-    try:
-        if bg:
-            if bg is True: bg = srf.get_at((0, 0))
-            pygame.PixelArray(srf).replace(rgba(bg), (0, 0, 0, 0))
-        sa = pygame.surfarray.pixels_alpha(srf)
-        i = 0
-        cols = len(sa)
-        while max(sa[i]) == 0 and i < cols: i += 1
-        x = i
-        i = cols - 1
-        while max(sa[i]) == 0 and i > x: i -= 1
-        w = i - x + 1
-
-        i = y = 0
-        rows = len(sa[0])
-        if w:
-            while max(sa[n][i] for n in range(x, x + w)) == 0 and i < rows: i += 1
-            y = i
-            i = rows - 1
-            while max(sa[n][i] for n in range(x, x + w)) == 0 and i > y: i -= 1
-    except:
-        logError()
-        return srf
-
-    return srf.subsurface((x, y, w, i - y + 1))
-
 def style(srf, bg=None, border=(0,0,0), weight=0, padding=0, borderradius=None):
     "Create a new surface with padding, background color, and/or border"
     w, h = srf.get_size()
