@@ -124,7 +124,7 @@ class Circle(QCircle):
         s = self._stroke
         rect = None
         if f: rect = pygame.draw.circle(srf, f, pos, r)
-        if s: rect = pygame.draw.circle(srf, s, pos, r, wt).inflate(wt, wt)
+        if s and wt: rect = pygame.draw.circle(srf, s, pos, r, wt).inflate(wt, wt)
         return pygame.Rect((0, 0), (0, 0)) if rect is None else rect
 
 
