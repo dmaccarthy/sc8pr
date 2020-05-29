@@ -42,16 +42,25 @@ def circles(sk, n=50):
         cv += Circle(r).config(weight=0, fill=rgba(True), pos=randPixel(size))
     return cv.snapshot()
 
-def bars(sk):
-    "Draw some color bars on the floor"
+def quilt(sk):
+    "Draw some colors on the floor in a quilt pattern"
     w, h = sk.size
-    w = round(w / 8)
-    x = w / 2
-    cv = Canvas(sk.size, "white")
-    for c in ("grey", None, "violet", "red", "green", "black", "gold", "blue"):
-        cv += Image((w, h), c).config(pos=(x, sk.center[1]))
-        x += w
+    w = (w - 64) // 6
+    h = (h - 64) // 4
+    cv = Canvas(sk.size, "grey")
+    c = [
+        "pink", "darkgreen", "mintcream", "gold", "white", "cyan",
+        "yellow", "blue", "brown", "tan2", "royalblue", "steelblue",
+        "violet", "orange", "skyblue", "black", "tomato", "seashell",
+        "salmon", "turquoise", "red", "magenta", "purple", "green",
+    ]
+    shuffle(c)
+    for i in range(4):
+        for j in range(6):
+            color = c[j + 6 * i]
+            cv += Image((w, h), color).config(pos=(32 + (j + 0.5) * w, 32 + (i + 0.5) * h))
     return cv.snapshot()
+
 
 class BrainSketch(Sketch):
     "Sketch class that binds a robot brain OR attaches a robot remote control"
