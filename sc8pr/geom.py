@@ -58,6 +58,15 @@ def delta(v2, v1=None, mag=None):
             y *= mag
     return x, y
 
+def shiftAlongNormal(x, y, deriv, dr):
+    m = deriv(x, y)
+    if m == 0: dx, dy = 0, dr
+    else:
+        m = -1 / m
+        dx = (-dr if m > 0 else dr) / sqrt(1 + m*m)
+        dy = m * dx
+    return x + dx, y + dy
+
 def vec2d(r, a, deg=True):
     "2D Polar to Cartesian conversion"
     if deg: a *= DEG
