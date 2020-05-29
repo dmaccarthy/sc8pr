@@ -159,8 +159,8 @@ class MessageBox(Canvas):
             self.remove().canvas.bubble("onaction", ev)
 
     def ondrag(self, ev):
-        if self["Input"] not in ev.hover.path:
-            ondrag(self, ev)
+        ti = "Input" in self and self["Input"] in ev.hover.path
+        if not ti: ondrag(self, ev)
 
 
 class NumInputBox(MessageBox):

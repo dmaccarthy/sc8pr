@@ -265,8 +265,8 @@ class Graphic:
         y += offset[1]
         a = self.anchor
         if a:
-            x -= blitSize[0] * (a & 3) // 2
-            y -= blitSize[1] * (a & 12) // 8
+            x -= (blitSize[0] - 1) * (a & 3) // 2
+            y -= (blitSize[1] - 1) * (a & 12) // 8
         return x, y
 
     def calcBlitRect(self, blitSize):
