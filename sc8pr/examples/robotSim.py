@@ -15,32 +15,55 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-"A collection of robotics simulations for sc8pr 2"
+"A collection of robotics simulations for sc8pr 2.2.dev"
 
 try:
-    from sc8pr import Sketch, Image, Canvas, BOTH
-    from sc8pr.geom import dist 
-    from sc8pr.shape import Circle 
-    from sc8pr.util import rgba, randPixel
+    from sc8pr import Image, Canvas, BOTH, TOP, BOTTOM
+    from sc8pr.geom import dist, shiftAlongNormal, angleDifference, DEG
+    from sc8pr.shape import Polygon, Line, Circle
+    from sc8pr.util import rangef 
     from sc8pr.robot import RobotThread
-    from sc8pr.gui.robot import Robot
-    from sc8pr.sprite import physics, Collisions
-    from sc8pr.misc.plot import Plot, Series
+    from sc8pr.gui.robot import Robot as _Robot
+    from sc8pr.sprite import physics, Collisions, Sprite
+    from sc8pr.plot import PSketch, PCanvas
 except Exception as e:
     print(e)
     print("Try running 'pip3 install sc8pr' on command line")
     exit()
-from math import sin, pi
+from math import pi, sin, cos, atan2
 from random import randint, uniform, choice, shuffle
 
-def circles(sk, n=50):
-    "Draw random circles for arena floor"
-    size = sk.size
-    cv = Canvas(size, "white")
-    for i in range(n):
-        r = randint(10, size[0]/8)
-        cv += Circle(r).config(weight=0, fill=rgba(True), pos=randPixel(size))
-    return cv.snapshot()
+
+class Robot(_Robot):
+
+    def __init__(self, colors=None):
+        super().__init__(colors)
+        self.gyroSample()
+    
+    def gyroSample(self, t=None):
+        self.gyroChange = 0.0
+        self._gyro_data = []
+        self._gyro_sample = t if t is None else round(self.sketch.frameRate * t)
+
+    def ondraw(self):
+        _Robot.ondraw(self)
+        if self._gyro_sample: self.get_gyro_data()
+
+    def get_gyro_data(self):
+        data = self._gyro_data
+        data.append(self.gyro)
+        n = len(data)
+        if n > self._gyro_sample:
+            x = sum(cos(g * DEG) for g in data) / n
+            y = sum(sin(g * DEG) for g in data) / n
+            gyro = atan2(y, x) / DEG
+            gyro1 = max(angleDifference(gyro, g) for g in data)
+            gyro2 = min(angleDifference(gyro, g) for g in data)
+            self.gyroChange = gyro1 - gyro2
+            data.pop(0)
+        else:
+            self.gyroChange = None
+
 
 def quilt(sk):
     "Draw some colors on the floor in a quilt pattern"
@@ -61,8 +84,26 @@ def quilt(sk):
             cv += Image((w, h), color).config(pos=(32 + (j + 0.5) * w, 32 + (i + 0.5) * h))
     return cv.snapshot()
 
+def curve(size, color="blue"):
+    size = getattr(size, "size", size)
+    cv = PCanvas(size, [-4, 4, -2, 2]).config(bg="white")
+    c = lambda *x: 2 * size[0] / size[1] * cos(x[0])
+    top = [(x, sin(x)) for x in rangef(-pi, pi, pi/40)]
+    bot = [shiftAlongNormal(*x, c, -0.08) for x in top]
+    blu = [cv.px(*x) for x in (top + list(reversed(bot)))]
+    cv += Polygon(blu).config(fill=color, weight=0)
+    return cv.snapshot()
 
-class BrainSketch(Sketch):
+def _between(x, x0, x1):
+    if x0 < x1: return x0 <= x and x <= x1
+    else: return x >= x0 or x <= x1
+
+def isColor(color, hue, sat, val):
+    h, s, v = color.hsva[:3]
+    return _between(h, *hue) and _between(s, *sat) and _between(v, *val) 
+
+
+class BrainSketch(PSketch):
     "Sketch class that binds a robot brain OR attaches a robot remote control"
 
     @staticmethod
@@ -83,35 +124,19 @@ class Arena(BrainSketch):
 
     def setup(self):
         try:
-            img = self.render
+            img = self.pattern
             try: self.bg = img(self)
             except: self.bg = Image(img)
         except: self.bg = Image(self.size, "white")
         self.weight = 1
         robo = Robot(["#ff5050", "#ffd428"])
-        self["Red"] = self.bindBrain(robo).config(width=60,
-            pos=(100,400), angle=270, bounce=BOTH)
+        self["Red"] = self.bindBrain(robo).config(width=64,
+            pos=self.center, angle=270, bounce=BOTH)
         robo.gyro = robo.angle
 
     @classmethod
-    def run(cls, brain=None, render=None):
-        cls((640,480)).config(brain=brain, render=render).play("Robot Arena")
-
-
-class Trace(BrainSketch):
-    "Sketch that implements a follow-the-blue-curve challenge"
-
-    def setup(self):
-        p = Plot(self.size, [-4, 4, -1.5, 1.5]).config(bg="white")
-        marker = Image((6, 6), "blue")
-        p["Curve"] = Series(sin, param=[-pi, pi, 2 * self.width - 1]).config(marker=marker)
-        self.bg = p.snapshot()
-        robo = Robot(["#ff5050", "#ffd428"])
-        self["Traci"] = self.bindBrain(robo).config(width=60, pos=self.center)
-
-    @staticmethod
-    def run(brain=None):
-        Trace((640,480)).config(brain=brain).play("Trace the Curve")
+    def run(cls, brain=None, pattern=None):
+        cls((640,480)).config(brain=brain, pattern=pattern).play("Robot Arena")
 
 
 class ParkingLot(BrainSketch):
@@ -119,39 +144,42 @@ class ParkingLot(BrainSketch):
 
     def __init__(self, size, brain):
         self.brain = brain
-        super().__init__(size)
+        super().__init__(size, [-3, 3, -2, 2])
+        self.config(bg="#f0f0f0")
 
     def drawLot(self):
-        n = 3.5
-        p = Plot(self.size, [0,6,0,n]).config(bg="#f0f0f0")
+        px = self.px
+        self += Line(px(-2.7, 0), px(2.7, 0)).config(weight=10, stroke="blue")
         attr = dict(stroke="orange", weight=4)
-        for x in range(1,6):
-            key = "Line{}".format(x)
-            p[key + "a"] = Series([(x, 0), (x, 1)]).config(**attr)
-            p[key + "b"] = Series([(x, n), (x, n-1)]).config(**attr)
-        attr.update(stroke="blue")
-        p["Blue"] = Series([(0.5, n/2), (5.5, n/2)]).config(**attr)
-        redDot = Circle(64).config(fill="red").snapshot().config(width=16)
-        p["Red"] = Series([(x + 0.5, n/2) for x in range(6)]).config(marker=redDot)
-        return p
+        for x in range(-2, 3):
+            self += Line(px(x, 2), px(x, 1)).config(**attr)
+            self += Line(px(x, -2), px(x, -1)).config(**attr)
+        self.flatten()
+        img = Circle(0.4 * self.unit).config(fill="grey", weight=0).snapshot()
+        for x in range(-3, 3):
+            self += Sprite(img).config(pos=px(x + 0.5, 2.36), mass=50, drag=0.02, wrap=0)
+            self += Sprite(img).config(pos=px(x + 0.5, -2.37), mass=50, drag=0.02, wrap=0)
+        return self
 
     def setup(self):
-        p = self.drawLot()
-        self.bg = p.snapshot()
+        self.drawLot()
         h = self.height / 4.5
-        x = randint(h, self.width - h)
-        y = p.pixelCoords((0, uniform(1.5, 2)))[1]
         attr = dict(height = h, mass = 1, wrap=0)
         robot = Robot(["#ffd428", "#ff5050"]).config(
-            pos = (x, y), angle = randint(0, 359), **attr)
+            pos = self.px(uniform(-2, 2), 0), angle = randint(0, 359), **attr)
         self["Crash"] = self.bindBrain(robot)
-        pos = lambda y: p.pixelCoords((0.5 + randint(0, 5), y))
         c = False, False
         a = 90, 270
-        self += Robot(c).config(pos=pos(0.5), angle=choice(a), **attr)
-        self += Robot(c).config(pos=pos(3), angle=choice(a), **attr)
+        pos = lambda y: self.px(randint(0, 5) - 2.5, y)
+        br = lambda *x: self.idle if randint(0, 1) == 0 else (lambda x: None)
+        self += Robot(c).bind(brain=br()).config(pos=pos(1.46), angle=choice(a), **attr)
+        self += Robot(c).bind(brain=br()).config(pos=pos(-1.46), angle=choice(a), **attr)
 
-    def ondraw(self): physics(self)
+    ondraw = physics
+
+    @staticmethod
+    def idle(r):
+        while r.active: r.updateSensors(0.5)
 
     @staticmethod
     def run(brain=None):
