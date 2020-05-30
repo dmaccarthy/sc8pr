@@ -239,6 +239,10 @@ class PCanvas(_PCanvas, Canvas):
         self.setCoords(self._lrbt, self._scrollSize)
         self._scrollEvent()
 
+    @staticmethod
+    def simple(size, lrbt, step=1):
+        return PCanvas(size, lrbt).gridlines(lrbt, step, {})
+
 
 class PSketch(_PCanvas, Sketch):
     

@@ -15,14 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-# from math import sin, cos
-import pygame
+import pygame, re
 from pygame.math import Vector2
 from sc8pr import Canvas, Graphic, Renderable, CENTER
 from sc8pr.shape import Line, Arrow, Shape
 from sc8pr.geom import transform2d
 from sc8pr.misc.plot import locus
-from sc8pr.plot import _PObject
+from sc8pr.plot import _PObject, PCanvas
 
 
 class PLocus(Shape):
@@ -140,6 +139,9 @@ class PVector(_PObject, Renderable, Vector2):
         for v in args: s += v
         return PVector(xy=s)
 
+    def __neg__(self):
+        return PVector(xy=Vector2.__neg__(self))
+
     def __add__(self, other):
         return PVector(xy=Vector2.__add__(self, other))
 
@@ -156,6 +158,24 @@ class PVector(_PObject, Renderable, Vector2):
 
     def __truediv__(self, x):
         return PVector(xy=Vector2.__truediv__(self, x))
+
+    @staticmethod
+    def parse(expr):
+        "Parse a string as a list of PVector instances"
+        expr = re.subn("\s*", "", expr)[0]
+        vecs = []
+        while len(expr):
+            neg = False
+            if expr[0] in "+-":
+                if expr[0] == "-": neg = True
+                expr = expr[1:]
+            n, v = _parse(expr, 0)
+            if not n: n, v = _parse(expr, 1)
+            if n:
+                vecs.append(-1 * v if neg else v)
+                expr = expr[n:]
+            else: break
+        return vecs
 
     def render(self):
         "Render the vector as an arrow on a pygame.Surface"
@@ -186,3 +206,47 @@ class PVector(_PObject, Renderable, Vector2):
         else:
             self.arrowShape = {"width": 0.1, "head": 0.1, "flatness": 2, "fixed": False}
         return self
+
+    @staticmethod
+    def tipToTail(vecs):
+        "Adjust each vector's tail to match the previous vector's tip"
+        if type(vecs) is str: vecs = PVector.parse(vecs)
+        for i in range(0, len(vecs)):
+            v = vecs[i]
+            if i: v.tail = v0.tip
+            v0 = v
+        return vecs
+
+    @staticmethod
+    def diagram(vecs, cv=None, resultant=True, **kwargs):
+        "Draw vectors on a PCanvas"
+        if type(vecs) is str: vecs = PVector.parse(vecs)
+        if cv is None: cv = PCanvas.simple(**kwargs)
+        cv += vecs
+        if resultant:
+            cv.resultant = PVector.sum(vecs).config(tail=vecs[0].tail, stroke="blue").setCanvas(cv)
+        return cv
+
+
+# Regular expressions for Cartesian and polar form
+
+_sign = "[-|\+]{0,1}"
+_num = _sign + "\d+\.{0,1}\d*([e|E]" + _sign + "[\d]*){0,1}"
+# _num = "[-|\+]{0,1}\d+\.{0,1}\d*"
+_re = [ # [Cartesian, Polar]
+    re.compile("\(" + _num + "," + _num + "\)"),
+    re.compile(_num + "@" + _num)
+]
+
+def _parse(expr, form):
+    "Parse one vector"
+    m = _re[form].match(expr)
+    if m:
+        m = m.group()
+        n = len(m)
+        if form:
+            v = PVector(*[float(m.split("@")[i]) for i in (0, 1)])
+        else:
+            v = PVector(xy=[float(m[1:-1].split(",")[i]) for i in (0, 1)])
+        return n, v
+    return None, None
