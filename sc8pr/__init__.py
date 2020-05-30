@@ -400,6 +400,33 @@ class Graphic:
         "Pass an event to a different handler"
         self.sketch.evMgr.handle(self, eventName, ev)
 
+    @staticmethod
+    def _deiconify(icon, ev):
+        "Icon 'onclick' handler"
+        icon.icon_restore.deiconify()
+
+    def iconify(self, **kwargs):
+        "Replace a graphic by its icon"
+        cv = self.canvas
+        if self in cv:
+            attr = dict(pos=self.pos, anchor=self.anchor, size=cv.iconSize)
+            attr.update(kwargs)
+            icon = self.icon.config(icon_restore=self, **attr)
+            self.remove()
+            cv += icon.bind(onclick=self._deiconify)
+            cv.icons.append(icon)
+        return self
+
+    def deiconify(self):
+        "Restore a previously iconified graphic"
+        cv = self.canvas
+        icon = self.icon
+        if icon in cv.icons:
+            icon.remove()
+            cv.icons.remove(icon)
+            cv += self
+        return self
+
     @property
     def timeFactor(self):
         sk = self.sketch
@@ -693,6 +720,7 @@ class Canvas(Graphic):
     clipArea = None
     weight = 0
     resizeContent = True
+    iconSize = 32, 32
 
     @staticmethod
     def _px(x): return x
@@ -711,6 +739,7 @@ class Canvas(Graphic):
             size = bg.size
         self._size = size
         self._items = []
+        self.icons = [] # !!!
         self.bg = bg
 
     @property
@@ -922,6 +951,7 @@ class Canvas(Graphic):
 
     def flatten(self, keep=()):
         "Draw graphics onto background and remove"
+        if isinstance(keep, Graphic): keep = (keep,)
         keep = [(gr.name, gr) for gr in keep]
         for gr in keep: gr[1].remove()
         self.config(bg=self.snapshot()).purge()

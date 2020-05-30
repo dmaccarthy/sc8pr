@@ -24,7 +24,7 @@ sc8pr 2.2.dev...
 ** Default knob size based on number of steps
 *** Add 'Canvas.call', 'Canvas.flatten', 'Canvas.scroll' and 'Canvas.scrollTo' methods, SCROLL event
 *** Standardize attributes (target, focus, hover, handler) for sc8pr events
-*** Add 'scrollable' property to 'Graphic' class
+*** Add 'scrollable' property and 'iconofy'/'deiconify' methods to 'Graphic' class
 *** Add 'sc8pr.gui.scroll', 'sc8pr.gui.tk' and 'sc8pr.gui.robot' modules
 *** Add 'LATEX_URL', 'LATEX_FMT', 'latex_url' to 'sc8pr.misc.webcache'
 *** 'WebCache' does not overwrite existing cache file if URL is different
@@ -47,7 +47,7 @@ sc8pr 2.2.dev...
 *** Fix bug in 'Canvas.__init__'
 *** Add 'sc8pr.plot' package and 'sc8pr.misc.table' module
 *** Add additional 'Graphic' and 'Canvas' methods to support new plotting/scrolling package
-*** Add 'Canvas.clipArea' and 'Canvas.resizeContent'
+*** Add 'Canvas.clipArea', 'Canvas.resizeContent', 'Canvas.icons, 'Canvas.iconSize'
 *** Add 'util.mix'
 *** Replace 'Canvas.grid' by 'Table.grid'
 *** Create 'util.circle_intersect'
