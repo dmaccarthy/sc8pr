@@ -145,7 +145,7 @@ class Line(Shape):
         self._size = abs(ux), abs(uy)
         u = hypot(ux, uy)
         self.length = u #if point else None
-        self.u = ux / u, uy / u
+        self.u = (ux / u, uy / u) if u else (0, 0)
 
     def __repr__(self):
         if self.length is None: p = " u={}".format(self.u)
@@ -216,7 +216,7 @@ class Line(Shape):
 
     def draw(self, srf, snapshot=False):
         if self.length is None:
-            raise AttributeError("Unable to draw line; segment length not given")
+            raise AttributeError("Unable to draw line; segment length is undefined")
         cv = self.canvas
         dx, dy = (0, 0) if snapshot else cv.rect.topleft
         x1, y1 = self.point(0)
