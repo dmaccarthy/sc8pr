@@ -53,9 +53,11 @@ sc8pr 2.2.dev...
 *** Create 'util.circle_intersect'
 *** Add 'QCircle' and make 'Circle' faster drawing
 * Modify 'sc8pr.gui.dialog'
+*** Create Dialog base class in 'sc8pr.gui.dialog'
 *** Add 'sc8pr.gui.robot'
 *** Add 'Image.autocrop' and 'util.autocrop' (depends on pygame.surfarray -> numpy)
 * Fire all DRAW events after drawing the entire sketch is complete.
+** Fix divid-by-zero in 'shape.Line' when length is 0
 
 
 !!! Add 'util.borderRadius'
