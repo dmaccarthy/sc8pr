@@ -25,7 +25,33 @@ from sc8pr.util import ondrag
 import sc8pr.gui.tk as tk
 
 
-class MessageBox(Canvas):
+class Dialog(Canvas):
+
+    def insertTop(self, gr, padding=12, name=None):
+        "Insert content at top of dialog"
+        try: tb = self["TitleBar"],
+        except: tb = ()
+        self.shiftContents((0, gr.height + padding), *tb)
+        y = padding + (tb[0].height if tb else 0) # + self.weight
+        gr.config(anchor=TOP, pos=(self.center[0], y))
+        gr.setCanvas(self, name)
+        return self
+
+    def title(self, title, padding=4, **kwargs):
+        "Add a title bar"
+        txtConfig = dict(font=Font.sans(), fontSize=15,
+            fontStyle=BOLD, color="white", padding=padding)
+        txtConfig.update(kwargs)
+        title = Text(title).config(**txtConfig)
+        cv = Canvas((self.width, title.height + self.weight), self.border)
+        cv += title.config(pos=(cv.center[0], self.weight), anchor=TOP)
+        self.insertTop(cv, 0, "TitleBar")
+        return self
+
+    def resize(self, size): pass
+
+
+class MessageBox(Dialog):
     "Create simple GUI dialogs"
 
     def __init__(self, text, userInput=None, buttons=None, title=None, size=(1,1), inputWidth=None, **kwargs):
@@ -49,7 +75,7 @@ class MessageBox(Canvas):
             t = Text(t).config(**txtConfig)
             if not bSize: bSize = 0, t.height + 12
             name = "Button_{}".format(t.data)
-            self[name] = Button(bSize, 2).textIcon(t, icon).config(anchor=BOTTOM) 
+            self[name] = Button(bSize, 2).textIcon(t, icon).config(anchor=BOTTOM)
             icon = not icon
         self.buttons = self[:len(buttons)]
         for b in self.buttons: b.bind(onaction=_btnClick)
@@ -107,29 +133,6 @@ class MessageBox(Canvas):
             b.config(pos=(x,y))
             x = self._size[0] - x
         return self
-
-    def insertTop(self, gr, padding=12, name=None):
-        "Insert content at top of dialog"
-        try: tb = self["TitleBar"],
-        except: tb = ()
-        self.shiftContents((0, gr.height + padding), *tb)
-        y = padding + (tb[0].height if tb else 0) # + self.weight
-        gr.config(anchor=TOP, pos=(self.center[0], y))
-        gr.setCanvas(self, name)
-        return self
-
-    def title(self, title, padding=4, **kwargs):
-        "Add a title bar"
-        txtConfig = dict(font=Font.sans(), fontSize=15,
-            fontStyle=BOLD, color="white", padding=padding)
-        txtConfig.update(kwargs)
-        title = Text(title).config(**txtConfig)
-        cv = Canvas((self.width, title.height + self.weight), self.border)
-        cv += title.config(pos=(cv.center[0], self.weight), anchor=TOP)
-        self.insertTop(cv, 0, "TitleBar")
-        return self
-
-    def resize(self, size): pass
 
     @property
     def data(self):
