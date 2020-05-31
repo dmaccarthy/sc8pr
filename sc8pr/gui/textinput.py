@@ -332,7 +332,7 @@ class TextInputCanvas(Canvas):
     def data(self): return self.ti.data
 
     @data.setter
-    def data(self, data): self.ti.data.config(data=data)
+    def data(self, data): self.ti.config(data=data)
 
     def onclick(self, ev): self.ti.focus().onclick(ev)
 
