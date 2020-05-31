@@ -17,11 +17,12 @@
 
 import pygame, re
 from pygame.math import Vector2
-from sc8pr import Canvas, Graphic, Renderable, CENTER
+from sc8pr import Canvas, Graphic, Renderable, CENTER, Image
 from sc8pr.shape import Line, Arrow, Shape
 from sc8pr.geom import transform2d
 from sc8pr.misc.plot import locus
 from sc8pr.plot import _PObject, PCanvas
+from sc8pr.util import ondrag
 
 
 class PLocus(Shape):
@@ -159,27 +160,11 @@ class PVector(_PObject, Renderable, Vector2):
     def __truediv__(self, x):
         return PVector(xy=Vector2.__truediv__(self, x))
 
-    @staticmethod
-    def parse(expr):
-        "Parse a string as a list of PVector instances"
-        expr = re.subn("\s*", "", expr)[0]
-        vecs = []
-        while len(expr):
-            neg = False
-            if expr[0] in "+-":
-                if expr[0] == "-": neg = True
-                expr = expr[1:]
-            n, v = _parse(expr, 0)
-            if not n: n, v = _parse(expr, 1)
-            if n:
-                vecs.append(-1 * v if neg else v)
-                expr = expr[n:]
-            else: break
-        return vecs
-
     def render(self):
         "Render the vector as an arrow on a pygame.Surface"
         l = self.length() * self.canvas.unit
+        if l < 2:
+            return Image((1, 1), self.stroke).image
         shape = self.arrowShape
         if type(shape) is dict:
             if shape["fixed"]:
@@ -208,23 +193,63 @@ class PVector(_PObject, Renderable, Vector2):
         return self
 
     @staticmethod
+    def parse(string):
+        "Parse a string as a list of PVector instances"
+        expr = re.subn("\s*", "", string)[0]
+        vecs = []
+        while len(expr):
+            neg = False
+            if expr[0] in "+-":
+                if expr[0] == "-": neg = True
+                expr = expr[1:]
+            n, v = _parse(expr, 0)
+            if not n: n, v = _parse(expr, 1)
+            if n:
+                vecs.append(-1 * v if neg else v)
+                expr = expr[n:]
+            else: break
+        if expr: raise ValueError("can't parse string '{}' as PVectors".format(string))
+        return PVector.tipToTail(vecs)
+
+    @staticmethod
     def tipToTail(vecs):
         "Adjust each vector's tail to match the previous vector's tip"
-        if type(vecs) is str: vecs = PVector.parse(vecs)
-        for i in range(0, len(vecs)):
-            v = vecs[i]
-            if i: v.tail = v0.tip
-            v0 = v
+        if len(vecs) > 1:
+            v0 = vecs[0]
+            for v in vecs[1:]:
+                v.tail = v0.tip
+                v0 = v
         return vecs
 
     @staticmethod
-    def diagram(vecs, cv=None, resultant=True, **kwargs):
+    def diagram(vecs, width, lrbt=None, step=1, bg="white", flatten=True,
+            resultant=True, components=False, draggable=False, **kwargs):
         "Draw vectors on a PCanvas"
         if type(vecs) is str: vecs = PVector.parse(vecs)
-        if cv is None: cv = PCanvas.simple(**kwargs)
+        if isinstance(width, PCanvas): cv = width
+        else:
+            x0, x1, y0, y1 = lrbt
+            dx = (x1 - x0) / 100
+            dy = (y1 - y0) / 100
+            cv = PCanvas(width, [x0-dx, x1+dx, y0-dy, y1+dy], bg=bg)
+            cv.gridlines(lrbt, step, {})
+        cv.config(**kwargs)
+        if flatten: cv.flatten()
+        if components:
+            for v in vecs:
+                vx, vy = v.components()
+                x, y = vx.mag, vy.mag
+                m = max(x, y)
+                if m and min(x, y) > m / 500:
+                    for v in (vx, vy): cv += v.config(stroke="yellow")
         cv += vecs
         if resultant:
-            cv.resultant = PVector.sum(vecs).config(tail=vecs[0].tail, stroke="blue").setCanvas(cv)
+            cv.resultant = v = PVector.sum(vecs)
+            if len(vecs) > 1:
+                v.config(tail=vecs[0].tail, stroke="blue").setCanvas(cv)
+        else: cv.resultant = None
+        if draggable:
+            for v in cv.instOf(PVector): v.bind(ondrag)
         return cv
 
 
