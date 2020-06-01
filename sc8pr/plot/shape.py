@@ -221,43 +221,11 @@ class PVector(_PObject, Renderable, Vector2):
                 v0 = v
         return vecs
 
-    @staticmethod
-    def diagram(vecs, width, lrbt=None, step=1, bg="white", flatten=True,
-            resultant=True, components=False, draggable=False, **kwargs):
-        "Draw vectors on a PCanvas"
-        if type(vecs) is str: vecs = PVector.parse(vecs)
-        if isinstance(width, PCanvas): cv = width
-        else:
-            x0, x1, y0, y1 = lrbt
-            dx = (x1 - x0) / 100
-            dy = (y1 - y0) / 100
-            cv = PCanvas(width, [x0-dx, x1+dx, y0-dy, y1+dy], bg=bg)
-            cv.gridlines(lrbt, step, {})
-        cv.config(**kwargs)
-        if flatten: cv.flatten()
-        if components:
-            for v in vecs:
-                vx, vy = v.components()
-                x, y = vx.mag, vy.mag
-                m = max(x, y)
-                if m and min(x, y) > m / 500:
-                    for v in (vx, vy): cv += v.config(stroke="yellow")
-        cv += vecs
-        if resultant:
-            cv.resultant = v = PVector.sum(vecs)
-            if len(vecs) > 1:
-                v.config(tail=vecs[0].tail, stroke="blue").setCanvas(cv)
-        else: cv.resultant = None
-        if draggable:
-            for v in cv.instOf(PVector): v.bind(ondrag)
-        return cv
-
 
 # Regular expressions for Cartesian and polar form
 
 _sign = "[-|\+]{0,1}"
 _num = _sign + "\d+\.{0,1}\d*([e|E]" + _sign + "[\d]*){0,1}"
-# _num = "[-|\+]{0,1}\d+\.{0,1}\d*"
 _re = [ # [Cartesian, Polar]
     re.compile("\(" + _num + "," + _num + "\)"),
     re.compile(_num + "@" + _num)
