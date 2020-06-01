@@ -843,7 +843,8 @@ class Canvas(Graphic):
 
     def __isub__(self, gr):
         "Remove item(s) from the canvas"
-        if isinstance(gr, Graphic):
+        if type(gr) is str: self[gr].remove()
+        elif isinstance(gr, Graphic):
             if gr in self: gr.remove()
             else: raise ValueError("Cannot remove {} from {}".format(gr, self))
         else:
@@ -858,6 +859,12 @@ class Canvas(Graphic):
             gr = self[-1]
             if recursive and isinstance(gr, Canvas): gr.purge()
             gr.remove()
+
+    def removeItems(self, *args):
+        "Remove specified items without raising exceptions if item is not in canvas"
+        for gr in args:
+            try: self -= gr
+            except: pass
 
     def shiftContents(self, offset, *args, resize=True):
         "Move contents and (optionally) adjust canvas size"

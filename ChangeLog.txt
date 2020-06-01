@@ -48,6 +48,7 @@ sc8pr 2.2.dev...
 *** Add 'sc8pr.plot' package and 'sc8pr.misc.table' module
 *** Add additional 'Graphic' and 'Canvas' methods to support new plotting/scrolling package
 *** Add 'Canvas.clipArea', 'Canvas.resizeContent', 'Canvas.icons, 'Canvas.iconSize'
+*** Allow 'Canvas.__isub__' to accept a string; add 'Canvas.removeItems'
 *** Add 'util.mix'
 *** Replace 'Canvas.grid' by 'Table.grid'
 *** Create 'util.circle_intersect'
