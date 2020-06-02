@@ -21,8 +21,7 @@ from sc8pr import Canvas, Graphic, Renderable, CENTER, Image
 from sc8pr.shape import Line, Arrow, Shape
 from sc8pr.geom import transform2d
 from sc8pr.misc.plot import locus
-from sc8pr.plot import _PObject, PCanvas
-from sc8pr.util import ondrag
+from sc8pr.plot import _PObject
 
 
 class PLocus(Shape):
@@ -167,8 +166,8 @@ class PVector(_PObject, Renderable, Vector2):
             return Image((1, 1), self.stroke).image
         shape = self.arrowShape
         if type(shape) is dict:
+            shape = shape.copy()
             if shape["fixed"]:
-                shape = shape.copy()
                 shape["width"] /= l
                 shape["head"] /= l
             del shape["fixed"]
@@ -222,7 +221,7 @@ class PVector(_PObject, Renderable, Vector2):
         return vecs
 
 
-# Regular expressions for Cartesian and polar form
+# Regular expressions for Cartesian and polar form (whitespace removed)
 
 _sign = "[-|\+]{0,1}"
 _num = _sign + "\d+\.{0,1}\d*([e|E]" + _sign + "[\d]*){0,1}"
