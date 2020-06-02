@@ -315,7 +315,7 @@ class Graphic:
         cv._items.append(self)
         return self
 
-    def remove(self, deleteRect=True):
+    def remove(self, deleteRect=False):
         "Remove the instance from its canvas"
         try:
             cv = self.canvas
@@ -486,7 +486,7 @@ class Renderable(Graphic):
     def refresh(self):
         if self.stale: self.image
 
-    def remove(self, deleteRect=True):
+    def remove(self, deleteRect=False): # !!!
         super().remove(deleteRect)
         self.stale = True
 
