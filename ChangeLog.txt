@@ -59,6 +59,9 @@ sc8pr 2.2.dev...
 *** Add 'Image.autocrop' and 'util.autocrop' (depends on pygame.surfarray -> numpy)
 * Fire all DRAW events after drawing the entire sketch is complete.
 ** Fix divid-by-zero in 'shape.Line' when length is 0
+*** Add 'sc8pr.misc.effect.FastDissolve'
+*** Change 'deleteRect' argument default to False in 'Graphic.remove' and 'Renderable.remove'
+*** Add 'examples.vector2d'
 
 
 !!! Add 'util.borderRadius'
