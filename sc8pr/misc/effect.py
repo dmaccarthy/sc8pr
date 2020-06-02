@@ -1,4 +1,4 @@
-# Copyright 2015-2018 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2020 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -18,7 +18,7 @@
 
 from random import uniform, random
 from math import sqrt, tan, pi, sin, cos, hypot
-# from sys import stderr
+from sys import stderr
 import pygame
 from pygame.pixelarray import PixelArray
 from sc8pr.util import rgba, style
@@ -46,30 +46,6 @@ class Effect:
         return (srf, srf.get_size()) if size else srf
 
 
-# class QueueRemove(Effect):
-#     "Remove a graphic, or its effects lists, at the specified frame"
-#     _pending = []
-# 
-#     def __init__(self, gr, complete=True):
-#         self._gr = gr
-#         self._complete = complete
-# 
-#     def apply(self, img, n=0):
-#         if n <= 0:
-#             gr = self._gr
-#             if self._complete:
-#                 p = QueueRemove._pending
-#                 if gr not in p: p.append(gr)
-#             else: gr.effects = None
-#         return img
-# 
-#     @classmethod
-#     def flush(cls):
-#         for gr in cls._pending:
-#             if gr in gr.canvas: gr.remove()
-#         cls._pending = []
-
-
 class Remove(Effect):
     "Remove a graphic, or its effects lists, at the specified frame"
 
@@ -80,7 +56,6 @@ class Remove(Effect):
     def apply(self, img, n=0):
         if n <= 0:
             if self._complete:
-#                 self._gr.remove()
                 self._gr.bind(ondraw=lambda gr:gr.remove())
             else: self._gr.effects = None
         return img
@@ -209,11 +184,10 @@ class Squash(Wipe):
 class MathEffect(Effect):
     "Effect based on y < f(x) or y > f(x)"
 
-    def __init__(self, noise=0.15, fill=(0,0,0,0)):#, eqn=None):
+    def __init__(self, noise=0.15, fill=(0,0,0,0)):
         self.fill = rgba(fill)
         self.above = noise > 0
         self.noise = abs(noise)
-#        if eqn: self.eqn = eqn.__get__(self, self.__class__)
 
     def eqn(self, x, n, size):
         dh = self.noise
@@ -359,3 +333,24 @@ class ClockHand(MathEffect):
             return 0 if n <= 0.5 else (y + x * tan((n - 0.75) * pi2), False)
         else:
             return h if n >= 0.5 else (y + x * tan((n - 0.25) * pi2))
+
+
+try:
+    from pygame.surfarray import pixels_alpha
+    
+    class FastDissolve(Effect):
+        """Dissolve to transparency only; uses pygame.surfarray for speed but requires numpy"""
+    
+        def apply(self, img, n):
+            if n >= 1: return img
+            srf = self.srfSize(img)
+            sa = pixels_alpha(srf)
+            h = len(sa[0])
+            for c in sa:
+                for r in range(h):
+                    if random() > n: c[r] = 0
+            return srf
+
+except:
+    FastDissolve = Dissolve
+    print("FastDissolve effect is unavailable; install numpy to fix", file=stderr)
