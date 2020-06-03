@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -22,18 +22,17 @@ sc8pr rather than using pygame directly (except for sound). This version
 loads image and sound files directly from the [pygame]/examples/data folder.
 """
 
-try:
-    from sc8pr import Sketch, Image, BOTH, TOP, TOPLEFT, TOPRIGHT
-    from sc8pr.sprite import Sprite
-    from sc8pr.text import Text, Font, BOLD
-    from sc8pr.misc.effect import ReplaceColor
-    from sc8pr.util import resolvePath
-except Exception as e:
-    print(e)
-    print("Try running 'pip3 install sc8pr' on command line")
-    exit()
+from sc8pr import version
+if 100 * version[0] + version[1] < 202:
+    raise NotImplementedError("This program requires sc8pr 2.2; installed version is {}.{}.".format(*version[:2]))
+
 import pygame
 from random import randint
+from sc8pr import Sketch, Image, BOTH, TOP, TOPLEFT, TOPRIGHT
+from sc8pr.sprite import Sprite
+from sc8pr.text import Text, Font, BOLD
+from sc8pr.misc.effect import ReplaceColor
+from sc8pr.util import resolvePath
 
 
 def loadImage(filename):
@@ -67,10 +66,10 @@ def setup(sk):
     sk.sounds = [pygame.mixer.Sound(folder + f) for f in audio]
 
     # Bind click event handler; hide cursor
-    sk.bind(onclick)
+    sk.bind(onmousedown)
     sk.cursor = False
 
-def onclick(sk, ev):
+def onmousedown(sk, ev):
     "Event handler for mouse clicks"
     chimp = sk["Chimp"]
     if chimp.spin == 0 and chimp.contains(sk.mouse.pos):

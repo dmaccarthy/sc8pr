@@ -17,21 +17,20 @@
 
 "A collection of robotics simulations for sc8pr 2.2.dev"
 
-try:
-    from sc8pr import Image, Canvas, BOTH, TOP, BOTTOM
-    from sc8pr.geom import dist, shiftAlongNormal, angleDifference, DEG
-    from sc8pr.shape import Polygon, Line, Circle
-    from sc8pr.util import rangef 
-    from sc8pr.robot import RobotThread
-    from sc8pr.gui.robot import Robot as _Robot
-    from sc8pr.sprite import physics, Collisions, Sprite
-    from sc8pr.plot import PSketch, PCanvas
-except Exception as e:
-    print(e)
-    print("Try running 'pip3 install sc8pr' on command line")
-    exit()
+from sc8pr import version
+if 100 * version[0] + version[1] < 202:
+    raise NotImplementedError("This program requires sc8pr 2.2; installed version is {}.{}.".format(*version[:2]))
+
 from math import pi, sin, cos, atan2
 from random import randint, uniform, choice, shuffle
+from sc8pr import Image, Canvas, BOTH, TOP, BOTTOM
+from sc8pr.geom import dist, shiftAlongNormal, angleDifference, DEG
+from sc8pr.shape import Polygon, Line, Circle
+from sc8pr.util import rangef 
+from sc8pr.robot import RobotThread
+from sc8pr.gui.robot import Robot as _Robot
+from sc8pr.sprite import physics, Collisions, Sprite
+from sc8pr.plot import PSketch, PCanvas
 
 
 class Robot(_Robot):

@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2020 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -25,13 +25,9 @@ When the animation is running, click the mouse to pause or resume.
 Set the speed to 0 or None to print the moves to the console only,
 without running the animation"""
 
-try:
-    from sc8pr import Sketch, Image, BOTTOM
-    from sc8pr.misc.video import Video
-except Exception as e:
-    print(e)
-    print("Try running 'pip3 install sc8pr' on command line")
-    exit()
+
+from sc8pr import Sketch, Image, BOTTOM
+from sc8pr.misc.video import Video
 
 def moveDisks(towers, n, start=0, moveTo=1):
     "Recursively generate a sequence of disk movements"

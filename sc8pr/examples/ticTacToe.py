@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -15,17 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-try:
-    from sc8pr import Sketch, Image, Graphic, CENTER
-    from sc8pr.shape import Line
-    from sc8pr.sprite import Sprite
-    from sc8pr.gui.dialog import MessageBox
-    from sc8pr.misc.cursors import cross, circle
-    from sc8pr.util import ondrag, sc8prData, resolvePath
-except Exception as e:
-    print(e)
-    print("Try running 'pip3 install sc8pr' on command line")
-    exit()
+from sc8pr import Sketch, Image, Graphic, CENTER
+from sc8pr.shape import Line
+from sc8pr.sprite import Sprite
+from sc8pr.gui.dialog import MessageBox
+from sc8pr.misc.cursors import cross, circle
+from sc8pr.util import ondrag, sc8prData, resolvePath
 
 TITLE = "Tic-Tac-Toe"
 

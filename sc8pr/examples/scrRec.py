@@ -28,29 +28,30 @@ command. The default video codec and pixel format for the chosen container
 will be used. For MP4, this will probably be libx264 and yuv420p.
 """
 
+# from sc8pr import version
+# if 100 * version[0] + version[1] < 202:
+#     raise NotImplementedError("This program requires sc8pr 2.2; installed version is {}.{}.".format(*version[:2]))
+
 try: import numpy, imageio as im
 except Exception as e:
     print(e)
     print("Try running 'pip3 install imageio imageio-ffmpeg' on command line")
-try:
-    from sc8pr import Sketch, Image, PixelData, LEFT
-    from sc8pr.text import Font, BOLD
-    from sc8pr.util import logError
-    from sc8pr.shape import Circle
-    from sc8pr.sprite import Sprite
-    from sc8pr.gui.button import Button
-    from sc8pr.gui.textinput import TextInput
-    from sc8pr.gui.dialog import ask
-    from sc8pr.misc.video import Video, Grabber, ImageIO
-except Exception as e:
-    print(e)
-    print("Try running 'pip3 install sc8pr' on command line")
-    exit()
+
 from sys import argv
 from datetime import datetime
 from time import time
 from threading import Thread
 from tkinter.filedialog import askdirectory
+
+from sc8pr import Sketch, Image, PixelData, LEFT
+from sc8pr.text import Font, BOLD
+from sc8pr.util import logError
+from sc8pr.shape import Circle
+from sc8pr.sprite import Sprite
+from sc8pr.gui.button import Button
+from sc8pr.gui.textinput import TextInput
+from sc8pr.gui.dialog import ask
+from sc8pr.misc.video import Video, Grabber, ImageIO
 
 
 def timeStr():

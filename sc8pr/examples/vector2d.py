@@ -17,6 +17,10 @@
 
 "Draw and save 2D vector diagrams"
 
+from sc8pr import version
+if 100 * version[0] + version[1] < 202:
+    raise NotImplementedError("This program requires sc8pr 2.2; installed version is {}.{}.".format(*version[:2]))
+
 import os, json
 from sc8pr import Sketch, TOP, CENTER, TOPLEFT, BOTTOMRIGHT, TOPRIGHT
 from sc8pr.util import ondrag, nothing, logError, modKeys, dragDrop
@@ -29,7 +33,8 @@ from sc8pr.gui.button import Button
 from sc8pr.gui.radio import Options
 
 
-class VectorUI(Dialog):
+class _VectorUI(Dialog):
+    "Create the UI dialog"
     drawTitle = False
     buttonWidth = 96
     padding = 8
@@ -84,7 +89,7 @@ class VectorUI(Dialog):
         cv = ti.canvas
         try:
             cv.vectors = PVector.parse(ti.data)
-            data = "{:.2g}, {:.2g}, {:.2g}, {:.2g}".format(*VectorUI.region(cv.vectors))
+            data = "{:.2g}, {:.2g}, {:.2g}, {:.2g}".format(*_VectorUI.region(cv.vectors))
         except:
             cv.vectors = None
             data = "Parse error!"
@@ -104,15 +109,18 @@ class VectorUI(Dialog):
         return x0, x1, y0, y1
 
 
-class Vector2DApp(VectorUI):
+class VectorUI(_VectorUI):
+    "Implement onaction handler: render the vector diagram"
+
+    lastDiagram = None
     cfg = {"axis":{}, "grid":{}, "vector":{},
         "resultant":{"stroke":"blue"}, "component":{"stroke":"green"}}
 
     @staticmethod
     def style(v, mode=0):
-        v.config(**Vector2DApp.cfg["vector"])
-        if mode == 1: v.config(**Vector2DApp.cfg["resultant"])
-        elif mode == 2: v.config(**Vector2DApp.cfg["component"])
+        v.config(**VectorUI.cfg["vector"])
+        if mode == 1: v.config(**VectorUI.cfg["resultant"])
+        elif mode == 2: v.config(**VectorUI.cfg["component"])
         return v
 
     @staticmethod
@@ -120,14 +128,14 @@ class Vector2DApp(VectorUI):
             resultant=True, components=False, draggable=False, **kwargs):
         "Draw vectors on a PCanvas"
         if type(vecs) is str: vecs = PVector.parse(vecs)
-        for v in vecs: Vector2DApp.style(v)
+        for v in vecs: VectorUI.style(v)
         if isinstance(width, PCanvas): cv = width
         else:
             x0, x1, y0, y1 = lrbt
             dx = (x1 - x0) / 100
             dy = (y1 - y0) / 100
             cv = PCanvas(width, [x0-dx, x1+dx, y0-dy, y1+dy], bg=bg)
-            cv.gridlines(lrbt, step, Vector2DApp.cfg["axis"], **Vector2DApp.cfg["grid"])
+            cv.gridlines(lrbt, step, VectorUI.cfg["axis"], **VectorUI.cfg["grid"])
         cv.config(**kwargs)
         if flatten: cv.flatten()
         if components:
@@ -136,12 +144,12 @@ class Vector2DApp(VectorUI):
                 x, y = vx.mag, vy.mag
                 m = max(x, y)
                 if m and min(x, y) > m / 500:
-                    for v in (vx, vy): cv += Vector2DApp.style(v, 2)
+                    for v in (vx, vy): cv += VectorUI.style(v, 2)
         cv += vecs
         if resultant:
             cv.resultant = v = PVector.sum(vecs)
             if len(vecs) > 1:
-                Vector2DApp.style(v, 1).config(tail=vecs[0].tail).setCanvas(cv)
+                VectorUI.style(v, 1).config(tail=vecs[0].tail).setCanvas(cv)
         else: cv.resultant = None
         if draggable:
             for v in cv.config(allowDrop=True).instOf(PVector):
@@ -149,7 +157,6 @@ class Vector2DApp(VectorUI):
         return cv
 
     def onaction(self, ev):
-        sk = self.sketch
         try: size = int(self["Size"].data)
         except: size = 384
         try: step = float(self["Step"].data)
@@ -163,11 +170,23 @@ class Vector2DApp(VectorUI):
                 components = opt[1].selected,
                 draggable = opt[2].selected
             )
-            cv = self.diagram([PVector(v) for v in self.vectors], size, lrbt, step, bg="white", **opt)
-            pos = sk.width - 8, sk.height - 10
+            self.lastDiagram = self.diagram([PVector(v) for v in self.vectors], size, lrbt, step, bg="white", **opt)
+        except:
+            self.lastDiagram = None
+            logError()
+
+
+class VectorApp(VectorUI):
+    "Modify dialog's onaction method to run as standalone app"
+
+    def onaction(self, ev):
+        super().onaction(ev)
+        sk = self.sketch
+        pos = sk.width - 8, sk.height - 10
+        cv = self.lastDiagram
+        if cv:
             sk += cv.config(pos=pos, anchor=BOTTOMRIGHT).bind(ondrag, onclick=self.click)
             if cv.resultant: print(str(cv.resultant)[9:-1])
-        except: logError()
 
     @staticmethod
     def click(cv, ev):
@@ -178,21 +197,24 @@ class Vector2DApp(VectorUI):
             fn = "vector{}.png"
             while os.path.exists(fn.format(i)): i += 1
             fn = fn.format(i)
-            cv.save(fn)
-            cv.removeItems("Saved")
+            cv.save(fn).removeItems("Saved")
             cv["Saved"] = Text("Saved as '{}'".format(fn)).config(anchor=TOP, pos=(cv.center[0], 8), **font)
         elif m & 1: cv.remove()
         else: cv.config(layer=-1)
 
-def setup(sk):
-    cv = Vector2DApp(384, [("Draw!", True)], weight=2, border="blue").config(pos=(4,4), anchor=TOPLEFT)
-    btn = list(cv.instOf(Button))[0]
-    btn.config(pos=(cv.width - 8, cv.height - 8), anchor=BOTTOMRIGHT)
-    sk += cv
-    sk.config(resizeContent=False, fixedAspect=False)
+
+class VectorSketch(Sketch):
+
+    def setup(self):
+        cv = VectorApp(384, [("Draw!", True)], weight=2, border="blue").config(pos=(4,4), anchor=TOPLEFT)
+        btn = list(cv.instOf(Button))[0]
+        btn.config(pos=(cv.width - 8, cv.height - 8), anchor=BOTTOMRIGHT)
+        self += cv
+        self.config(resizeContent=False, fixedAspect=False)
 
 
 try:
-    with open("vector2d.json") as f: Vector2DApp.cfg = json.load(f)
+    with open("vector2d.json") as f: VectorUI.cfg = json.load(f)
 except: pass
-Sketch((800, 600)).play("Vector Diagrams 2D")
+if __name__ == "__main__":
+    VectorSketch((800, 600)).play("Vector Diagrams 2D")

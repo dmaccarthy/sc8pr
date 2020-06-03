@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2020 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -15,24 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-try:
-    from sc8pr import Sketch, Image, TOPLEFT, BOTH, RIGHT, LEFT, BOTTOM
-    from sc8pr.sprite import Sprite, physics, Collisions
-    from sc8pr.text import Text, Font
-    from sc8pr.util import randPixel, rgba, resolvePath
-    from sc8pr.geom import vec2d, delta
-    from sc8pr.gui.textinput import TextInput
-    from sc8pr.gui.button import Button
-    from sc8pr.misc.video import Video
-except Exception as e:
-    print(e)
-    print("Try running 'pip3 install sc8pr' on command line")
-    exit()
-from pygame.constants import K_UP, K_DOWN, K_LEFT, K_RIGHT
+from sc8pr import version
+if 100 * version[0] + version[1] < 202:
+    raise NotImplementedError("This program requires sc8pr 2.2; installed version is {}.{}.".format(*version[:2]))
+
 import json
 from time import time
 from math import pow
 from random import uniform, randint
+from pygame.constants import K_UP, K_DOWN, K_LEFT, K_RIGHT
+from sc8pr import Sketch, Image, TOPLEFT, BOTH, RIGHT, LEFT, BOTTOM
+from sc8pr.sprite import Sprite, physics, Collisions
+from sc8pr.text import Text, Font
+from sc8pr.util import randPixel, rgba, resolvePath
+from sc8pr.geom import vec2d, delta
+from sc8pr.gui.textinput import TextInput
+from sc8pr.gui.button import Button
+from sc8pr.misc.video import Video
 
 
 JSON = "asterShield_scores.json"
@@ -224,7 +223,7 @@ class Game(Sketch):
 
         icon = Sprite(Asteroid.original).config(spin=0.4)
         okay = Text("Okay").config(font=FONT)
-        self += Button((w/7, h/10)).bind(onclick=restart).textIcon(okay,
+        self += Button((w/7, h/10)).bind(onmousedown=restart).textIcon(okay,
             icon, 10).config(pos=(self.center[0], 0.9 * h),
             anchor=BOTTOM, border="blue", weight=3)
 
