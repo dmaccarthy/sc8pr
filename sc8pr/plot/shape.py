@@ -101,12 +101,8 @@ class PBar(_PObject, Renderable):
 
 
 class PImage(_PObject, Image): pass
+class PText(_PObject, Text): pass
 
-class PText(_PObject, Text):
-
-    def update(self, x, y):
-        self.stale = True
-        self.csPos = x, y
 
 
 class PLine(_PObject, Line):
