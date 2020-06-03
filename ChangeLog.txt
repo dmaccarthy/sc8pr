@@ -62,6 +62,8 @@ sc8pr 2.2.dev...
 *** Add 'sc8pr.misc.effect.FastDissolve'
 *** Change 'deleteRect' argument default to False in 'Graphic.remove' and 'Renderable.remove'
 *** Add 'examples.vector2d'
+*** Change CLICK event to MOUSEDOWN and implement a new CLICK event (after MOUSEUP only when on the same item)
+*** Add 'plot.shape.PLine'
 
 
 !!! Add 'util.borderRadius'

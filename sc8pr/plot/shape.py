@@ -50,7 +50,7 @@ class _PObject:
     def angle(self, a):
         cv = self.canvas
         self.theta = a if cv is None or cv.clockwise else -a
-    
+
     def update(self, x, y): self.csPos = x, y
 
     def _warn(self): pass
@@ -85,7 +85,9 @@ class PBar(_PObject, Renderable):
         self._xy = x, y
         self._barWidth = barWidth
 
-    def update(self, x, y): self._xy = x, y
+    def update(self, x, y):
+        self.stale = True
+        self._xy = x, y
 
     def render(self):
         y = self._xy[1]
@@ -99,7 +101,12 @@ class PBar(_PObject, Renderable):
 
 
 class PImage(_PObject, Image): pass
-class PText(_PObject, Text): pass
+
+class PText(_PObject, Text):
+
+    def update(self, x, y):
+        self.stale = True
+        self.csPos = x, y
 
 
 class PLine(_PObject, Line):
