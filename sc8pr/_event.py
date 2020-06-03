@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -61,7 +61,7 @@ class EventManager:
         elif key: self.handle(self.focus, name, ev)
 
         # Process MOUSEBUTTONDOWN events by calling as necessary:
-        # onrelease, onblur, onfocus, onclick
+        # onrelease, onblur, onfocus, onmousedown
         elif ev.type == pygame.MOUSEBUTTONDOWN:
             if self.drag is not None: self._dragRelease(ev)
             for p in path:
@@ -73,12 +73,15 @@ class EventManager:
                 self.handle(self.focus, "onblur", ev)
                 self.focus = focus
                 self.handle(focus, "onfocus", ev)
-            self.handle(path, "onclick", ev)
+            self._mousedown = path[0]
+            self.handle(path, "onmousedown", ev)
 
-        # Process MOUSEBUTTONUP events by calling onrelease or onmouseup
+        # Process MOUSEBUTTONUP events by calling onrelease or onmouseup/onclick
         elif ev.type == pygame.MOUSEBUTTONUP:
             if not self._dragRelease(ev):
                 self.handle(path, "onmouseup", ev)
+                if path[0] is self._mousedown:
+                    self.handle(path, "onclick", ev)
 
         # Process MOUSEMOTION events by calling as necessary:
         # onmouseout, onmouseover, ondrag, onmousemotion
@@ -89,7 +92,6 @@ class EventManager:
                 current = _find(self._oldHover.path, "ondrag") \
                     if self.drag is None else self.drag
                 if current is not None:
-#                 if current not in (None, sk):
                     if self.drag is not current: self.drag = current
                     self.handle(current, "ondrag", ev)
                     drag = True

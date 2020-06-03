@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -23,7 +23,7 @@ from sc8pr.gui.button import Button
 
 class Options(Canvas):
     """GUI control consisting of check boxes and text;
-    buttons handle onclick; trigger onaction"""
+    buttons handle onmousedown; trigger onaction"""
 
     def __init__(self, text, height=None, padding=4, imgs=None, txtConfig={}):
         text = [Text(t).config(**txtConfig) for t in text]
@@ -48,7 +48,7 @@ class Options(Canvas):
 
 class Radio(Options):
     """GUI control consisting of radio buttons and text;
-    buttons handle onclick; radio handles onaction and triggers onchange"""
+    buttons handle onmousedown; radio handles onaction and triggers onchange"""
 
     def __init__(self, text, height=None, padding=4, imgs=None, txtConfig={}):
         if imgs is None: imgs = Button._radioTiles()
