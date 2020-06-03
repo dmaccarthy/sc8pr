@@ -97,20 +97,6 @@ class QCircle(Shape):
     def intersect(self, other):
         "Find the intersection(s) of two circles as list of points"
         return circle_intersect(self.pos, self.radius, other.pos, other.radius)
-#         R = self.radius
-#         r = other.radius
-#         d = dist(self.pos, other.pos)
-#         if d > r + R or d == 0 or d < abs(r - R): return []
-#         r2 = r * r
-#         x = (d*d + r2 - R*R) / (2*d)
-#         ux, uy = delta(self.pos, other.pos, 1)
-#         x0, y0 = other.pos
-#         x0 += x * ux
-#         y0 += x * uy
-#         if x < r:
-#             y = sqrt(r2 - x*x)
-#             return [(x0 - y * uy, y0 + y * ux), (x0 + y * uy, y0 - y * ux)]
-#         else: return [(x0, y0)]
 
 
 class Circle(QCircle):
@@ -132,9 +118,15 @@ class Line(Shape):
     resolution = 1e-10
     snapshot = None
 
+    @property
+    def pos(self): return self._start
+
+    @pos.setter
+    def pos(self, pos): self._start = pos
+
     def __init__(self, start, point=None, vector=None):
         "Create a line or line segment"
-        self.pos = start
+        self._start = start
         if point:
             ux = point[0] - start[0]
             uy = point[1] - start[1]
@@ -148,14 +140,17 @@ class Line(Shape):
         self.u = (ux / u, uy / u) if u else (0, 0)
 
     def __repr__(self):
-        if self.length is None: p = " u={}".format(self.u)
-        else: p = ",{}".format(self.point(self.length))
-        return "<{} {}{}>".format(type(self).__name__, self.pos, p)
+        if self.length is None: p = "vector={}".format(self.u)
+        else: p = "{}".format(self.point(self.length))
+        return "{}({}, {})".format(type(self).__name__, self._start, p)
+
+    def __str__(self): return "<{}>".format(repr(self))
 
     def point(self, s=0):
         "Return the coordinates of a point on the line"
-        px, py = self.pos
+        px, py = self._start
         ux, uy = self.u
+        if s is True: s = self.length
         return px + s * ux, py + s * uy
 
     def midpoint(self):
@@ -163,7 +158,7 @@ class Line(Shape):
 
     def parameters(self, pt):
         "Find parameters (s,d) of point q = p0 + s*u + d*n where n is perpendicular to u"
-        pos = self.pos
+        pos = self._start
         dx = pt[0] - pos[0]
         dy = pt[1] - pos[1]
         ux, uy = self.u
@@ -184,8 +179,8 @@ class Line(Shape):
         u2x, u2y = other.u
         det = u2x * u1y - u1x * u2y
         if det:
-            p1 = self.pos
-            p2 = other.pos
+            p1 = self._start
+            p2 = other._start
             dx = p2[0] - p1[0]
             dy = p2[1] - p1[1]
             s1 = (u2x * dy - u2y * dx) / det
@@ -219,11 +214,10 @@ class Line(Shape):
             raise AttributeError("Unable to draw line; segment length is undefined")
         cv = self.canvas
         dx, dy = (0, 0) if snapshot else cv.rect.topleft
-        x1, y1 = self.point(0)
-        x2, y2 = self.point(self.length)
+        x1, y1 = self.point()
+        x2, y2 = self.point(True)
         wt = max(1, round(self.weight))
-        r = pygame.draw.line(srf, self._stroke, (x1+dx,y1+dy),
-            (x2+dx,y2+dy), wt)
+        r = pygame.draw.line(srf, self._stroke, (x1+dx,y1+dy), (x2+dx,y2+dy), wt)
         return r.inflate(wt, wt)
 
     def contains(self, pos):
@@ -234,7 +228,7 @@ class Line(Shape):
         dx, dy = size
         if ux < 0: dx = -dx
         if uy < 0: dy = -dy
-        self.__init__(self.pos, vector=(dx,dy))
+        self.__init__(self._start, vector=(dx,dy))
 
 
 class Polygon(Shape):
@@ -457,7 +451,7 @@ class Ellipse(Shape):
 
 class Arc(Ellipse):
     arc = 0, 360
-    
+
     @property
     def fill(self): return None
 

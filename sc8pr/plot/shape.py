@@ -16,12 +16,114 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 import pygame, re
+from math import floor, ceil
 from pygame.math import Vector2
-from sc8pr import Canvas, Graphic, Renderable, CENTER, Image
+from sc8pr import Canvas, Graphic, Image, Renderable, CENTER, BOTTOM, TOP
 from sc8pr.shape import Line, Arrow, Shape
 from sc8pr.geom import transform2d
 from sc8pr.misc.plot import locus
-from sc8pr.plot import _PObject
+from sc8pr.text import Text
+
+
+class _PObject:
+    autoPositionOnResize = _scrollAdjust = False
+    theta = 0
+    csPos = 0, 0
+
+    @property
+    def pos(self):
+        cv = self.canvas
+        return cv.px(*self.csPos) if cv else self.csPos
+
+    @pos.setter
+    def pos(self, pos):
+        cv = self.canvas
+        if cv: pos = cv.cs(*pos)
+        self.csPos = pos
+
+    @property
+    def angle(self):
+        cv = self.canvas
+        return self.theta if cv is None or cv.clockwise else -self.theta
+
+    @angle.setter
+    def angle(self, a):
+        cv = self.canvas
+        self.theta = a if cv is None or cv.clockwise else -a
+    
+    def update(self, x, y): self.csPos = x, y
+
+    def _warn(self): pass
+
+
+class PBar(_PObject, Renderable):
+    fill = "blue"
+    stroke = "black"
+    weight = 1
+    contains = Graphic.contains
+
+    @property
+    def anchor(self):
+        return BOTTOM if self._xy[1] >= 0 else TOP
+
+    @property
+    def csPos(self): return self._xy[0], 0
+
+    @property
+    def pos(self):
+        x, y = self._xy
+        x1, y1 = self.canvas.px(x, 0)
+        return x1, floor(y1) if y < 0 else ceil(y1)
+
+    @pos.setter
+    def pos(self, xy): pass
+
+    @csPos.setter
+    def csPos(self, xy): pass
+
+    def __init__(self, x, y, barWidth=1):
+        self._xy = x, y
+        self._barWidth = barWidth
+
+    def update(self, x, y): self._xy = x, y
+
+    def render(self):
+        y = self._xy[1]
+        cv = self.canvas
+        u = cv.units
+        w = round(abs(u[0] * self._barWidth))
+        h = round(abs(u[1] * y))
+        wt = round(self.weight)
+        img = Canvas((w, h + 1), self.fill).config(weight=wt, border=self.stroke)
+        return img.snapshot().original
+
+
+class PImage(_PObject, Image): pass
+class PText(_PObject, Text): pass
+
+
+class PLine(_PObject, Line):
+
+    @property
+    def csPos(self): return self._start
+
+    @csPos.setter
+    def csPos(self, pos): self._start = pos
+
+    def contains(self, pos): return False
+    def resize(self, size): pass
+
+    def draw(self, srf, snapshot=False):
+        if self.length is None:
+            raise AttributeError("Unable to draw line; segment length is undefined")
+        cv = self.canvas
+        px = cv.px
+        x1, y1 = px(*self.point())
+        x2, y2 = px(*self.point(self.length))
+        wt = max(1, round(self.weight))
+        dx, dy = (0, 0) if snapshot else cv.rect.topleft
+        r = pygame.draw.line(srf, self._stroke, (x1+dx,y1+dy), (x2+dx,y2+dy), wt)
+        return r.inflate(wt, wt)
 
 
 class PLocus(Shape):

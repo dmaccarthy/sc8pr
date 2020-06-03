@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-from math import sqrt, floor, ceil
+from math import sqrt
 import pygame
 from sc8pr import Image, Canvas, Sketch, Renderable, Graphic, BOTTOM, TOP, CENTER
 from sc8pr.util import mix
-from sc8pr.text import Text
-from sc8pr.shape import Line, Polygon
+from sc8pr.shape import Polygon
 from sc8pr.misc.plot import _lrbt
+from sc8pr.plot.shape import _PObject, PLine, PText, PBar, PImage
 from sc8pr.plot.scroll import ScrollBars
 
 
@@ -157,15 +157,14 @@ class _PCanvas:
         if type(step) in (int, float): dx = dy = step
         else: dx, dy = step
         x0, x1, y0, y1 = lrbt
-        px = self.px
         if dx:
             x = x0
             while x < x1 + dx / 2:
-                self += Line(px(x, y0), px(x, y1)).config(**style)
+                self += PLine((x, y0), (x, y1)).config(**style)
                 x += dx
         if dy:
             while y0 < y1 + dy / 2:
-                self += Line(px(x0, y0), px(x1, y0)).config(**style)
+                self += PLine((x0, y0), (x1, y0)).config(**style)
                 y0 += dy
         return self if axis is None else self.axis(lrbt, **axis)
 
@@ -173,11 +172,10 @@ class _PCanvas:
         "Draw coordinate axes"
         style = {"weight":2, "stroke":"black"}
         style.update(kwargs)
-        px = self.px
         if y is None and len(x) == 4:
             x, y = x[:2], x[2:]
-        if x: self += Line(px(x[0], 0), px(x[1], 0)).config(**style)
-        if y: self += Line(px(0, y[0]), px(0, y[1])).config(**style)
+        if x: self += PLine((x[0], 0), (x[1], 0)).config(**style)
+        if y: self += PLine((0, y[0]), (0, y[1])).config(**style)
         return self
 
     def series(self, points, markers=1, shift=(0, 0), **kwargs):
@@ -260,78 +258,3 @@ class PSketch(_PCanvas, Sketch):
             else: scrollSize = self._scrollSize
         self.setCoords(self._lrbt, scrollSize)
         self._scrollEvent()
-
-
-class _PObject:
-    autoPositionOnResize = _scrollAdjust = False
-    theta = 0
-    csPos = 0, 0
-
-    @property
-    def pos(self):
-        cv = self.canvas
-        return cv.px(*self.csPos) if cv else self.csPos
-
-    @pos.setter
-    def pos(self, pos):
-        cv = self.canvas
-        if cv: pos = cv.cs(*pos)
-        self.csPos = pos
-
-    @property
-    def angle(self):
-        cv = self.canvas
-        return self.theta if cv is None or cv.clockwise else -self.theta
-
-    @angle.setter
-    def angle(self, a):
-        cv = self.canvas
-        self.theta = a if cv is None or cv.clockwise else -a
-    
-    def update(self, x, y): self.csPos = x, y
-
-
-class PBar(_PObject, Renderable):
-    fill = "blue"
-    stroke = "black"
-    weight = 1
-    contains = Graphic.contains
-
-    @property
-    def anchor(self):
-        return BOTTOM if self._xy[1] >= 0 else TOP
-
-    @property
-    def csPos(self): return self._xy[0], 0
-
-    @property
-    def pos(self):
-        x, y = self._xy
-        x1, y1 = self.canvas.px(x, 0)
-        return x1, floor(y1) if y < 0 else ceil(y1)
-
-    @pos.setter
-    def pos(self, xy): pass
-
-    @csPos.setter
-    def csPos(self, xy): pass
-
-    def __init__(self, x, y, barWidth=1):
-        self._xy = x, y
-        self._barWidth = barWidth
-
-    def update(self, x, y): self._xy = x, y
-
-    def render(self):
-        y = self._xy[1]
-        cv = self.canvas
-        u = cv.units
-        w = round(abs(u[0] * self._barWidth))
-        h = round(abs(u[1] * y))
-        wt = round(self.weight)
-        img = Canvas((w, h + 1), self.fill).config(weight=wt, border=self.stroke)
-        return img.snapshot().original
-
-
-class PImage(_PObject, Image): pass
-class PText(_PObject, Text): pass
