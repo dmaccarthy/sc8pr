@@ -697,6 +697,11 @@ class Image(Graphic):
             tiles += [Image(_pyflip(s.image, False, True)) for s in tiles]
         return tiles
 
+    def crop(self, *args):
+        "Crop an image"
+        r = pygame.Rect(*args)
+        return Image(self.image.subsurface(r))
+
     @property
     def image(self):
         "Return a scaled and rotated surface"
