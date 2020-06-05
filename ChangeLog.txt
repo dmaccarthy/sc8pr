@@ -64,7 +64,7 @@ sc8pr 2.2.dev...
 *** Add 'examples.vector2d'
 *** Change CLICK event to MOUSEDOWN and implement a new CLICK event (after MOUSEUP only when on the same item)
 *** Add 'plot.shape.PLine'
-*** Add 'Image.crop'
+*** Add 'Image.crop', 'Image.flip', 'Image.cutGen' and 'Image.cut'
 
 
 !!! Add 'util.borderRadius'

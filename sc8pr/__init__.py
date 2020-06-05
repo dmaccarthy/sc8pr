@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
+from pygame.examples.oldalien import Img
 
 version = 2, 2, "dev"
 
@@ -697,10 +698,31 @@ class Image(Graphic):
             tiles += [Image(_pyflip(s.image, False, True)) for s in tiles]
         return tiles
 
+    def cutGen(self, x=(), y=(), padding=0):
+        "Generate images by cutting the original"
+        srf = self.image
+        x0 = 0
+        for c in range(len(x) + 1):
+            y0 = 0
+            for r in range(len(y) + 1):
+                try: h = y[r] - y0
+                except: h = self.height - y0
+                try: w = x[c] - x0
+                except: w = self.width - x0
+                yield Image(srf.subsurface(x0+padding, y0+padding, w-2*padding, h-2*padding))
+                y0 += h
+            x0 += w
+
+    def cut(self, x=(), y=(), padding=0):
+        return list(self.cutGen(x, y, padding))
+
+    def flip(self, mode=HORIZONTAL):
+        "Create a new image by flipping an existing instance"
+        return Image(_pyflip(self.image, mode & HORIZONTAL, mode & VERTICAL))
+
     def crop(self, *args):
-        "Crop an image"
-        r = pygame.Rect(*args)
-        return Image(self.image.subsurface(r))
+        "Create a new Image instance by cropping an existing image"
+        return Image(self.image.subsurface(pygame.Rect(*args)))
 
     @property
     def image(self):
