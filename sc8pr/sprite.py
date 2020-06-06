@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -78,8 +78,12 @@ class CostumeImage(Graphic):
     def updateCostume(self):
         "Change sprite costume"
         n = self.costumeTime
+        if n < 0:
+            dn = -1
+            n = -n
+        else: dn = 1
         if n and self.sketch.frameCount % n == 0:
-            self.costumeNumber = self._costumeNumber + 1
+            self.costumeNumber = self._costumeNumber + dn
             if self._costumeNumber == 0 and self.onreset: 
                 self.onreset()
 
