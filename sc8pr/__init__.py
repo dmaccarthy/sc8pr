@@ -698,7 +698,7 @@ class Image(Graphic):
             tiles += [Image(_pyflip(s.image, False, True)) for s in tiles]
         return tiles
 
-    def cutGen(self, x=(), y=(), padding=0):
+    def _cut(self, x=(), y=(), padding=0):
         "Generate images by cutting the original"
         srf = self.image
         x0 = 0
@@ -714,7 +714,7 @@ class Image(Graphic):
             x0 += w
 
     def cut(self, x=(), y=(), padding=0):
-        return list(self.cutGen(x, y, padding))
+        return list(self._cut(x, y, padding))
 
     def flip(self, mode=HORIZONTAL):
         "Create a new image by flipping an existing instance"
