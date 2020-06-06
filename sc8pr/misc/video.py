@@ -44,6 +44,7 @@ def _indx(obj, i):
 class Video(Sprite):
     "A class for storing and retrieving sequences of compressed images"
     _autoSave = False
+    _paused = False
     frameTimes = None
 
     def __init__(self, data=None, alpha=False, progress=None, start=0, end=None):
@@ -155,6 +156,16 @@ class Video(Sprite):
     def costume(self):
         "Return the current costume"
         return self[self.costumeNumber]
+
+    def play(self, t=None):
+        "Pause or resume playback"
+        if t or t is None and not self.costumeTime:
+            self.costumeTime = t if t else self._paused
+            self._paused = False
+        elif self.costumeTime:
+            self._paused = self.costumeTime 
+            self.costumeTime = 0
+        return self
 
     def extend(self, imgs):
         "Append multiple frames to the video"
