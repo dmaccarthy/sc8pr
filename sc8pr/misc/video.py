@@ -88,7 +88,10 @@ class Video(Sprite):
         return c
 
     def __getitem__(self, n):
-        "Return a frame as an Image instance"
+        "Return a frame as an Image instance, or a slice as a new Video instance"
+        if type(n) is slice:
+            r = range(n.start, n.stop, n.step) if n.step else range(n.start, n.stop)
+            return self.clip(r)
         if n != self._current[0]:
             self._current = n, self._costumes[n].img
         img = self._current[1]
