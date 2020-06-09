@@ -46,6 +46,12 @@ class _PCanvas:
     def unit(self): return self._units[2]
 
     @property
+    def xFactor(self): return self._units[0] / self._units[2]
+
+    @property
+    def yFactor(self): return self._units[1] / self._units[2]
+
+    @property
     def clockwise(self): return self._units[3]
 
     @property

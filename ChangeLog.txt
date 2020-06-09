@@ -66,6 +66,7 @@ sc8pr 2.2.dev...
 *** Change CLICK event to MOUSEDOWN and implement a new CLICK event (after MOUSEUP only when on the same item)
 *** Add 'plot.shape.PLine'
 *** Add 'Image.crop', 'Image.flip', and 'Image.cut'
+*** 'Video.__getitem__' accepts slices and calls 'Video.clip'
 
 
 !!! Add 'util.borderRadius'
