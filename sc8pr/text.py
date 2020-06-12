@@ -1,4 +1,4 @@
-# Copyright 2015-2019 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -84,6 +84,9 @@ class Font:
     def find(cls, *args):
         for f in args:
             f = cls._key(f)[0]
+            if f == "mono": f = Font.mono()
+            elif f == "sans": f = Font.sans()
+            elif f == "serif": f = Font.serif()
             if f in Font.installed(): return f
 
     @staticmethod
