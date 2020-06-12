@@ -39,6 +39,17 @@ class _PCanvas:
     _scrollbars = None
     _units = 1, 1, 1, True
 
+    @staticmethod
+    def viewport(grid, margin):
+        if type(margin) in (int, float):
+            left = right = bottom = top = margin
+        else:
+            left, right, bottom, top = margin
+        w = (grid[1] - grid[0]) * (1 + left + right)
+        h = (grid[3] - grid[2]) * (1 + bottom + top)
+        return (grid[0] - left * w, grid[1] + right * w,
+            grid[2] - bottom * h, grid[3] + top * h)
+
     @property
     def units(self): return self._units[:2]
 
