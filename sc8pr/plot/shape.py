@@ -70,10 +70,13 @@ class PBar(_PObject, Renderable):
     def csPos(self): return self._xy[0], 0
 
     @property
+    def data(self): return self._xy
+
+    @property
     def pos(self):
-        x, y = self._xy
+        x = self._xy[0]
         x1, y1 = self.canvas.px(x, 0)
-        return x1, floor(y1) if y < 0 else ceil(y1)
+        return x1, y1
 
     @pos.setter
     def pos(self, xy): pass
@@ -102,7 +105,6 @@ class PBar(_PObject, Renderable):
 
 class PImage(_PObject, Image): pass
 class PText(_PObject, Text): pass
-
 
 
 class PLine(_PObject, Line):

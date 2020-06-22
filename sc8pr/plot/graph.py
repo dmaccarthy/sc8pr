@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, json
+import json
 from math import sin, cos
 from sc8pr import TOP, RIGHT, Image
 from sc8pr.util import mix, rangef
@@ -53,10 +53,12 @@ def cvGraph(data, size=(512, 384)):
     cv.axis = cv[-2]
     for gr in cv[-2:]: gr.role = "axis"
 
-    # Determine font
+    # Determine fonts
     font = {"fontSize": 18}
     font.update(data.get("font", {}))
     _font(font)
+    labelFont = font.copy()
+    labelFont.update(data.get("labelFont", {}))
 
     # Label the x- and y-axis ticks
     label = data.get("xlabel", None)
@@ -68,7 +70,11 @@ def cvGraph(data, size=(512, 384)):
     folders = data.get("folders", {})
     cv.seriesList = []
     for series in data.get("locus", []): _locus(cv, series)
-    for series in data.get("series", []): _series(cv, series, font, folders)
+    for series in data.get("series", []):
+        if "data" in series:
+            sdata = _series(cv, series, font, folders)
+        else:
+            _markerLabel(cv, series["label"], sdata, labelFont)
 
     # Add graph and axis titles
     font.update(data.get("titleFont", {}))
@@ -104,17 +110,42 @@ def _series(cv, series, font, folders):
     config = {}
     marker = series.get("marker", None)
     if marker is None:
-        marker = Image(series["image"].format(**folders)).config(**series.get("image_config", {}))
-    if type(marker) is str:
+        imgs = series["image"]
+        if type(imgs) is str: imgs = [imgs]
+        cfg = series.get("image_config", {})
+        marker = [Image(img.format(**folders)).config(**cfg) for img in imgs]
+        if len(marker) == 1: marker = marker[0]
+    elif type(marker) is str:
         config = font.copy()
     elif type(marker) is list:
         r = marker[0]
         marker = Circle(10 * r).config(**marker[1]).snapshot().config(height=2*r)
     config.update(series.get("config", {}))
-    series = cv.series(series.get("data"), marker, series.get("shift", (0, 0)), **config)
-    cv += series
-    cv.seriesList.append(series)
-    for gr in series: gr.role = "marker"
+    data = series.get("data")
+    sList = cv.series(data, marker, series.get("shift", (0, 0)), **config)
+    cv.seriesList.append(sList)
+    cv += sList
+    for gr in sList: gr.role = "marker"
+    return data
+
+def _markerLabel(cv, label, data, font):
+    config = font.copy()
+    config.update(label.get("config", {}))
+    frmt = label["format"]
+    shift = label.get("shift", (0, 0))
+    sList = cv.series(data, frmt, shift, **config)
+    cv.seriesList.append(sList)
+    cv += sList
+    for gr in sList:
+        gr.config(role="label", template=frmt, shift=shift)
+
+def _moveLabel(label, csPos):
+    x, y = csPos
+    sx, sy = label.shift
+    label.config(csPos=(x+sx, y+sy), data=label.template.format(x=x, y=y))
+
+def moveMarkerLabels(markers, labels):
+    for m, l in zip(markers, labels): _moveLabel(l, m._xy)
 
 def _title(cv, title, font, folders):
     "Add graph or axis titles"
