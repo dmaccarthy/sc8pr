@@ -38,7 +38,7 @@ class Robot(_Robot):
     def __init__(self, colors=None):
         super().__init__(colors)
         self.gyroSample()
-    
+
     def gyroSample(self, t=None):
         self.gyroChange = 0.0
         self._gyro_data = []
@@ -92,14 +92,6 @@ def curve(size, color="blue"):
     blu = [cv.px(*x) for x in (top + list(reversed(bot)))]
     cv += Polygon(blu).config(fill=color, weight=0)
     return cv.snapshot()
-
-def _between(x, x0, x1):
-    if x0 < x1: return x0 <= x and x <= x1
-    else: return x >= x0 or x <= x1
-
-def isColor(color, hue, sat, val):
-    h, s, v = color.hsva[:3]
-    return _between(h, *hue) and _between(s, *sat) and _between(v, *val) 
 
 
 class BrainSketch(PSketch):
