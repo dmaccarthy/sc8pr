@@ -338,21 +338,22 @@ try:
         def ffmpeg(p): os.environ["IMAGEIO_FFMPEG_EXE"] = p
 
         @staticmethod
-        def decodev(src, progress=None, vid=None):
+        def decodev(src, progress=None, vid=None, start=0, end=None):
             "Load a movie file as a Video instance"
             if vid is None: vid = Video()
             with im.get_reader(src) as reader:
                 meta = reader.get_meta_data()
+                vid.ffmpeg_meta = meta
                 i, n = 1, meta.get("nframes")
                 vid.size = meta["size"]
                 vid.meta["frameRate"] = meta["fps"]
                 info = struct.pack("!3I", 0, *vid.size)
                 try: # Extra frames/bad metadata in MKV?
                     for f in reader:
-                        vid += bytes(f), info
-                        if progress:
-                            progress(i, n)
-                            i += 1
+                        if end and i >= end: break
+                        if i >= start: vid += bytes(f), info
+                        if progress: progress(i, n)
+                        i += 1
                 except: pass
             return vid
 
