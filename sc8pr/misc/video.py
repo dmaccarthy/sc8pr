@@ -348,7 +348,7 @@ try:
         def ffmpeg(p): os.environ["IMAGEIO_FFMPEG_EXE"] = p
 
         @staticmethod
-        def decodev(src, progress=None, vid=None, *args):
+        def decodev(src, progress=None, vid=None, *args, asList=False):
             "Load a movie file as a Video instance"
             if vid is None: vid = Video()
             with im.get_reader(src) as reader:
@@ -368,7 +368,23 @@ try:
                         if progress: progress(i, n)
                         i += 1
                 except: pass
-            return vid
+            return ImageIO._clipList(vid, *args) if asList else vid
+
+        @staticmethod
+        def _clipList(vid, *args):
+            "Separate a discontinuous clip into individual Video instances"
+            if not args: return [vid]
+            n = len(args) - 1
+            args = [args[i+1] - args[i] for i in range(0, n, 2)]
+            n = len(vid) - sum(args)
+            if n: args.append(n)
+            vids = []
+            n = 0
+            for a in args:
+                tmp = vid.clip(n, n+a)
+                vids.append(tmp)
+                n += a
+            return vids
 
         @staticmethod
         def decodef(src, dest=None, size=512):
