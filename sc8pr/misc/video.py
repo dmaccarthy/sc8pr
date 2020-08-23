@@ -332,15 +332,6 @@ class Grabber:
 try:
     import numpy, imageio as im
 
-    def _crit(i, j, args):
-        n = len(args)
-        if n % 2 == 0 and i >= args[-1]: c = None
-        else:
-            if j + 1 < n and i >= args[j+1]: j += 2
-            c = i >= args[j]
-        return c, j
-        
-
     class ImageIO:
         "Use imageio and ffmpeg to decode and encode video"
 
@@ -359,16 +350,25 @@ try:
                 vid.meta["frameRate"] = meta["fps"]
                 info = struct.pack("!3I", 0, *vid.size)
                 try: # Extra frames/bad metadata in MKV?
-                    if args is None: args = [0]
+                    if len(args) == 0: args = [0]
                     j = 0
                     for f in reader:
-                        c, j = _crit(i, j, args)
+                        c, j = ImageIO._crit(i, j, args)
                         if c is None: break
                         elif c: vid += bytes(f), info
                         if progress: progress(i, n)
                         i += 1
                 except: pass
             return ImageIO._clipList(vid, *args) if asList else vid
+
+        @staticmethod
+        def _crit(i, j, args):
+            n = len(args)
+            if n % 2 == 0 and i >= args[-1]: c = None
+            else:
+                if j + 1 < n and i >= args[j+1]: j += 2
+                c = i >= args[j]
+            return c, j
 
         @staticmethod
         def _clipList(vid, *args):
