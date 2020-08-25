@@ -886,12 +886,14 @@ class Canvas(Graphic):
             gr = self[-1]
             if recursive and isinstance(gr, Canvas): gr.purge()
             gr.remove()
+        return self
 
     def removeItems(self, *args):
         "Remove specified items without raising exceptions if item is not in canvas"
         for gr in args:
             try: self -= gr
             except: pass
+        return self
 
     def shiftContents(self, offset, *args, resize=True):
         "Move contents and (optionally) adjust canvas size"
