@@ -119,12 +119,13 @@ class Collisions:
     def involving(self, sprite, group=None, asBool=False):
         "Detect whether a sprite is colliding with any of the specified sprites"
         coll = {}
-        for s in self._group(group):
-            if s is not sprite:
-                c = self.collide(sprite, s)
-                if c:
-                    if asBool: return True
-                    coll[s] = c
+        if hasattr(sprite, "rect"):
+            for s in self._group(group):
+                if s is not sprite:
+                    c = hasattr(s, "rect") and self.collide(sprite, s)
+                    if c:
+                        if asBool: return True
+                        coll[s] = c
         return False if asBool else coll
 
     def betweenMap(self, group1, group2=None):
