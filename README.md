@@ -10,7 +10,6 @@ sc8pr 2 features include:
 * a selection of GUI controls
 * curve plotting
 * robotics simulator
-* LaTeX rendering (using [codecogs.com](http://www.codecogs.com/latex/about.php))
 
 For more information, please see the [documentation](http://dmaccarthy.github.io/sc8pr/).
 

@@ -14,9 +14,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
-from pygame.examples.oldalien import Img
 
-version = 2, 2, "dev"
+
+version = 2, 2, "a0"
 
 import sys, os, struct, zlib
 from math import hypot
