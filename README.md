@@ -18,6 +18,8 @@ For more information, please see the [documentation](http://dmaccarthy.github.io
 Latest releases (2.1.2 or 2.2a0):
 ```
 pip3 install sc8pr
+```
+```
 pip3 install sc8pr==2.2a0
 ```
 
