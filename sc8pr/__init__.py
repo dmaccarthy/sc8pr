@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2021 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 2, 2, "dev"
+version = 2, 2, "a1"
 
 import sys, os, struct, zlib
 from math import hypot
