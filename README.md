@@ -15,12 +15,12 @@ For more information, please see the [documentation](http://dmaccarthy.github.io
 
 # Installation
 
-Latest releases (2.1.2 or 2.2a0):
+Latest releases (2.1.2 or 2.2a1):
 ```
 pip3 install sc8pr
 ```
 ```
-pip3 install sc8pr==2.2a0
+pip3 install sc8pr==2.2a1
 ```
 
 Bug fixes:
@@ -30,7 +30,7 @@ pip3 install https://github.com/dmaccarthy/sc8pr/archive/BugFix-2.1.zip
 
 Development version (2.2.dev):
 ```
-pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
+pip3 install https://github.com/dmaccarthy/sc8pr/archive/refs/heads/master.zip
 ```
 
 If setuptools is unable to locate a pygame wheel for your platform and Python version, you will need to install [pygame](http://www.pygame.org) separately.
