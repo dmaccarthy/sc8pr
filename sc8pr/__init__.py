@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 2, 2, "a1"
+version = 2, 2, "dev"
 
 import sys, os, struct, zlib
 from math import hypot
