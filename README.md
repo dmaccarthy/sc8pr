@@ -15,17 +15,20 @@ For more information, please see the [documentation](http://dmaccarthy.github.io
 
 # Installation
 
-Latest releases (2.1.2 or 2.2a1):
-```
-pip3 install sc8pr
-```
+Latest releases (2.2a1):
 ```
 pip3 install sc8pr==2.2a1
 ```
 
+If installing older sc8pr versions using pip3, specify the --no-deps option and install pygame separately...
+```
+pip3 install pygame
+pip3 install --no-deps sc8pr==2.1
+```
+
 Bug fixes:
 ```
-pip3 install https://github.com/dmaccarthy/sc8pr/archive/BugFix-2.1.zip
+pip3 install --no-deps https://github.com/dmaccarthy/sc8pr/archive/BugFix-2.1.zip
 ```
 
 Development version (2.2.dev):
