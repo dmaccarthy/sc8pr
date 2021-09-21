@@ -15,7 +15,7 @@ For more information, please see the [documentation](http://dmaccarthy.github.io
 
 # Installation
 
-Latest releases (2.2a1):
+Latest release (2.2a1):
 ```
 pip3 install sc8pr==2.2a1
 ```
