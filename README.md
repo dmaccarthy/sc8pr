@@ -20,12 +20,6 @@ Latest release (2.2a1):
 pip3 install sc8pr==2.2a1
 ```
 
-If installing older sc8pr versions using pip3, specify the --no-deps option and install pygame separately...
-```
-pip3 install pygame
-pip3 install --no-deps sc8pr==2.1
-```
-
 Bug fixes:
 ```
 pip3 install --no-deps https://github.com/dmaccarthy/sc8pr/archive/BugFix-2.1.zip
@@ -36,10 +30,14 @@ Development version (2.2.dev):
 pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
 ```
 
-If setuptools is unable to locate a pygame wheel for your platform and Python version, you will need to install [pygame](http://www.pygame.org) separately.
+If installation is unsuccessful, try installing **pygame** and **sc8pr** separately...
+```
+pip3 install pygame
+pip3 install --no-deps sc8pr==2.2a1
+```
 
 See the documentation for more [detailed instructions](https://dmaccarthy.github.io/sc8pr/?inst).
 
 # Try It First
 
-sc8pr is pure Python 3 code, so you can try it without running the setup. Just unzip the sc8pr package into your PYTHONPATH. You will still need pygame installed.
+**sc8pr** is pure Python 3 code, so you can try it without running the setup. Just unzip the **sc8pr** package into your PYTHONPATH. You will still need **pygame** installed.
