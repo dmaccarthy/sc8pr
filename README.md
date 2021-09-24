@@ -34,7 +34,7 @@ pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
 If installation is unsuccessful, try installing **pygame** and **sc8pr** separately...
 ```
 pip3 install pygame
-pip3 install --no-deps sc8pr==2.1.1
+pip3 install --no-deps sc8pr
 ```
 
 See the documentation for more [detailed instructions](https://dmaccarthy.github.io/sc8pr/?inst).
