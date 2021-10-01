@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 2, 2, "dev"
+version = 2, 2, "a2"
 
 import sys, os, struct, zlib
 from math import hypot
@@ -1222,8 +1222,8 @@ class Sketch(Canvas):
                 if ev.type == pygame.VIDEOEXPOSE: _pd.flip()
                 if ev.type != pygame.VIDEORESIZE:
                     self.evMgr.dispatch(ev)
-                elif ev.size != self.size:
-                    setattr(ev, "originalSize", self.size)
+                elif ev.size != self._size: # Changed from self.size
+                    setattr(ev, "originalSize", self._size)
                     self._resize_ev = ev
                     s = hasattr(self, "_scrollSize")
                     if s: self.scrollTo()
