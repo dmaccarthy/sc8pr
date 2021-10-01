@@ -1219,6 +1219,7 @@ class Sketch(Canvas):
         "Handle events in the pygame event queue"
         for ev in pygame.event.get():
             try:
+                if ev.type == pygame.VIDEOEXPOSE: _pd.flip()
                 if ev.type != pygame.VIDEORESIZE:
                     self.evMgr.dispatch(ev)
                 elif ev.size != self.size:
