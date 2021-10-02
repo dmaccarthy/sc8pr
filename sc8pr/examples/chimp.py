@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -21,10 +21,6 @@ tutorial (https://www.pygame.org/docs/tut/ChimpLineByLine.html), but using
 sc8pr rather than using pygame directly (except for sound). This version
 loads image and sound files directly from the [pygame]/examples/data folder.
 """
-
-from sc8pr import version
-if 100 * version[0] + version[1] < 202:
-    raise NotImplementedError("This program requires sc8pr 2.2; installed version is {}.{}.".format(*version[:2]))
 
 import pygame
 from random import randint
@@ -65,12 +61,12 @@ def setup(sk):
     audio = "punch.wav", "whiff.wav"
     sk.sounds = [pygame.mixer.Sound(folder + f) for f in audio]
 
-    # Bind click event handler; hide cursor
+    # Bind mousedown event handler; hide cursor
     sk.bind(onmousedown)
     sk.cursor = False
 
 def onmousedown(sk, ev):
-    "Event handler for mouse clicks"
+    "Handler for mousedown events"
     chimp = sk["Chimp"]
     if chimp.spin == 0 and chimp.contains(sk.mouse.pos):
         chimp.oldVel = chimp.vel
