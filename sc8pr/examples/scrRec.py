@@ -46,7 +46,7 @@ from time import time
 from threading import Thread
 from tkinter.filedialog import askdirectory
 
-from sc8pr import Sketch, Image, PixelData, LEFT
+from sc8pr import Sketch, Image, Graphic, PixelData, LEFT
 from sc8pr.text import Font, BOLD
 from sc8pr.util import logError
 from sc8pr.shape import Circle
@@ -63,7 +63,7 @@ def timeStr():
     for c in " -:": s = s.replace(c, "_")
     return s
 
-def onclick(btn, ev):
+def onmousedown(btn, ev):
     "Toggle recording mode when record button is pressed"
     sk = btn.sketch
     if sk.grab:
@@ -95,7 +95,7 @@ class Recorder(Sketch):
         "Compose the record button"
         sz = 21, 21
         btn = Button(sz, ["#ffffff00", "#ffc0c0"]).config(anchor=LEFT,
-            pos=(12,y), weight=0).bind(onclick)
+            pos=(12,y), weight=0).bind(onmousedown, contains=Graphic.contains)
         img = Circle(76).config(fill="red", weight=6).snapshot(), Image((19,19))
         btn += Sprite(img).config(pos=btn.center, height=19)
         return btn
