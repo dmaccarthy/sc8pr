@@ -60,7 +60,7 @@ sc8pr 2.2.dev...
 ** Fix divide-by-zero in 'shape.Line' when length is 0
 *** Add 'sc8pr.misc.effect.FastDissolve'
 *** Change 'deleteRect' argument default to False in 'Graphic.remove' and 'Renderable.remove'
-*** Change CLICK event to MOUSEDOWN and implement a new CLICK event (after MOUSEUP only when on the same item)
+*** Change CLICK event to MOUSEDOWN and implement a new CLICK event (after MOUSEUP only when on the same item); affects GUI controls that handle MOUSEDOWN
 *** Add 'plot.shape.PLine'
 *** Add 'Image.crop', 'Image.flip', and 'Image.cut'
 *** 'Video.__getitem__' accepts slices and calls 'Video.clip'

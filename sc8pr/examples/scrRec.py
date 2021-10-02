@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -26,11 +26,14 @@ python3 scrRec.py mp4 "C:\ffmpeg\bin\ffmpeg.exe"
 You can omit the ffmpeg path if your system recognizes 'ffmpeg' as a system
 command. The default video codec and pixel format for the chosen container
 will be used. For MP4, this will probably be libx264 and yuv420p.
-"""
 
-# from sc8pr import version
-# if 100 * version[0] + version[1] < 202:
-#     raise NotImplementedError("This program requires sc8pr 2.2; installed version is {}.{}.".format(*version[:2]))
+You can also run the screen recorder from Python: e.g.
+
+from sc8pr.examples.scrRec import play
+
+play("./", "mp4", "C:/ffmpeg/bin/ffmpeg.exe")
+
+"""
 
 try: import numpy, imageio as im
 except Exception as e:
@@ -78,7 +81,7 @@ def blink(sk, b=True):
 
 
 class Recorder(Sketch):
-    output = argv[1] if len(argv) > 1 else "s8v"
+    output = "s8v"
 
     def setup(self):
         x, y = self.center
@@ -169,12 +172,11 @@ class SaveThread(Thread):
         fps = 30
         vid.removeGaps(2*0.3, 1/fps).sync(fps).save(fn)
 
+def play(fldr=None, output="s8v", ffmpeg=None):
+    if fldr is None:
+        fldr = ask(askdirectory, allowQuit=None, title="Select Recordings Folder", initialdir="./")
+    if ffmpeg: ImageIO.ffmpeg(ffmpeg)
+    Recorder.output = output
+    Recorder((288, 56)).config(recFolder=fldr).play("Screen Recorder")
 
-def main():
-    fldr = ask(askdirectory, allowQuit=None,
-        title="Select Recordings Folder", initialdir="./")
-    if fldr:
-        if len(argv) > 2: ImageIO.ffmpeg(argv[2])
-        Recorder((288, 56)).config(recFolder=fldr).play("Screen Recorder")
-
-main()
+if __name__ == "__main__": play(None, *argv[1:])

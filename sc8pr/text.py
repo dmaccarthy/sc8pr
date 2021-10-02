@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -33,8 +33,8 @@ class Font:
     _cacheOrder = []
     _serif = ("Merriweather", "DroidSerif", "Deja Vu Serif", "Palatino",
         "Garamond", "Georgia", "Century", "TimesNewRoman", "Times")
-    _sans = ("MerriweatherSans", "OpenSans", "Arsenal", "Oxygen",
-        "DroidSans", "Deja Vu Sans", "LucidaSans", "Verdana", "Geneva", "Helvetica", "Arial")
+    _sans = ("LucidaSans", "OpenSans", "Oxygen", "Arsenal", "DroidSans", "Deja Vu Sans",
+        "MerriweatherSans", "Verdana", "Geneva", "Helvetica", "Arial")
     _mono = ("SourceCodePro", "Inconsolata", "LucidaConsole",
         "DroidSansMono", "Deja Vu Sans Mono", "Monaco", "CourierNew", "Courier")
 
@@ -132,7 +132,7 @@ class Text(Renderable):
         "Render the text as an Image"
         font = Font.get(self.font, self.fontSize, self.fontStyle)
         text = str(self.data).split("\n")
-        srfs = [font.render(t, True, self.color) for t in text]
+        srfs = [font.render(t if t else " ", True, self.color) for t in text]
         return self._joinLines(srfs)
 
     def _joinLines(self, srfs):

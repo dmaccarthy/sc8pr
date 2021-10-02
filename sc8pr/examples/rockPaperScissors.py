@@ -76,5 +76,7 @@ def onkeydown(sk, ev):
     try: onclick(sk["rps".index(ev.unicode.lower())], ev)
     except: pass
 
-# Play the game!
-Sketch().bind(setup, onkeydown).play("Rock, Paper, Scissors")
+def play():
+    Sketch().bind(setup, onkeydown).play("Rock, Paper, Scissors")
+
+if __name__ == "__main__": play()

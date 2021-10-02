@@ -17,6 +17,7 @@
 
 
 version = 2, 2, "a2"
+print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import sys, os, struct, zlib
 from math import hypot
@@ -1164,9 +1165,9 @@ class Sketch(Canvas):
         pygame.key.set_repeat(400, 80)
         _pd.set_caption(caption)
         try:
-            try: icon = pygame.image.load(icon)
-            except: icon = Image.fromBytes(sc8prData("alien")).image 
-            _pd.set_icon(icon)
+            try: icon = Image(icon) # pygame.image.load
+            except: icon = Image.fromBytes(sc8prData("alien"))
+            _pd.set_icon(icon.config(width=64).image)
         except: logError()
         w, h = self._size
         self._fixedAspect = w / h
