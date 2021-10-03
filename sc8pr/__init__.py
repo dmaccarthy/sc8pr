@@ -19,14 +19,14 @@
 version = 2, 2, "dev"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
-import sys, os, struct, zlib
+import sys, struct, zlib #, os
 from math import hypot
 import pygame
 import pygame.display as _pd
 from pygame.transform import flip as _pyflip
 from sc8pr._event import EventManager
 from sc8pr.geom import transform2d, positiveAngle, delta, sigma
-from sc8pr.util import CachedSurface, style, logError, sc8prData, tile, rgba, drawBorder, hasAlpha
+from sc8pr.util import CachedSurface, style, logError, sc8prData, tile, rgba, drawBorder #, hasAlpha
 
 # Anchor point constants
 TOPLEFT = 0
