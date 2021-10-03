@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 2, 2, "a2"
+version = 2, 2, "dev"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import sys, os, struct, zlib
@@ -1220,7 +1220,9 @@ class Sketch(Canvas):
         "Handle events in the pygame event queue"
         for ev in pygame.event.get():
             try:
-                if ev.type == pygame.VIDEOEXPOSE: _pd.flip()
+                if ev.type == pygame.VIDEOEXPOSE and self.dirtyRegions is not None:
+                    self.dirtyRegions = [pygame.Rect((0,0), self._size)]
+                    # _pd.flip()
                 if ev.type != pygame.VIDEORESIZE:
                     self.evMgr.dispatch(ev)
                 elif ev.size != self._size: # Changed from self.size
