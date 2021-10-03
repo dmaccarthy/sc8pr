@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-version = 2, 1, 3
+version = 2, 1, "4dev"
 
 import sys, os, struct, zlib
 from math import hypot
@@ -1050,6 +1050,8 @@ class Sketch(Canvas):
         "Handle events in the pygame event queue"
         for ev in pygame.event.get():
             try:
+                if ev.type == pygame.VIDEOEXPOSE and self.dirtyRegions is not None:
+                    self.dirtyRegions = [pygame.Rect((0,0), self._size)]
                 if ev.type != pygame.VIDEORESIZE:
                     self.evMgr.dispatch(ev)
                 elif ev.size != self.size:
