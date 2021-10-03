@@ -1130,21 +1130,20 @@ class Sketch(Canvas):
 
     def _pygameMode(self, n): return pygame.RESIZABLE if n is True else int(n)
 
-    def resize(self, size, mode=None):
+    def resize(self, size, mode=None): # Rewritten (non-recursive!) for v2.2.a3 !!!
         "Resize the sketch, maintaining aspect ratio if required"
-        if mode is None: mode = self._mode
-        else:
-            mode = self._pygameMode(mode)
-            self._mode = mode
-        initSize = self.size
+        initSize = self._size
         size = round(size[0]), round(size[1])
-        self.image = _pd.set_mode(size, mode)
-        _pd.flip()
         if self.fixedAspect: size = self._aspectSize(size, initSize)
-        if self.fixedAspect and sum(abs(x-y) for (x,y) in (zip(size, self.size))) > 1:
-            return self.resize(size)
-        super().resize(self.size) # !!!
-        self._size = self.size
+        if size != initSize:
+            if mode is None: mode = self._mode
+            else:
+                mode = self._pygameMode(mode)
+                self._mode = mode
+            self.image = _pd.set_mode(size, mode)
+            _pd.flip()
+            super().resize(self.size)
+            self._size = self.size
         if self.dirtyRegions is not None:
             self.dirtyRegions = [pygame.Rect((0,0), self._size)]
         evMgr = self.evMgr
