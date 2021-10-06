@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -17,7 +17,7 @@
 
 from sc8pr import Sketch, Image, Graphic, CENTER
 from sc8pr.shape import Line
-from sc8pr.sprite import Sprite
+from sc8pr.sprite import CostumeImage
 from sc8pr.gui.dialog import MessageBox
 from sc8pr.misc.cursors import cross, circle
 from sc8pr.util import ondrag, sc8prData, resolvePath
@@ -27,14 +27,14 @@ TITLE = "Tic-Tac-Toe"
 def setup(game):
     "Create Tic-Tac-Toe board with 100 pixel squares and 20 pixel margins"
 
-    # Load costumes for X and O sprites, and logo
+    # Load costumes for X's and O's, and logo
     img = Image(resolvePath("img/xo.png", __file__)).tiles(3)
     game.alien = Image.fromBytes(sc8prData("alien")).config(height=36)
 
-    # Create and position sprites, one per square
+    # Create and position X's and O's, one per square
     for s in range(9):
         pos = 70 + 100 * (s % 3), 70 + 100 * (s // 3)
-        game += Sprite(img).bind(contains=Graphic.contains,
+        game += CostumeImage(img).bind(contains=Graphic.contains,
             onclick=clickSquare).config(pos=pos, width=100)
 
     # Draw the board and start game
@@ -50,31 +50,32 @@ def startGame(game):
     "Set initial game state"
     game.playerWin = None
     game.playerTurn = 1
-    for sp in game.sprites(): sp.costumeNumber = 0
+    for sp in game.instOf(CostumeImage): sp.costumeNumber = 0
     setCursor(game)
 
-def clickSquare(sprite, ev):
+def clickSquare(sq, ev):
     "Handle CLICK events on any square"
-    if sprite.costumeNumber == 0: # Square is vacant?
-        game = sprite.sketch
+    if sq.costumeNumber == 0: # Square is vacant?
+        game = sq.sketch
 
         # Assign square to current player
         n = game.playerTurn
-        sprite.costumeNumber = n
+        sq.costumeNumber = n
 
         # Check for game over
-        if winner(list(game.sprites()), n): game.playerWin = n
-        elif 0 not in [sp.costumeNumber for sp in game.sprites()]:
+        squares = list(game.instOf(CostumeImage))
+        if winner(squares, n): game.playerWin = n
+        elif 0 not in [sp.costumeNumber for sp in squares]:
             game.playerWin = 0
         else:
             game.playerTurn = 3 - n
             setCursor(game)
 
-def winner(sprites, n):
+def winner(squares, n):
     "Check if player n occupies 3 squares in a row"
     for sq in [(0,1,2), (3,4,5), (6,7,8), (0,3,6),
             (1,4,7), (2,5,8), (0,4,8), (2,4,6)]:
-        if sum(1 for s in sq if sprites[s].costumeNumber == n) == 3:
+        if sum(1 for s in sq if squares[s].costumeNumber == n) == 3:
             return True
 
 def ondraw(game):
@@ -106,5 +107,4 @@ def onaction(msgbox, ev):
 def play():
     Sketch((340,340)).bind(setup, ondraw).play(TITLE)
 
-main = play
 if __name__ == "__main__": play()
