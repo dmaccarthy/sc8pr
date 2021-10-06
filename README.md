@@ -38,4 +38,4 @@ See the documentation for more [detailed instructions](https://dmaccarthy.github
 
 # Try It First
 
-**sc8pr** is pure Python 3 code, so you can try it without running the setup. Just unzip the **sc8pr** package into your PYTHONPATH. You will still need **pygame** installed.
+**sc8pr** is pure Python 3 code, so you can try it without running the setup. Just unzip the **sc8pr** package into your PYTHONPATH. You will still need **pygame 1.9** or **2.0** installed for current **sc8pr** versions and **pygame 1.9** for older versions.
