@@ -93,8 +93,7 @@ class VideoPlayer(Sketch):
             w = 0.98 * self.width
             if txt.width > w: txt.config(width=w)
 
-    def onkeydown(self, ev):
-        print(ev)
+    def onkeyup(self, ev):
         u = ev.unicode.upper()
         if u == '?': self.menu()
         elif u == 'O': self.open()
@@ -113,7 +112,6 @@ class VideoPlayer(Sketch):
             elif ev.key == K_HOME:
                 vid.costumeTime = vid.costumeNumber = 0
             elif u == "N":
-                print(ev)
                 vid.costumeTime = 0
                 try: vid.costumeNumber = int(input("Go to frame? "))
                 except: pass
