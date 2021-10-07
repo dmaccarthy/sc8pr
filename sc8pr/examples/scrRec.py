@@ -35,7 +35,7 @@ play("./", "mp4", "C:/ffmpeg/bin/ffmpeg.exe")
 
 """
 
-try: import numpy, imageio
+try: import numpy, imageio, PIL.Image
 except Exception as e:
     print(e)
     print("Try running 'pip3 install imageio imageio-ffmpeg' on command line\n")
@@ -178,7 +178,7 @@ class SaveThread(Thread):
 def play(fldr=None, output="s8v", ffmpeg=None):
     if fldr is None:
         fldr = ask(askdirectory, allowQuit=None, title="Select Recordings Folder", initialdir="./")
-    ImageIO.init(imageio, ffmpeg)
+    ImageIO.init(imageio, numpy, PIL.Image, ffmpeg=ffmpeg)
     Recorder.output = output
     Recorder((288, 56)).config(recFolder=fldr).play("Screen Recorder")
 

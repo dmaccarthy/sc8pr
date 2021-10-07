@@ -19,7 +19,7 @@
 version = 2, 2, "dev"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
-import sys, struct, zlib #, os
+import sys, struct, zlib, io #, os
 from math import hypot
 import pygame
 import pygame.display as _pd
@@ -62,6 +62,7 @@ class PixelData:
         rgb = "RGBA", "RGB"
         self.compressed = False
         if type(img) is bytes: img = img[:-12], img[-12:]
+        elif type(img) is PixelData: img = img.raw()
         elif isinstance(img, Graphic):
             try: img = img.image
             except: img = img.snapshot()
@@ -86,6 +87,7 @@ class PixelData:
         else: raise NotImplementedError("Only RGB and RGBA modes are supported")
         self.codec = codec
         if compress: self.compress()
+        elif self.compressed: self.decompress()
 
     def compress(self):
         if not self.compressed:
@@ -136,8 +138,8 @@ class PixelData:
     @property
     def img(self): return Image(self.srf)
 
-    def pil(self, pil):
-        fn = lambda d,s,m: pil.Image.frombytes(m, s, d)
+    def pil(self, frombytes): # !!!
+        fn = lambda d,s,m: frombytes(m, s, d)
         return self._image(fn)
 
 
@@ -735,10 +737,22 @@ class Image(Graphic):
         try: return bool(self.at(pos, self.rect).a)
         except: return False
 
-    def save(self, fn):
+    def save(self, fn):           
         pygame.image.save(self._srf.original, fn)
         return self
 
+    def _export(self, fn="a.png"):
+        b = io.BytesIO(b"")
+        pygame.image.save(self.image, b, fn)
+        b.seek(0)
+        return b
+
+    @property
+    def png(self): return self._export()
+
+    @property
+    def jpg(self): return self._export("a.jpg")
+        
     def copy(self): return Image(self.image.copy())
 
 

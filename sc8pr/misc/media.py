@@ -51,78 +51,59 @@ class ImageIO:
     "Use imageio and ffmpeg to decode and encode video"
     
     @staticmethod
-    def init(im, ff=None):
+    def init(im, np, pil=None, ffmpeg=None):
         ImageIO.im = im
-        if ff: os.environ["IMAGEIO_FFMPEG_EXE"] = ff
+        ImageIO.np = np
+        ImageIO.pil = pil
+        if ffmpeg: os.environ["IMAGEIO_FFMPEG_EXE"] = ffmpeg
 
     @staticmethod
-    def ffmpeg(p): os.environ["IMAGEIO_FFMPEG_EXE"] = p
-
-    @staticmethod
-    def decodev(src, progress=None, vid=None, *args, asList=False):
-        "Load a movie file as a Video instance"
-        if vid is None: vid = Video()
+    def decode(src, *args, progress=None):
+        "Load a movie file as a list of Video clips"
+        if not args: args = (0,),
+        vid = [Video() for a in args]
         with ImageIO.im.get_reader(src) as reader:
             meta = reader.get_meta_data()
-            vid.ffmpeg_meta = meta
             i, n = 1, meta.get("nframes")
-            vid.size = meta["size"]
-            vid.meta["frameRate"] = meta["fps"]
-            info = struct.pack("!3I", 0, *vid.size)
+            for v in vid:
+                v.ffmpeg_meta = meta
+                v.size = meta["size"]
+                v.meta["frameRate"] = meta["fps"]
+            v = 0
+            info = struct.pack("!3I", 0, *vid[0].size)
+            a = args[0]
             try: # Extra frames/bad metadata in MKV?
-                if len(args) == 0: args = [0]
-                j = 0
                 for f in reader:
-                    c, j = ImageIO._crit(i, j, args)
-                    if c is None: break
-                    elif c: vid += bytes(f), info
+                    if len(a) == 2 and a[1] == i:
+                        v += 1
+                        if v >= len(args): break
+                        a = args[v]
+                    if i >= a[0]: vid[v] += bytes(f), info
                     if progress: progress(i, n)
                     i += 1
             except: pass
-        return ImageIO._clipList(vid, *args) if asList else vid
+        return vid if args and len(args) > 1 else vid[0]
 
     @staticmethod
-    def _crit(i, j, args):
-        n = len(args)
-        if n % 2 == 0 and i >= args[-1]: c = None
-        else:
-            if j + 1 < n and i >= args[j+1]: j += 2
-            c = i >= args[j]
-        return c, j
-
-    @staticmethod
-    def _clipList(vid, *args):
-        "Separate a discontinuous clip into individual Video instances"
-        if not args: return [vid]
-        n = len(args) - 1
-        args = [args[i+1] - args[i] for i in range(0, n, 2)]
-        n = len(vid) - sum(args)
-        if n: args.append(n)
-        vids = []
-        n = 0
-        for a in args:
-            tmp = vid.clip(n, n+a)
-            vids.append(tmp)
-            n += a
-        return vids
-
-    @staticmethod
-    def decodef(src, dest=None, size=512):
+    def decodeSave(src, dest=None, size=512):
         "Convert a video file to s8v format"
         if dest is None: dest = src + ".s8v"
-        ImageIO.decodev(src, vid=Video().autoSave(dest, size)).autoSave()
+        ImageIO.decode(src, vid=Video().autoSave(dest, size)).autoSave()
+        return dest
 
     @staticmethod
-    def frameData(img, np, PIL=None):
+    def frameData(img):
         "Format frame data for imageio export"
-        if PIL: return np.array(img.pil(PIL))
+        if ImageIO.pil:
+            return ImageIO.np.array(img.pil(ImageIO.pil.Image.frombytes))
         img = pygame.surfarray.array3d(img.srf)
-        return np.swapaxes(img, 0, 1)
+        return ImageIO.np.swapaxes(img, 0, 1)
 
     @staticmethod
-    def encodev(vid, dest, fps=None, progress=None):
-        "Save a movie file from a Video instance"
-        if isinstance(vid, Video): vid = vid.scaleFrames()
+    def encode(vid, dest="movie.mp4", fps=None, progress=None):
+        "Encode a movie from a Video instance or s8v file"
+        if type(vid) is str: vid = Video(vid)
+        vid = vid.scaleFrames()
         i, n = 1, len(vid)
         if fps is None: fps = vid.meta.get("frameRate")
         if fps is None: fps = 30
@@ -131,18 +112,4 @@ class ImageIO:
                 writer.append_data(ImageIO.frameData(img))
                 if progress:
                     progress(i, n)
-                    i += 1
-
-    @staticmethod
-    def encodef(fn, dest, fps=None, progress=None):
-        "Convert an s8v file to using ffmpeg"
-        vid = Video(fn, start=0, end=1)
-        if fps is None: fps = vid.meta.get("frameRate")
-        if fps is None: fps = 30
-        i = 0
-        with ImageIO.im.get_writer(dest, fps=fps) as writer:
-            for img in Video._iter(fn):
-                writer.append_data(ImageIO.frameData(img))
-                if progress:
-                    progress(i)
                     i += 1

@@ -69,7 +69,9 @@ sc8pr 2.2.dev...
 *** Add 'robot.gyroSample' and 'robot.gyroChange' in 'sc8pr.examples.robotSim'
 *** Add 'sc8pr.misc.hsv.hsvBox'
 * Move Grabber and ImageIO classes to sc8pr.misc.media
-*** Add clip parameters (*args) to 'ImageIO.decodev'; add 'ffmpeg_meta' attribute to video
+*** Re-do ImageIO class
+*** Add 'ffmpeg_meta' attribute to video
 *** Ignore collisions for sprites with no 'rect' attribute
+* Add Image.png and Image.jpg
 
 !!! Add 'util.borderRadius'
