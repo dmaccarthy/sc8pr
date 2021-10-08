@@ -49,6 +49,13 @@ REMOVE = 12
 CIRCLE = 0
 RECT = 1
 
+_helpers = {}
+
+def helper_modules(*args, **kwargs):
+    for a in args:
+        _helpers[a.__name__] = a
+    _helpers.update(kwargs)
+
 
 class PixelData:
     "A class for storing, compressing, and converting raw pixel data"
@@ -138,9 +145,11 @@ class PixelData:
     @property
     def img(self): return Image(self.srf)
 
-    def pil(self, frombytes): # !!!
-        fn = lambda d,s,m: frombytes(m, s, d)
-        return self._image(fn)
+    @staticmethod
+    def _frombytes(d, s, m): return _helpers["PIL.Image"].frombytes(m, s, d)
+
+    @property
+    def pil(self): return self._image(PixelData._frombytes)
 
 
 class Graphic:

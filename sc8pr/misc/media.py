@@ -17,15 +17,15 @@
 
 
 import os, struct, pygame
-from sc8pr import PixelData
+from sc8pr import PixelData, _helpers
 from sc8pr.misc.video import Video
 
 
 class Grabber:
     "A class for performing screen captures using PIL.ImageGrab.grab"
     
-    def __init__(self, grab, rect=None):
-        self.grab = grab
+    def __init__(self, rect=None):
+        self.grab = _helpers["PIL.ImageGrab"].grab
         if rect and not isinstance(rect, pygame.Rect):
             if len(rect) == 2: rect = (0, 0), rect
             rect = pygame.Rect(rect)
@@ -51,18 +51,14 @@ class ImageIO:
     "Use imageio and ffmpeg to decode and encode video"
     
     @staticmethod
-    def init(im, np, pil=None, ffmpeg=None):
-        ImageIO.im = im
-        ImageIO.np = np
-        ImageIO.pil = pil
-        if ffmpeg: os.environ["IMAGEIO_FFMPEG_EXE"] = ffmpeg
+    def ffmpeg(ff): os.environ["IMAGEIO_FFMPEG_EXE"] = ffmpeg
 
     @staticmethod
     def decode(src, *args, progress=None):
         "Load a movie file as a list of Video clips"
         if not args: args = (0,),
         vid = [Video() for a in args]
-        with ImageIO.im.get_reader(src) as reader:
+        with _helpers["imageio"].get_reader(src) as reader:
             meta = reader.get_meta_data()
             i, n = 1, meta.get("nframes")
             for v in vid:
@@ -91,13 +87,21 @@ class ImageIO:
         ImageIO.decode(src, vid=Video().autoSave(dest, size)).autoSave()
         return dest
 
+#     @staticmethod
+#     def frameData(img):
+#         "Format frame data for imageio export"
+#         np = _helpers
+#         if ImageIO.pil:
+#             return ImageIO.np.array(img.pil(ImageIO.pil.Image.frombytes))
+#         img = pygame.surfarray.array3d(img.srf)
+#         return ImageIO.np.swapaxes(img, 0, 1)
+
     @staticmethod
-    def frameData(img):
-        "Format frame data for imageio export"
-        if ImageIO.pil:
-            return ImageIO.np.array(img.pil(ImageIO.pil.Image.frombytes))
-        img = pygame.surfarray.array3d(img.srf)
-        return ImageIO.np.swapaxes(img, 0, 1)
+    def _createFrameData():
+        pil = _helpers.get("PIL.Image")
+        np = _helpers["numpy"]
+        if pil: return lambda img: np.array(img.pil)
+        else: return lambda img: np.swapaxes(pygame.surfarray.array3d(img.srf), 0, 1)
 
     @staticmethod
     def encode(vid, dest="movie.mp4", fps=None, progress=None):
@@ -107,9 +111,10 @@ class ImageIO:
         i, n = 1, len(vid)
         if fps is None: fps = vid.meta.get("frameRate")
         if fps is None: fps = 30
-        with ImageIO.im.get_writer(dest, fps=fps) as writer:
+        with _helpers["imageio"].get_writer(dest, fps=fps) as writer:
+            fd = ImageIO._createFrameData()
             for img in vid.frames():
-                writer.append_data(ImageIO.frameData(img))
+                writer.append_data(fd(img))
                 if progress:
                     progress(i, n)
                     i += 1

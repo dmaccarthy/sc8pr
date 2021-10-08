@@ -72,6 +72,7 @@ sc8pr 2.2.dev...
 *** Re-do ImageIO class
 *** Add 'ffmpeg_meta' attribute to video
 *** Ignore collisions for sprites with no 'rect' attribute
-* Add Image.png and Image.jpg
+* Add 'PixelData.pil, 'Image.png' and 'Image.jpg' properties
+*** Add 'sc8pr.helper_modules' function
 
 !!! Add 'util.borderRadius'
