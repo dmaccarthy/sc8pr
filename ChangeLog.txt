@@ -29,7 +29,6 @@ sc8pr 2.2.dev...
 *** Add 'sc8pr.robot.gui' module
 *** Add 'LATEX_URL', 'LATEX_FMT', 'latex_url' to 'sc8pr.misc.webcache'
 *** 'WebCache' does not overwrite existing cache file if URL is different
-* Add 'fakeCursor' example (depends on 'hoverable' property)
 ** Fix blit location bug in 'Canvas.snapshot'
 * Sync video capture when sketch does not run at nominal frame rate
 * Add 'util.modKeys'
@@ -65,9 +64,6 @@ sc8pr 2.2.dev...
 *** Add 'plot.shape.PLine'
 *** Add 'Image.crop', 'Image.flip', and 'Image.cut'
 *** 'Video.__getitem__' accepts slices and calls 'Video.clip'
-* Normalize examples to use 'play' as name of main function
-*** Add 'sc8pr.examples.vector2d'
-*** Add 'robot.gyroSample' and 'robot.gyroChange' in 'sc8pr.examples.robotSim'
 *** Add 'sc8pr.misc.hsv.hsvBox'
 * Move Grabber and ImageIO classes to sc8pr.misc.media
 *** Re-do ImageIO class
