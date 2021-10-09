@@ -49,9 +49,9 @@ REMOVE = 12
 CIRCLE = 0
 RECT = 1
 
-# pygame 1.9 -> 2.0 compatibility
-SIZECHANGED = pygame.WINDOWSIZECHANGED if hasattr(pygame, "WINDOWSIZECHANGED") else -1
-WINEXPOSED = pygame.WINDOWEXPOSED if hasattr(pygame, "WINDOWEXPOSED") else -1
+# pygame 1.9 <--> 2.0 compatibility
+SIZECHANGED = getattr(pygame, "WINDOWSIZECHANGED", -1)
+WINEXPOSED = getattr(pygame, "WINDOWEXPOSED", -1)
 
 
 class PixelData:
