@@ -49,6 +49,10 @@ REMOVE = 12
 CIRCLE = 0
 RECT = 1
 
+# pygame 1.9 -> 2.0 compatibility
+SIZECHANGED = pygame.WINDOWSIZECHANGED if hasattr(pygame, "WINDOWSIZECHANGED") else -1
+WINEXPOSED = pygame.WINDOWEXPOSED if hasattr(pygame, "WINDOWEXPOSED") else -1
+
 
 class PixelData:
     "A class for storing, compressing, and converting raw pixel data"
@@ -1234,20 +1238,24 @@ class Sketch(Canvas):
 
     def _evHandle(self):
         "Handle events in the pygame event queue"
+        resized = False
         for ev in pygame.event.get():
             try:
-                if ev.type == pygame.VIDEOEXPOSE and self.dirtyRegions is not None:
+                if ev.type in (pygame.VIDEOEXPOSE, WINEXPOSED) and self.dirtyRegions is not None:
                     self.dirtyRegions = [pygame.Rect((0,0), self._size)]
                     # _pd.flip()
-                if ev.type != pygame.VIDEORESIZE:
+                if ev.type not in (pygame.VIDEORESIZE, SIZECHANGED):
                     self.evMgr.dispatch(ev)
-                elif ev.size != self._size: # Changed from self.size
-                    setattr(ev, "originalSize", self._size)
-                    self._resize_ev = ev
-                    s = hasattr(self, "_scrollSize")
-                    if s: self.scrollTo()
-                    self.resize(ev.size)
-                    if s: self.resizeCoords(ev)
+                elif not resized:
+                    size = ev.size if hasattr(ev, "size") else (ev.x, ev.y)
+                    if size != self._size:
+                        resized = True
+                        setattr(ev, "originalSize", self._size)
+                        self._resize_ev = ev
+                        s = hasattr(self, "_scrollSize")
+                        if s: self.scrollTo()
+                        self.resize(size)
+                        if s: self.resizeCoords(ev)
             except: logError()
 
     def _drawDirtyRegions(self, srf):
