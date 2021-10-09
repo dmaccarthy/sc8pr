@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -107,8 +107,8 @@ class Slider(Canvas):
         if self._flip: x = 1 - x
         return self._calc(x)
 
-    def onmousedown(self, ev):
-        "Handle click events on the slider canvas"
+    def onclick(self, ev):
+        "Handle CLICK events on the slider canvas"
         self._lastButton = btn = ev.button
         if btn in self.allowButton:
             dim = tall(*self.size)

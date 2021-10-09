@@ -16,17 +16,17 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 2, 2, "dev"
+version = 2, 2, "dev3"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
-import sys, struct, zlib, io #, os
+import sys, struct, zlib, io
 from math import hypot
 import pygame
 import pygame.display as _pd
 from pygame.transform import flip as _pyflip
 from sc8pr._event import EventManager
 from sc8pr.geom import transform2d, positiveAngle, delta, sigma
-from sc8pr.util import CachedSurface, style, logError, sc8prData, tile, rgba, drawBorder #, hasAlpha
+from sc8pr.util import CachedSurface, style, logError, sc8prData, tile, rgba, drawBorder
 
 # Anchor point constants
 TOPLEFT = 0
@@ -48,13 +48,6 @@ REMOVE_Y = 8
 REMOVE = 12
 CIRCLE = 0
 RECT = 1
-
-_helpers = {}
-
-def helper_modules(*args, **kwargs):
-    for a in args:
-        _helpers[a.__name__] = a
-    _helpers.update(kwargs)
 
 
 class PixelData:
@@ -146,7 +139,8 @@ class PixelData:
     def img(self): return Image(self.srf)
 
     @staticmethod
-    def _frombytes(d, s, m): return _helpers["PIL.Image"].frombytes(m, s, d)
+    def _frombytes(d, s, m):
+        return sys.modules["PIL.Image"].frombytes(m, s, d)
 
     @property
     def pil(self): return self._image(PixelData._frombytes)

@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = 2, 2, "dev"
+version = 2, 2, "dev3"
 ver = "{}.{}.{}".format(*version)
 archive = "master" if version[-1] == "dev" else "v" + ver
 with open("README.txt", encoding="utf8") as f: readme = f.read()
@@ -11,7 +11,7 @@ setup(
     version = ver,
     license = "GPLv3",
     packages = find_packages(),
-    package_data = {"sc8pr": ["*.data", "examples/img/*.*"]},
+    package_data = {"sc8pr": ["*.data"]},
 
     # Author
     author = "David MacCarthy",

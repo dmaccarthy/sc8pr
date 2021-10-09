@@ -17,15 +17,16 @@
 
 
 import os, struct, pygame
-from sc8pr import PixelData, _helpers
+from sc8pr import PixelData
 from sc8pr.misc.video import Video
+from sys import modules
 
 
 class Grabber:
     "A class for performing screen captures using PIL.ImageGrab.grab"
-    
+
     def __init__(self, rect=None):
-        self.grab = _helpers["PIL.ImageGrab"].grab
+        self.grab = modules["PIL.ImageGrab"].grab
         if rect and not isinstance(rect, pygame.Rect):
             if len(rect) == 2: rect = (0, 0), rect
             rect = pygame.Rect(rect)
@@ -49,69 +50,54 @@ class Grabber:
 
 class ImageIO:
     "Use imageio and ffmpeg to decode and encode video"
-    
-    @staticmethod
-    def ffmpeg(ff): os.environ["IMAGEIO_FFMPEG_EXE"] = ffmpeg
 
     @staticmethod
-    def decode(src, *args, progress=None):
+    def ffmpeg(ff): os.environ["IMAGEIO_FFMPEG_EXE"] = ff
+
+    @staticmethod
+    def decode(src, *args, save=None, purge=False, progress=None):
         "Load a movie file as a list of Video clips"
         if not args: args = (0,),
         vid = [Video() for a in args]
-        with _helpers["imageio"].get_reader(src) as reader:
+        with modules["imageio"].get_reader(src) as reader:
             meta = reader.get_meta_data()
-            i, n = 1, meta.get("nframes")
-            for v in vid:
-                v.ffmpeg_meta = meta
-                v.size = meta["size"]
-                v.meta["frameRate"] = meta["fps"]
-            v = 0
+            i, n = 0, meta.get("nframes")
+            for clip in vid:
+                clip.ffmpeg_meta = meta
+                clip.size = meta["size"]
+                clip.meta["frameRate"] = meta["fps"]
+            clip = 0
             info = struct.pack("!3I", 0, *vid[0].size)
             a = args[0]
             try: # Extra frames/bad metadata in MKV?
                 for f in reader:
                     if len(a) == 2 and a[1] == i:
-                        v += 1
-                        if v >= len(args): break
-                        a = args[v]
-                    if i >= a[0]: vid[v] += bytes(f), info
-                    if progress: progress(i, n)
+                        if save: vid[clip].save(save.format(clip))
+                        if purge: vid[clip].purge()
+                        clip += 1
+                        if clip >= len(args): break
+                        a = args[clip]
+                    if i >= a[0]: vid[clip] += bytes(f), info
+                    if progress: progress(i)
                     i += 1
             except: pass
         return vid if args and len(args) > 1 else vid[0]
 
     @staticmethod
-    def decodeSave(src, dest=None, size=512):
-        "Convert a video file to s8v format"
-        if dest is None: dest = src + ".s8v"
-        ImageIO.decode(src, vid=Video().autoSave(dest, size)).autoSave()
-        return dest
-
-#     @staticmethod
-#     def frameData(img):
-#         "Format frame data for imageio export"
-#         np = _helpers
-#         if ImageIO.pil:
-#             return ImageIO.np.array(img.pil(ImageIO.pil.Image.frombytes))
-#         img = pygame.surfarray.array3d(img.srf)
-#         return ImageIO.np.swapaxes(img, 0, 1)
-
-    @staticmethod
     def _createFrameData():
-        pil = _helpers.get("PIL.Image")
-        np = _helpers["numpy"]
+        pil = modules.get("PIL.Image")
+        np = modules["numpy"]
         if pil: return lambda img: np.array(img.pil)
         else: return lambda img: np.swapaxes(pygame.surfarray.array3d(img.srf), 0, 1)
 
     @staticmethod
-    def encode(vid, dest="movie.mp4", fps=None, progress=None):
+    def encode(vid, save="movie.mp4", progress=None):
         "Encode a movie from a Video instance or s8v file"
         if type(vid) is str: vid = Video(vid)
+        fps = vid.meta.get("frameRate")
         vid = vid.scaleFrames()
         i, n = 1, len(vid)
-        if fps is None: fps = vid.meta.get("frameRate")
-        if fps is None: fps = 30
-        with _helpers["imageio"].get_writer(dest, fps=fps) as writer:
+        with modules["imageio"].get_writer(save, fps=(fps if fps else 30)) as writer:
             fd = ImageIO._createFrameData()
             for img in vid.frames():
                 writer.append_data(fd(img))

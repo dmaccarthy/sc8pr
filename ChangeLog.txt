@@ -64,6 +64,7 @@ sc8pr 2.2.dev...
 *** Add 'plot.shape.PLine'
 *** Add 'Image.crop', 'Image.flip', and 'Image.cut'
 *** 'Video.__getitem__' accepts slices and calls 'Video.clip'
+* Add 'Video.convert_alpha'
 * Normalize examples to use 'play' as name of main function
 *** Add 'sc8pr.examples.vector2d'
 *** Add 'robot.gyroSample' and 'robot.gyroChange' in 'sc8pr.examples.robotSim'

@@ -278,7 +278,11 @@ class Video(Sprite):
     def scaleFrames(self, size=None, inPlace=False):
         "Ensure all frame images have the same size"
         if not size: size = self.size
-        vid = self if inPlace else Video().config(size=size)
+        if inPlace: vid = self
+        else:
+            vid = Video().config(size=size)
+            fps = self.meta.get("frameRate")
+            if fps: vid.meta["frameRate"] = fps
         for i in range(len(self)):
             px = self._costumes[i]
             if px.size != size:
@@ -296,4 +300,12 @@ class Video(Sprite):
             if x > gap:
                 dt = x - repl
                 for j in range(i, n): data[j] -= dt
+        return self
+
+    def convert_alpha(self):
+        "Convert frames to RGBA"
+        i = 0
+        for v in self._costumes:
+            self._costumes[i] = PixelData(v.srf.convert_alpha(), True)
+            i += 1
         return self

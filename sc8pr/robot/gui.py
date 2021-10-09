@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2021 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -52,10 +52,3 @@ class Robot(sc8pr.robot.Robot):
     
     def numinput(self, prompt, title=None, allowCancel=False):
         return self.textinput(prompt, title, allowCancel, True)
-
-
-# Robot.confirm = confirm
-# Robot.numinput = numinput
-# Robot.textinput = textinput
-
-# def gui(robot): return robot.bind(confirm, numinput, textinput)

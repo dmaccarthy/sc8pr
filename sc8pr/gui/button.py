@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2021 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -156,7 +156,7 @@ class Button(Canvas):
         if self._status < 4 and ev.target is self:
             self._status &= 254
 
-    def onmousedown(self, ev):
+    def onclick(self, ev):
         if self._status < 4 and ev.button in self.allowButton:
             if self.selectable: self.selected = not self.selected
             self.bubble("onaction", ev)

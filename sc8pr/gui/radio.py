@@ -23,7 +23,7 @@ from sc8pr.gui.button import Button
 
 class Options(Canvas):
     """GUI control consisting of check boxes and text;
-    buttons handle onmousedown; trigger onaction"""
+    buttons handle CLICK; trigger ACTION"""
 
     def __init__(self, text, height=None, padding=4, imgs=None, txtConfig={}):
         text = [Text(t).config(**txtConfig) for t in text]
@@ -48,7 +48,7 @@ class Options(Canvas):
 
 class Radio(Options):
     """GUI control consisting of radio buttons and text;
-    buttons handle onmousedown; radio handles onaction and triggers onchange"""
+    buttons handle CLICK; radio handles ACTION and triggers CHANGE"""
 
     def __init__(self, text, height=None, padding=4, imgs=None, txtConfig={}):
         if imgs is None: imgs = Button._radioTiles()
