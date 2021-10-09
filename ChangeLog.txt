@@ -25,10 +25,10 @@ sc8pr 2.2.dev...
 *** Add 'Canvas.call', 'Canvas.flatten', 'Canvas.scroll' and 'Canvas.scrollTo' methods, SCROLL event
 *** Standardize attributes (target, focus, hover, handler) for sc8pr events
 *** Add 'scrollable' property and 'iconofy'/'deiconify' methods to 'Graphic' class
-*** Add 'sc8pr.gui.scroll', 'sc8pr.gui.tk' and 'sc8pr.gui.robot' modules
+*** Add 'sc8pr.gui.scroll' and 'sc8pr.gui.tk' modules
+*** Add 'sc8pr.robot.gui' module
 *** Add 'LATEX_URL', 'LATEX_FMT', 'latex_url' to 'sc8pr.misc.webcache'
 *** 'WebCache' does not overwrite existing cache file if URL is different
-* Add 'fakeCursor' example (depends on 'hoverable' property)
 ** Fix blit location bug in 'Canvas.snapshot'
 * Sync video capture when sketch does not run at nominal frame rate
 * Add 'util.modKeys'
