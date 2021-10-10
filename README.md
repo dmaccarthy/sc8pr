@@ -16,29 +16,7 @@ For more information, please see the [documentation](http://dmaccarthy.github.io
 
 # Installation
 
-Latest relase (v2.1):
+This relase (v2.1.4):
 ```
-pip3 install sc8pr
+pip3 install sc8pr==2.1.4
 ```
-
-Bug fixes:
-```
-pip3 install https://github.com/dmaccarthy/sc8pr/archive/BugFix-2.1.zip
-```
-
-Development version (v.2.2.dev):
-```
-pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
-```
-
-If installation is unsuccessful, try installing **pygame** and **sc8pr** separately...
-```
-pip3 install pygame
-pip3 install --no-deps sc8pr
-```
-
-See the documentation for more [detailed instructions](https://dmaccarthy.github.io/sc8pr/?inst).
-
-# Try It First
-
-sc8pr is pure Python 3 code, so you can try it without running the setup. Just unzip the sc8pr package into your PYTHONPATH. You will still need pygame installed.
