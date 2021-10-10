@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from sc8pr import Canvas, Image, LEFT
+from sc8pr import Canvas, Image, CENTER
 from sc8pr.text import Text
 from sc8pr.util import rgba, sc8prData
 
@@ -117,7 +117,7 @@ class Button(Canvas):
         h = self.height - 2 * padding
         self += icon.config(height=h)
         w = icon.width
-        icon.config(pos=(padding, padding + h / 2), anchor=LEFT)
+        icon.config(pos=(padding + w / 2, padding + h / 2), anchor=CENTER)
         return w
 
     def textIcon(self, text, icon=None, padding=6):
