@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 2, 2, "dev3"
+version = 2, 2, "dev4"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import sys, struct, zlib, io
@@ -1164,7 +1164,7 @@ class Sketch(Canvas):
                 mode = self._pygameMode(mode)
                 self._mode = mode
             self.image = _pd.set_mode(size, mode)
-            _pd.flip()
+#             _pd.flip() # Needed?
             super().resize(self.size)
             self._size = self.size
         if self.dirtyRegions is not None:
