@@ -73,9 +73,6 @@ class Dialog(Canvas):
         icon = Sprite(SoccerBall.ballImage).config(spin=1)
         play = Text("Play").config(**attr)
         play = Button((96,36), 2).textIcon(play, icon)
-        x, y = icon.pos
-        x += icon.width / 2
-        icon.config(anchor=CENTER, pos=(x,y))
 
         # Titles
         attr.update(anchor=TOP)

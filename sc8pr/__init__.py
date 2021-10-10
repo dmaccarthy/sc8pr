@@ -16,7 +16,6 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-
 version = 2, 2, "dev4"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
