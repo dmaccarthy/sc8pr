@@ -33,8 +33,8 @@ class Font:
     _cacheOrder = []
     _serif = ("Merriweather", "DroidSerif", "Deja Vu Serif", "Palatino",
         "Garamond", "Georgia", "Century", "TimesNewRoman", "Times")
-    _sans = ("MerriweatherSans", "OpenSans", "Arsenal", "Oxygen",
-        "DroidSans", "Deja Vu Sans", "LucidaSans", "Verdana", "Geneva", "Helvetica", "Arial")
+    _sans = ("LucidaSans", "OpenSans", "Oxygen", "Arsenal", "DroidSans", "Deja Vu Sans",
+        "MerriweatherSans", "Verdana", "Geneva", "Helvetica", "Arial")
     _mono = ("SourceCodePro", "Inconsolata", "LucidaConsole",
         "DroidSansMono", "Deja Vu Sans Mono", "Monaco", "CourierNew", "Courier")
 

@@ -15,7 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-version = 2, 1, "4dev"
+version = 2, 1, 4
+print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import sys, os, struct, zlib
 from math import hypot
@@ -47,6 +48,10 @@ REMOVE_Y = 8
 REMOVE = 12
 CIRCLE = 0
 RECT = 1
+
+# pygame 1.9 <--> 2.0 compatibility
+SIZECHANGED = getattr(pygame, "WINDOWSIZECHANGED", -1)
+WINEXPOSED = getattr(pygame, "WINDOWEXPOSED", -1)
 
 
 class PixelData:
@@ -919,8 +924,8 @@ class Sketch(Canvas):
     @bg.setter
     def bg(self, bg):
         self._setBg(bg)
-        if self.fixedAspect and hasattr(bg, "aspectRatio"):
-            self.fixedAspect = bg.aspectRatio
+        if self._fixedAspect and hasattr(bg, "aspectRatio"):
+            self._fixedAspect = bg.aspectRatio
         if self.dirtyRegions is not None:
             self.dirtyRegions = [pygame.Rect((0,0), self._size)]
 
@@ -947,23 +952,27 @@ class Sketch(Canvas):
 
     @size.setter
     def size(self, size):
-        if self.fixedAspect:
+        if self._fixedAspect:
             self._fixedAspect = size[0] / size[1]
         self.resize(size)
 
     @property
-    def fixedAspect(self): return self._fixedAspect
+    def fixedAspect(self): return bool(self._fixedAspect)
 
     @fixedAspect.setter
     def fixedAspect(self, a):
-        self._fixedAspect = a
-        if a: self.resize(self.size)
+#         self._fixedAspect = a
+#         if a: self.resize(self.size)
+        if a:
+            w, h = self.size
+            self._fixedAspect = w / h
+        else: self._fixedAspect = False
 
     def _aspectSize(self, size, initSize):
         "Modify sketch size to preserve aspect ratio"
         w, h = size
         w0, h0 = initSize
-        a = self.fixedAspect
+        a = self._fixedAspect
         if w0 == w: w = h * a
         elif h0 == h: h = w / a
         else:
@@ -983,8 +992,8 @@ class Sketch(Canvas):
         size = round(size[0]), round(size[1])
         self.image = _pd.set_mode(size, mode)
         _pd.flip()
-        if self.fixedAspect: size = self._aspectSize(size, initSize)
-        if self.fixedAspect and sum(abs(x-y) for (x,y) in (zip(size, self.size))) > 1:
+        if self._fixedAspect: size = self._aspectSize(size, initSize)
+        if self._fixedAspect and sum(abs(x-y) for (x,y) in (zip(size, self.size))) > 1:
             return self.resize(size)
         super().resize(self.size)
         self._size = self.size
@@ -1007,7 +1016,7 @@ class Sketch(Canvas):
             _pd.set_icon(icon)
         except: logError()
         w, h = self._size
-        self._fixedAspect = w / h
+        if self._fixedAspect: self._fixedAspect = w / h
         mode = self._pygameMode(mode)
         self._mode = mode
         self.image = _pd.set_mode(self._size, mode)
@@ -1048,15 +1057,23 @@ class Sketch(Canvas):
 
     def _evHandle(self):
         "Handle events in the pygame event queue"
+        resized = False
         for ev in pygame.event.get():
             try:
-                if ev.type == pygame.VIDEOEXPOSE and self.dirtyRegions is not None:
+                if ev.type in (pygame.VIDEOEXPOSE, WINEXPOSED) and self.dirtyRegions is not None:
                     self.dirtyRegions = [pygame.Rect((0,0), self._size)]
-                if ev.type != pygame.VIDEORESIZE:
+                if ev.type not in (pygame.VIDEORESIZE, SIZECHANGED):
                     self.evMgr.dispatch(ev)
-                elif ev.size != self.size:
-                    self.resize(ev.size)
-                    if hasattr(self, "onresize"): self.onresize(ev)
+                elif not resized:
+                    size = ev.size if hasattr(ev, "size") else (ev.x, ev.y)
+                    if size != self._size:
+                        resized = True
+                        setattr(ev, "originalSize", self._size)
+                        self._resize_ev = ev
+                        s = hasattr(self, "_scrollSize")
+                        if s: self.scrollTo()
+                        self.resize(size)
+                        if s: self.resizeCoords(ev)
             except: logError()
 
     def _drawDirtyRegions(self, srf):
