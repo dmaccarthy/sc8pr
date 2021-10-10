@@ -1125,7 +1125,7 @@ class Sketch(Canvas):
 
     @size.setter
     def size(self, size):
-        if self.fixedAspect:
+        if self._fixedAspect:
             self._fixedAspect = size[0] / size[1]
         self.resize(size)
 
@@ -1155,7 +1155,7 @@ class Sketch(Canvas):
         "Resize the sketch, maintaining aspect ratio if required"
         initSize = self._size
         size = round(size[0]), round(size[1])
-        if self.fixedAspect: size = self._aspectSize(size, initSize)
+        if self._fixedAspect: size = self._aspectSize(size, initSize)
         if size != initSize:
             if mode is None: mode = self._mode
             else:
@@ -1190,7 +1190,7 @@ class Sketch(Canvas):
             _pd.set_icon(icon.config(width=64).image)
         except: logError()
         w, h = self._size
-        self._fixedAspect = w / h
+        if self._fixedAspect: self._fixedAspect = w / h
         mode = self._pygameMode(mode)
         self._mode = mode
         self.image = _pd.set_mode(self._size, mode)
