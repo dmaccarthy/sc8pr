@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = 2, 1, 4
+version = 2, 1, "dev5"
 ver = "{}.{}.{}".format(*version)
 archive = "master" if version[-1] == "dev" else "v" + ver
 with open("README.txt", encoding="utf8") as f: readme = f.read()
