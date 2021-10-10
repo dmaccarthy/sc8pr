@@ -1100,8 +1100,8 @@ class Sketch(Canvas):
     @bg.setter
     def bg(self, bg):
         self._setBg(bg)
-        if self.fixedAspect and hasattr(bg, "aspectRatio"):
-            self.fixedAspect = bg.aspectRatio
+        if self._fixedAspect and hasattr(bg, "aspectRatio"):
+            self._fixedAspect = bg.aspectRatio
         if self.dirtyRegions is not None:
             self.dirtyRegions = [pygame.Rect((0,0), self._size)]
 
@@ -1130,18 +1130,20 @@ class Sketch(Canvas):
         self.resize(size)
 
     @property
-    def fixedAspect(self): return self._fixedAspect
+    def fixedAspect(self): return bool(self._fixedAspect)
 
     @fixedAspect.setter
     def fixedAspect(self, a):
-        self._fixedAspect = a
-        if a: self.resize(self.size)
+        if a:
+            w, h = self.size
+            self._fixedAspect = w / h
+        else: self._fixedAspect = False
 
     def _aspectSize(self, size, initSize):
         "Modify sketch size to preserve aspect ratio"
         w, h = size
         w0, h0 = initSize
-        a = self.fixedAspect
+        a = self._fixedAspect
         if w0 == w: w = h * a
         elif h0 == h: h = w / a
         else:
