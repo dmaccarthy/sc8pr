@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -36,6 +36,7 @@ class Table(Canvas):
     def rows(self): return len(self._rows)
 
     def cell(self, c, r):
+        "Return a pygame.Rect describing the cell's location within the canvas"
         cols = self._cols
         rows = self._rows
         if type(c) is int: c1 = c + 1
@@ -47,6 +48,7 @@ class Table(Canvas):
         return pygame.Rect(xy, (sum(cols[c:c1]), sum(rows[r:r1])))
 
     def box(self, c=None, r=None, **kwargs):
+        "Draw a border around a cell or a rectangular group of cells"
         if c is True:
             for c in range(self.cols):
                 for r in range(self.rows):
@@ -59,8 +61,16 @@ class Table(Canvas):
             self += Polygon(pts).config(**kwargs)
         return self
 
+    def bottomBoxes(self):
+        "Move all Polygon instances to the lowest layers"
+        boxes = list(self.instOf(Polygon))
+        boxes.reverse()
+        for box in boxes: box.config(layer=0)
+        return self
+
     @staticmethod
     def grid(*args, cols=None, size=None, fit=True):
+        "Arrange items in a grid of same-sized cells"
         n = len(args)
         if cols is None: cols = n
         rows = (n - 1) // cols + 1
