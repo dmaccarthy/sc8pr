@@ -8,7 +8,7 @@ sc8pr 2.2.dev...
 * Fix bug where BLUR event does not fire when focus changes while the focussed graphic is being dragged
 * Move 'cover' method from 'Sketch' class to 'Canvas'
 *** Add FOCUS event and 'Graphic.focus' method; add; 'trigger' argument to 'Graphic.blur'
-*** DRAG and RELEASE events apply to Sketch
+* DRAG and RELEASE events apply to Sketch
 *** Add 'Sketch.resizeTrigger' to trigger 'onresize' handler for programmatic resizing
 * Add 'hoverable' property to Graphic class and add 'includeAll' argument to 'Canvas.objectAt'
 * Allow 'padding' argument of 'util.style' to be a 2-tuple with different x and y values
@@ -36,21 +36,22 @@ sc8pr 2.2.dev...
 * Allow assignment to canvas by layer: cv[layer] = gr
 ** Fix minor bug with 'Sketch.caption' getter
 *** Add 'Ellipse' and 'Arc' classes to 'sc8pr.shape'
-*** Add 'sprite.onreset' event, called by 'sprite.ondraw'
+* Add 'sprite.onreset' event, called by 'sprite.ondraw'
 *** Add 'Video' methods 'splice', 'info', '__add__', 'effect', 'effectInPlace', 'play'
 *** 'Video.clip' accepts negative 'start' and 'end' arguments
-*** 'CostumeImage.costumeTime' may be negative for reverse playback
+* 'CostumeImage.costumeTime' may be negative for reverse playback
 *** 'Plot' constructor can take an object with 'size' attribute in place of a size literal
 *** 'Plot.clockwise' and 'Plot.units' properties
 *** Add 'geom.smallAngle' and 'geom.shiftAlongNormal'
 *** Add 'Graphic.scale'
 *** Fix bug in 'Canvas.__init__'
-*** Add 'sc8pr.plot' package and 'sc8pr.misc.table' module
+*** Add 'sc8pr.plot' package
 *** Add additional 'Graphic' and 'Canvas' methods to support new plotting/scrolling package
 *** Add 'Canvas.clipArea', 'Canvas.resizeContent', 'Canvas.icons, 'Canvas.iconSize'
 *** Allow 'Canvas.__isub__' to accept a string; add 'Canvas.removeItems'
-*** Add 'util.mix'
-*** Replace 'Canvas.grid' by 'Table.grid'
+* Add 'util.mix'
+* Add 'sc8pr.misc.table' module
+* Replace 'Canvas.grid' by 'Table.grid'
 *** Create 'util.circle_intersect'
 *** Add 'QCircle' and make 'Circle' faster drawing
 * Modify 'sc8pr.gui.dialog'
@@ -66,14 +67,13 @@ sc8pr 2.2.dev...
 *** 'Video.__getitem__' accepts slices and calls 'Video.clip'
 * Add 'Video.convert_alpha'
 * Normalize examples to use 'play' as name of main function
-*** Add 'sc8pr.examples.vector2d'
-*** Add 'robot.gyroSample' and 'robot.gyroChange' in 'sc8pr.examples.robotSim'
+** Add 'sc8pr.examples.vector2d'
+*** Add 'robot.gyroSample' and 'robot.gyroChange' in 'sc8pr.robot.arena'
 *** Add 'sc8pr.misc.hsv.hsvBox'
 * Move Grabber and ImageIO classes to sc8pr.misc.media
-*** Re-do ImageIO class
+* Re-do ImageIO class
 *** Add 'ffmpeg_meta' attribute to video
 *** Ignore collisions for sprites with no 'rect' attribute
 * Add 'PixelData.pil, 'Image.png' and 'Image.jpg' properties
-*** Add 'sc8pr.helper_modules' function
 
 !!! Add 'util.borderRadius'
