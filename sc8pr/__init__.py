@@ -803,14 +803,6 @@ class Canvas(Graphic):
     def px(self, *pt): return delta(self._px(pt), self._scroll)
     def cs(self, *pt): return self._cs(sigma(pt, self._scroll))
 
-    def call(self, methodname, seq, *args, **kwargs):
-        "Call the specified method on the canvas contents"
-        if type(seq) is bool:
-            seq = self.everything() if seq else self
-        for obj in seq:
-            fn = getattr(obj, methodname, None)
-            if fn: fn(*args, **kwargs)
-
     @property
     def border(self): return self._border
 

@@ -22,7 +22,8 @@ sc8pr 2.2.dev...
 *** Add 'Slider.methodNames'
 ** Drag slider knob from any point rather than only the center
 ** Default knob size based on number of steps
-*** Add 'Canvas.call', 'Canvas.flatten', 'Canvas.scroll' and 'Canvas.scrollTo' methods, SCROLL event
+* Add 'Canvas.flatten'
+*** Add 'Canvas.scroll' and 'Canvas.scrollTo' methods, SCROLL event
 *** Standardize attributes (target, focus, hover, handler) for sc8pr events
 *** Add 'scrollable' property and 'iconofy'/'deiconify' methods to 'Graphic' class
 *** Add 'sc8pr.gui.scroll' and 'sc8pr.gui.tk' modules

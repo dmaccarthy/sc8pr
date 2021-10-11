@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -26,9 +26,7 @@ from sc8pr.geom import sigma, delta
 scale = pygame.transform.smoothscale
 
 def nothing(*args): pass
-
-# from pygame.constants import K_LSHIFT, K_RSHIFT, K_LALT, K_RALT, K_LCTRL, K_RCTRL 
-
+  
 def modKeys():
     key = pygame.key.get_pressed()
     m = 0
