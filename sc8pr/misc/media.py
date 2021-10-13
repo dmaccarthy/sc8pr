@@ -117,19 +117,23 @@ class FFWriter(_FF):
 
     def write(self, img):
         "Write one frame to the video file"
-        if not isinstance(img, Graphic):
-            img = Image(img)
-        if self.size is None: self.size = img.size
-        srf = img.image
-        if srf.get_size() != self.size:
+        try: srf = img.image
+        except: srf = Image(img).image
+#         if not isinstance(img, Graphic):
+#             img = Image(img)
+        size = srf.get_size()
+        if self.size is None: self.size = size
+        if size != self.size:
             srf = Image(srf).config(size=self.size).image
         data = self._fd(PixelData(srf))
 #         elif img.size != self.size:
 #             img.config(size=self.size)
 #         data = self._fd(PixelData(img.snapshot()))
         self._io.append_data(data)
+        return self
 
     def encode(self, vid):
         "Encode a Video instance as a media file"
         for frame in vid.scaleFrames().frames():
             self._io.append_data(self._fd(frame))
+        return self
