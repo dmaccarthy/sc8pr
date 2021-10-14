@@ -22,8 +22,8 @@ Additional features for encoding and decoding media using additional packages
 
 
 import os, struct, pygame
-from sc8pr import PixelData, Graphic, Image
-from sc8pr.misc.video import Video
+from sc8pr import PixelData, Graphic, Image, version
+from sc8pr.misc.video import Video, ZipFile, _j2b, fileExt
 from sys import modules
 
 
@@ -99,6 +99,22 @@ class FFReader(_FF):
         for f in self._io:
             yield PixelData((bytes(f), self._info))
 
+    def saveS8V(self, fn):
+        "Convert a movie file to S8V format"
+        meta = {"frameRate":self.meta["fps"], "Saved By":"sc8pr{}".format(version)}
+        fn = fileExt(fn, ["s8v", "zip"])
+        with ZipFile(fn, "w") as zf:
+            zf.writestr("metadata", _j2b(meta))
+            n = 0
+            prev = None
+            for pxd in self:
+                if not pxd.compressed: pxd.compress()
+                data = bytes(pxd)
+                zf.writestr(str(n), b'' if data == prev else data)
+                prev = data
+                n += 1
+        return self
+
 
 class FFWriter(_FF):
     "Write graphics directly to media file using imageio/FFmpeg"
@@ -112,7 +128,7 @@ class FFWriter(_FF):
 
     def __init__(self, fn, fps=30):
         self._fd = FFWriter._createFrameData()
-        self.size = None
+        self._size = None
         self._io = modules["imageio"].get_writer(fn, fps=fps)
 
     def write(self, img):
@@ -122,18 +138,19 @@ class FFWriter(_FF):
 #         if not isinstance(img, Graphic):
 #             img = Image(img)
         size = srf.get_size()
-        if self.size is None: self.size = size
-        if size != self.size:
-            srf = Image(srf).config(size=self.size).image
+        if self._size is None: self._size = size
+        if size != self._size:
+            srf = Image(srf).config(size=self._size).image
         data = self._fd(PixelData(srf))
-#         elif img.size != self.size:
-#             img.config(size=self.size)
+#         elif img.size != self._size:
+#             img.config(size=self._size)
 #         data = self._fd(PixelData(img.snapshot()))
         self._io.append_data(data)
         return self
 
     def encode(self, vid):
         "Encode a Video instance as a media file"
+        if type(vid) is str: vid = Video(vid)
         for frame in vid.scaleFrames().frames():
             self._io.append_data(self._fd(frame))
         return self
