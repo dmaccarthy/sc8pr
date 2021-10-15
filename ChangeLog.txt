@@ -72,7 +72,8 @@ sc8pr 2.2.dev...
 *** Add 'robot.gyroSample' and 'robot.gyroChange' in 'sc8pr.robot.arena'
 *** Add 'sc8pr.misc.hsv.hsvBox'
 * Move Grabber and ImageIO classes to sc8pr.misc.media
-* Re-do ImageIO class
+** Re-do ImageIO class
+* FFReader and FFWriter classes
 *** Add 'ffmpeg_meta' attribute to video
 *** Ignore collisions for sprites with no 'rect' attribute
 * Add 'PixelData.pil, 'Image.png' and 'Image.jpg' properties

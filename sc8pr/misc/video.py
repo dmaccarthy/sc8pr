@@ -16,25 +16,12 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from zipfile import ZipFile
-from json import loads, dumps
-from time import time
+from sc8pr.misc.s8v import S8Vfile
 from sc8pr import Image, PixelData, version
 from sc8pr.sprite import Sprite
 from sc8pr.util import hasAlpha, fileExt
+from time import time
 
-
-def _j2b(obj):
-    return bytes(dumps(obj, ensure_ascii=False), encoding="utf-8")
-
-def _b2j(b): return loads(str(b, encoding="utf-8"))
-
-def _indx(obj, i):
-    n = len(obj)
-    if i is None: i = n
-    elif i < 0: i += n
-    return i
-    
 
 class Video(Sprite):
     "A class for storing and retrieving sequences of compressed images"
@@ -55,6 +42,30 @@ class Video(Sprite):
             img = self._costumes[0].img
             self._size = img.size
             self._current = 0, img
+
+    def _load(self, fn, progress=None, start=0, end=None):
+        "Load the video from a S8V file"
+        with S8Vfile(fn) as s8v:
+            self.meta = s8v.meta
+            i = 0
+            for f in s8v.clip(start, end):
+                self._costumes.append(f)
+                if progress:
+                    i += 1
+                    progress(i, s8v.frames)
+
+    def save(self, fn, progress=None, append=False):
+        "Save the Video as an S8V archive of PixelData binaries"
+        fn = fileExt(fn, ["s8v", "zip"])
+        with S8Vfile(fn, "a" if append else "w", **self.meta) as s8v:
+            i = 0
+            n = len(self._costumes)
+            for c in self._costumes:
+                s8v.append(c)
+                if progress:
+                    i += 1
+                    progress(i, n)
+        return self
 
     def purge(self):
         "Remove all frames from the video"
@@ -171,40 +182,6 @@ class Video(Sprite):
         return self
 
     @staticmethod
-    def info(f):
-        with ZipFile(f) as zf:
-            meta = _b2j(zf.read("metadata"))
-            meta["len"] = len(zf.namelist()) - 1
-            return meta
-    
-    def _loadMeta(self, zf):
-        try: self.meta = _b2j(zf.read("metadata"))
-        except: pass
-
-    def _saveMeta(self, zf):
-        if self.meta: zf.writestr("metadata", _j2b(self.meta))
-
-    def _load(self, fn, progress=None, start=0, end=None):
-        "Load the video from a ZIP file"
-        with ZipFile(fn) as zf:
-            self._loadMeta(zf)
-            self._costumes = []
-            i = j = start
-            n = len(zf.namelist()) - 1
-            while i != end:
-                try:
-                    data = zf.read(str(i))
-                    while not data and i == start and j:
-                        j -= 1                        
-                        data = zf.read(str(j))
-                    if data: data = PixelData(data, True)
-                    else: data = self._costumes[i - start - 1]
-                    self._costumes.append(data)
-                    i += 1
-                    if progress: progress(i - start, n)
-                except: i = end
-
-    @staticmethod
     def _iter(fn, maxFrames=256):
         "Iterate through the frames in an s8V file"
         i = 0
@@ -230,24 +207,6 @@ class Video(Sprite):
         vid._costumes = [costumes[i] for i in start]
         vid.meta = dict(self.meta)
         return vid
-
-    def save(self, fn, progress=None, append=False):
-        "Save the Video as a zip archive of PixelData binaries"
-        self.meta["Saved By"] = "sc8pr{}".format(version)
-        fn = fileExt(fn, ["s8v", "zip"])
-        with ZipFile(fn, "a" if append else "w") as zf:
-            n = len(zf.namelist())
-            if n == 0: self._saveMeta(zf)
-            if append is True: append = (n - 1) if n else 0
-            costumes = self._costumes
-            n = len(costumes)
-            for i in range(n):
-                c = costumes[i]
-                if progress: progress(i + 1, n)
-                same = i and c == costumes[i - 1]
-                fn = str((i + append) if append else i)
-                zf.writestr(fn, b'' if same else bytes(c))
-        return self
 
     def capture(self, sk):
         "Capture the current frame of the sketch"

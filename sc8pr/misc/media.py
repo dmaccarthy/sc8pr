@@ -23,7 +23,8 @@ Additional features for encoding and decoding media using additional packages
 
 import os, struct, pygame
 from sc8pr import PixelData, Graphic, Image, version
-from sc8pr.misc.video import Video, ZipFile, _j2b, fileExt
+from sc8pr.misc.video import Video
+from sc8pr.misc.s8v import S8Vfile
 from sys import modules
 
 
@@ -99,21 +100,29 @@ class FFReader(_FF):
         for f in self._io:
             yield PixelData((bytes(f), self._info))
 
-    def saveS8V(self, fn):
-        "Convert a movie file to S8V format"
-        meta = {"frameRate":self.meta["fps"], "Saved By":"sc8pr{}".format(version)}
-        fn = fileExt(fn, ["s8v", "zip"])
-        with ZipFile(fn, "w") as zf:
-            zf.writestr("metadata", _j2b(meta))
-            n = 0
-            prev = None
-            for pxd in self:
-                if not pxd.compressed: pxd.compress()
-                data = bytes(pxd)
-                zf.writestr(str(n), b'' if data == prev else data)
-                prev = data
-                n += 1
-        return self
+    def estimateFrames(self):
+        "Try to estimate frames from movie metadata"
+        try:
+            meta = self.meta
+            n = meta["nframes"]
+            if n == float("inf"):
+                n = round(meta["fps"] * meta["duration"])
+        except: n = None
+        return n
+
+    @staticmethod
+    def convert(fn, progress=None):
+        "Read a movie and write it as an S8V file"
+        with FFReader(fn) as src:
+            fn += ".s8v"
+            with S8Vfile(fn, "x", fps=src.meta["fps"]) as s8v:
+                n = 0
+                f = src.estimateFrames()
+                for frame in src:
+                    s8v.append(bytes(PixelData(frame, True)))
+                    n += 1
+                    if progress: progress(n, f)
+        return fn
 
 
 class FFWriter(_FF):
@@ -135,22 +144,31 @@ class FFWriter(_FF):
         "Write one frame to the video file"
         try: srf = img.image
         except: srf = Image(img).image
-#         if not isinstance(img, Graphic):
-#             img = Image(img)
         size = srf.get_size()
         if self._size is None: self._size = size
         if size != self._size:
             srf = Image(srf).config(size=self._size).image
         data = self._fd(PixelData(srf))
-#         elif img.size != self._size:
-#             img.config(size=self._size)
-#         data = self._fd(PixelData(img.snapshot()))
         self._io.append_data(data)
         return self
 
-    def encode(self, vid):
-        "Encode a Video instance as a media file"
-        if type(vid) is str: vid = Video(vid)
-        for frame in vid.scaleFrames().frames():
-            self._io.append_data(self._fd(frame))
-        return self
+    @staticmethod
+    def encode(vid, dest=None, fps=None):
+        "Encode a Video instance or S8V file using FFmpeg"
+        isVid = isinstance(vid, Video)
+        if isVid and fps is None: fps = vid.meta.get("frameRate")
+        if fps is None: fps = 30
+        if dest is None:
+            dest = "movie.mp4" if isVid else vid + ".mp4"
+        with FFWriter(dest, fps) as ffw:
+            if isVid:
+                for f in vid.scaleFrames().frames():
+                    ffw._io.append_data(ffw._fd(f))
+            else:
+                with S8Vfile(vid) as s8v:
+                    size = None
+                    for f in s8v.clip():
+                        if size is None: size = f.size
+                        if f.size != size:
+                            f = PixelData(f.img.config(size=size), True)
+                        ffw._io.append_data(ffw._fd(f))
