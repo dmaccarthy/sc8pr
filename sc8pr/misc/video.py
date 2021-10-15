@@ -22,6 +22,12 @@ from sc8pr.sprite import Sprite
 from sc8pr.util import hasAlpha, fileExt
 from time import time
 
+def _indx(obj, i):
+    n = len(obj)
+    if i is None: i = n
+    elif i < 0: i += n
+    return i
+
 
 class Video(Sprite):
     "A class for storing and retrieving sequences of compressed images"

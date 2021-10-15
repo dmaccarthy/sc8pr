@@ -56,14 +56,14 @@ class S8Vfile:
         self._zf.writestr(str(self.frames), data)
         self.frames += 1
 
-    def read(self, frame, allowEmpty=False):
+    def read(self, frame, allowEmpty=False, compress=True):
         "Read one frame as a compressed PixelData instance"
         data = self._zf.read(str(frame))
         if not allowEmpty:
             while not data:
                 data = self._zf.read(str(frame))
                 frame -= 1
-        return PixelData(data, True) if data else None
+        return PixelData(data, compress) if data else None
 
     def clip(self, start=0, end=None):
         "Generate a sequence of consecutive frames as PixelData instances"
