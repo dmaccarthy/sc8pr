@@ -67,11 +67,13 @@ class _FF:
 class FFReader(_FF):
     "Read images directly from a media file using imageio/FFmpeg"
 
-    def __init__(self, fn):
-        self._io = r = modules["imageio"].get_reader(fn)
+    def __init__(self, src, **kwargs):
+        self._io = modules["imageio"].get_reader(src, **kwargs)
         self._iter = iter(self._io)
-        self.meta = r.get_meta_data()
-        self._info = struct.pack("!3I", 0, *self.meta["size"])
+        self.meta = self._io.get_meta_data()
+        size = kwargs.get("size")
+        if size is None: size = self.meta["size"]
+        self._info = struct.pack("!3I", 0, *size)
 
     def __next__(self):
         "Return the next frame as an uncompressed PixelData instance"
@@ -111,18 +113,18 @@ class FFReader(_FF):
         return n
 
     @staticmethod
-    def convert(fn, progress=None):
+    def convert(src, dest=None, progress=None, **kwargs):
         "Read a movie and write it as an S8V file"
-        with FFReader(fn) as src:
-            fn += ".s8v"
-            with S8Vfile(fn, "x", fps=src.meta["fps"]) as s8v:
+        with FFReader(src, **kwargs) as src:
+            if dest is None: dest = src + ".s8v"
+            with S8Vfile(dest, "x", fps=src.meta["fps"]) as s8v:
                 n = 0
                 f = src.estimateFrames()
                 for frame in src:
                     s8v.append(bytes(PixelData(frame, True)))
                     n += 1
                     if progress: progress(n, f)
-        return fn
+        return dest
 
 
 class FFWriter(_FF):
@@ -135,21 +137,33 @@ class FFWriter(_FF):
         if pil: return lambda img: np.array(img.pil)
         else: return lambda img: np.swapaxes(pygame.surfarray.array3d(img.srf), 0, 1)
 
-    def __init__(self, fn, fps=30):
+    def __init__(self, src, fps=30):
         self._fd = FFWriter._createFrameData()
         self._size = None
-        self._io = modules["imageio"].get_writer(fn, fps=fps)
+        self._io = modules["imageio"].get_writer(src, fps=fps)
 
-    def write(self, img):
-        "Write one frame to the video file"
-        try: srf = img.image
-        except: srf = Image(img).image
+    def write(self, srf):
+        "Write one frame (surface) to the video file, resizing if necessary"
+        if type(img) is not pygame.Surface:
+            try: srf = srf.image
+            except: srf = Image(srf).image
         size = srf.get_size()
         if self._size is None: self._size = size
         if size != self._size:
             srf = Image(srf).config(size=self._size).image
-        data = self._fd(PixelData(srf))
-        self._io.append_data(data)
+        self.writePixelData(PixelData(srf))
+        return self
+
+    def writePixelData(self, pix):
+        "Write a PixelData instance: DOES NOT VERIFY SIZE"
+        PixelData._debug("numpy.array")
+        self._io.append_data(self._fd(pix))
+        return self
+
+    def writePIL(self, pil):
+        "Write a PIL image: DOES NOT VERIFY SIZE"
+        PixelData._debug("numpy.array")
+        self._io.append_data(modules["numpy"].array(pil))
         return self
 
     @staticmethod
