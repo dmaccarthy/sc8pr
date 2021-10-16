@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-version = 2, 1, "dev5"
+version = 2, 1, "5dev"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import sys, os, struct, zlib
@@ -926,6 +926,8 @@ class Sketch(Canvas):
         self._setBg(bg)
         if self._fixedAspect and hasattr(bg, "aspectRatio"):
             self._fixedAspect = bg.aspectRatio
+            size = self.size
+            self.resize(self._aspectSize(size, size))
         if self.dirtyRegions is not None:
             self.dirtyRegions = [pygame.Rect((0,0), self._size)]
 
