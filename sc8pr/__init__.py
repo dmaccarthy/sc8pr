@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 2, 2, "dev4"
+version = 2, 2, "4dev"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import sys, struct, zlib, io
@@ -50,12 +50,20 @@ CIRCLE = 0
 RECT = 1
 
 # pygame 1.9 <--> 2.0 compatibility
-SIZECHANGED = getattr(pygame, "WINDOWSIZECHANGED", -1)
-WINEXPOSED = getattr(pygame, "WINDOWEXPOSED", -1)
+SIZECHANGED = getattr(pygame, "WINDOWSIZECHANGED", None)
+WINEXPOSED = getattr(pygame, "WINDOWEXPOSED", None)
 
 
 class PixelData:
     "A class for storing, compressing, and converting raw pixel data"
+
+    debug = None
+
+    @classmethod
+    def _debug(cls, msg):
+        if cls.debug is not None:
+            cls.debug += 1
+            print(cls.debug, msg)
 
     def __str__(self):
         name = type(self).__name__
@@ -79,13 +87,16 @@ class PixelData:
             self.size = img.get_size()
             bits = img.get_bitsize()
             m = "RGB" if bits == 24 else "RGBA" if bits == 32 else None
+            self._debug("pygame.image.tostring")
             self._data = pygame.image.tostring(img, m)
         else: # Pillow image
             self.size = img.size
             m = img.mode
             if m not in rgb:
                 m = rgb[0]
+                self._debug("PIL.Image.convert")
                 img = img.convert(m)
+            self._debug("PIL.Image.tobytes")
             self._data = img.tobytes()
         if m in rgb: self.mode = m
         else: raise NotImplementedError("Only RGB and RGBA modes are supported")
@@ -95,12 +106,14 @@ class PixelData:
 
     def compress(self):
         if not self.compressed:
+            self._debug("PixelData.compress")
             self._data = self.codec.compress(self._data)
             self.compressed = True
         return self
 
     def decompress(self):
         if self.compressed:
+            self._debug("PixelData.decompress")
             self._data = self.codec.decompress(self._data)
             self.compressed = False
         return self
@@ -134,6 +147,7 @@ class PixelData:
         "Convert raw data to an image using the function provided"
         data = self._data
         if self.compressed: data = self.codec.decompress(data)
+        self._debug(fn.__name__)
         return fn(data, self.size, self.mode)
 
     @property
@@ -144,6 +158,7 @@ class PixelData:
 
     @staticmethod
     def _frombytes(d, s, m):
+        PixelData._debug("PIL.Image.frombytes")
         return sys.modules["PIL.Image"].frombytes(m, s, d)
 
     @property
@@ -825,7 +840,7 @@ class Canvas(Graphic):
 
     @bg.setter
     def bg(self, bg): self._setBg(bg)
-    
+
     def _setBg(self, bg):
         t = type(bg)
         if t is str: bg = pygame.Color(bg)
@@ -1094,6 +1109,8 @@ class Sketch(Canvas):
         self._setBg(bg)
         if self._fixedAspect and hasattr(bg, "aspectRatio"):
             self._fixedAspect = bg.aspectRatio
+            size = self.size
+            self.resize(self._aspectSize(size, size))
         if self.dirtyRegions is not None:
             self.dirtyRegions = [pygame.Rect((0,0), self._size)]
 

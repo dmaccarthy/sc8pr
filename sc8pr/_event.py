@@ -19,7 +19,7 @@ import pygame
 
 class EventManager:
     "Process events (except VIDEORESIZE) from the pygame event queue"
-    debug = False
+    debug = 0
 
     def __init__(self, sk):
         self.sk = sk
@@ -29,6 +29,7 @@ class EventManager:
 
     def dispatch(self, ev):
         "Process one pygame event"
+        if self.debug: print("Procesing  :", pygame.event.event_name(ev.type) if self.debug == 1 else ev)
 
         # Encapsulate mouse and keyboard events as sketch attributes
         sk = self.sk
@@ -109,7 +110,8 @@ class EventManager:
         setattr(ev, "handler", eventName)
         current = _find(path, eventName)
         handle = current is not None
-        if self.debug: print("Handling  :" if handle else "No handler:", ev)
+        if self.debug:
+            print("Handling  :" if handle else "No handler:", pygame.event.event_name(ev.type) if self.debug == 1 else ev)
         if handle: getattr(current, eventName)(ev)
 
     def _dragRelease(self, ev):
