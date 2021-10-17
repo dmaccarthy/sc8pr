@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -52,6 +52,7 @@ class EventManager:
 
         # Call sk.onevent
         if hasattr(sk, "onevent"):
+            setattr(ev, "handler", None)
             if sk.onevent(ev): return
 
         # Send non-mouse and non-keyboard events
@@ -100,7 +101,7 @@ class EventManager:
 
         # Call sk.onhandled
         if hasattr(sk, "onhandled"):
-            delattr(ev, "target")
+#             delattr(ev, "target")  # Removed!!!
             sk.onhandled(ev)
 
     def handle(self, path, eventName, ev):

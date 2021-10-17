@@ -3,79 +3,83 @@ sc8pr 2.2.dev...
 *   = Change documented
 **  = No documentation required
 *** = Not added to documentation
+****= Experimental
 !!! = In progress
 
-* Fix bug where BLUR event does not fire when focus changes while the focussed graphic is being dragged
-* Move 'cover' method from 'Sketch' class to 'Canvas'
-*** Add FOCUS event and 'Graphic.focus' method; add; 'trigger' argument to 'Graphic.blur'
-* DRAG and RELEASE events apply to Sketch
-*** Add 'Sketch.resizeTrigger' to trigger 'onresize' handler for programmatic resizing
-* Add 'hoverable' property to Graphic class and add 'includeAll' argument to 'Canvas.objectAt'
-* Allow 'padding' argument of 'util.style' to be a 2-tuple with different x and y values
-* Fix delay on moving 'TextInput' cursor after CLICK
-** Allow clipboard paste into text input
-* Add 'TextInput.scroll' method as default 'ondraw' event handler
-** Add support for selection, copy, cut, and paste operations in 'TextInput'
-*** Add 'TextInput.blurAction'
-*** Add 'TextInputCanvas' class and call 'tk.getClipboard'
-* Change 'MessageBox' text input to 'TextInputCanvas'
+
+*** Add 'geom.smallAngle' and 'geom.shiftAlongNormal'
 *** Add 'Slider.methodNames'
-** Drag slider knob from any point rather than only the center
-** Default knob size based on number of steps
-* Add 'Canvas.flatten'
-*** Add 'Canvas.scroll' and 'Canvas.scrollTo' methods, SCROLL event
-*** Standardize attributes (target, focus, hover, handler) for sc8pr events
+*** 'Video.clip' accepts negative 'start' and 'end' arguments
+*** 'Video.__getitem__' accepts slices and calls 'Video.clip'
+*** Add 'Video' methods 'splice', 'info', '__add__', 'effect', 'effectInPlace', 'play'
+*** Add 'TextInputCanvas' class and call 'tk.getClipboard'
+*** Add 'TextInput.blurAction'
+*** Add 'Image.crop', 'Image.flip', and 'Image.cut'
+*** Add 'Image.autocrop' and 'util.autocrop' (depends on pygame.surfarray -> numpy)
+*** Allow 'Canvas.__isub__' to accept a string; add 'Canvas.removeItems'
+*** Add 'Canvas.clipArea', 'Canvas.resizeContent', 'Canvas.icons, 'Canvas.iconSize'
+*** Add FOCUS event and 'Graphic.focus' method; add; 'trigger' argument to 'Graphic.blur'
+*** Add 'Ellipse' and 'Arc' classes to 'sc8pr.shape'
+*** Create 'util.circle_intersect'
+*** Add 'Sketch.resizeTrigger' to trigger 'onresize' handler for programmatic resizing
 *** Add 'scrollable' property and 'iconofy'/'deiconify' methods to 'Graphic' class
 *** Add 'sc8pr.gui.scroll' and 'sc8pr.gui.tk' modules
-*** Add 'sc8pr.robot.gui' module
-*** Add 'LATEX_URL', 'LATEX_FMT', 'latex_url' to 'sc8pr.misc.webcache'
-*** 'WebCache' does not overwrite existing cache file if URL is different
-** Fix blit location bug in 'Canvas.snapshot'
-* Sync video capture when sketch does not run at nominal frame rate
-* Add 'util.modKeys'
-* Add 'invert' parameter to 'misc.plot.coordTr'
-* Allow assignment to canvas by layer: cv[layer] = gr
-** Fix minor bug with 'Sketch.caption' getter
-*** Add 'Ellipse' and 'Arc' classes to 'sc8pr.shape'
-* Add 'sprite.onreset' event, called by 'sprite.ondraw'
-*** Add 'Video' methods 'splice', 'info', '__add__', 'effect', 'effectInPlace', 'play'
-*** 'Video.clip' accepts negative 'start' and 'end' arguments
-* 'CostumeImage.costumeTime' may be negative for reverse playback
-*** 'Plot' constructor can take an object with 'size' attribute in place of a size literal
-*** 'Plot.clockwise' and 'Plot.units' properties
-*** Add 'geom.smallAngle' and 'geom.shiftAlongNormal'
-*** Add 'Graphic.scale'
-*** Fix bug in 'Canvas.__init__'
-*** Add 'sc8pr.plot' package
-*** Add additional 'Graphic' and 'Canvas' methods to support new plotting/scrolling package
-*** Add 'Canvas.clipArea', 'Canvas.resizeContent', 'Canvas.icons, 'Canvas.iconSize'
-*** Allow 'Canvas.__isub__' to accept a string; add 'Canvas.removeItems'
-* Add 'util.mix'
-* Add 'sc8pr.misc.table' module
-* Replace 'Canvas.grid' by 'Table.grid'
-*** Create 'util.circle_intersect'
-*** Add 'QCircle' and make 'Circle' faster drawing
-* Modify 'sc8pr.gui.dialog'
-* Create Dialog base class in 'sc8pr.gui.dialog'
-*** Add 'Image.autocrop' and 'util.autocrop' (depends on pygame.surfarray -> numpy)
-* Fire all DRAW events after drawing the entire sketch is complete.
-** Fix divide-by-zero in 'shape.Line' when length is 0
-*** Add 'sc8pr.misc.effect.FastDissolve'
-*** Change 'deleteRect' argument default to False in 'Graphic.remove' and 'Renderable.remove'
-* Change CLICK event to MOUSEDOWN and implement a new CLICK event (after MOUSEUP only when on the same item); affects GUI controls that handle MOUSEDOWN
-*** Add 'plot.shape.PLine'
-*** Add 'Image.crop', 'Image.flip', and 'Image.cut'
-*** 'Video.__getitem__' accepts slices and calls 'Video.clip'
-* Add 'Video.convert_alpha'
-* Normalize examples to use 'play' as name of main function
-** Add 'sc8pr.examples.vector2d'
 *** Add 'robot.gyroSample' and 'robot.gyroChange' in 'sc8pr.robot.arena'
-*** Add 'sc8pr.misc.hsv.hsvBox'
+*** 'WebCache' does not overwrite existing cache file if URL is different
+*** Add 'LATEX_URL', 'LATEX_FMT', 'latex_url' to 'sc8pr.misc.webcache'
+*** 'Plot.clockwise' and 'Plot.units' properties
+*** 'Plot' constructor can take an object with 'size' attribute in place of a size literal
+*** Add 'QCircle' and make 'Circle' faster drawing
+
+
+** Fix minor bug with 'Sketch.caption' getter
+** Fix divide-by-zero in 'shape.Line' when length is 0
+** Fix bug in 'Canvas.__init__'
+** Fix blit location bug in 'Canvas.snapshot'
+** Drag slider knob from any point rather than only the center
+** Default knob size based on number of steps
+** Allow clipboard paste into text input
+** Add support for selection, copy, cut, and paste operations in 'TextInput'
+** Add 'sc8pr.examples.vector2d'
+* Sync video capture when sketch does not run at nominal frame rate
+* Standardize attributes (target, focus, hover, handler) for sc8pr events
+* Replace 'Canvas.grid' by 'Table.grid'
+* Normalize examples to use 'play' as name of main function
 * Move Grabber and ImageIO classes to sc8pr.misc.media
-** Re-do ImageIO class
 * FFReader and FFWriter classes
-*** Add 'ffmpeg_meta' attribute to video
-*** Ignore collisions for sprites with no 'rect' attribute
+* Move 'cover' method from 'Sketch' class to 'Canvas'
+* Modify 'sc8pr.gui.dialog'
+* Ignore collisions for sprites with no 'rect' attribute
+* Fix delay on moving 'TextInput' cursor after CLICK
+* Fix bug where BLUR event does not fire when focus changes while the focussed graphic is being dragged
+* Fire all DRAW events after drawing the entire sketch is complete.
+* DRAG and RELEASE events apply to Sketch
+* Create Dialog base class in 'sc8pr.gui.dialog'
+* 'CostumeImage.costumeTime' may be negative for reverse playback
+* Change 'MessageBox' text input to 'TextInputCanvas'
+* Change 'deleteRect' argument default to False in 'Graphic.remove' and 'Renderable.remove'
+* Change CLICK event to MOUSEDOWN and implement a new CLICK event (after MOUSEUP only when on the same item); affects GUI controls that handle MOUSEDOWN
+* Allow 'padding' argument of 'util.style' to be a 2-tuple with different x and y values
+* Allow assignment to canvas by layer: cv[layer] = gr
+* Add 'Video.convert_alpha'
+* Add 'util.modKeys'
+* Add 'util.mix'
+* Add 'TextInput.scroll' method as default 'ondraw' event handler
+* Add 'sprite.onreset' event, called by 'sprite.ondraw'
+* Add 'sc8pr.robot.gui' module
+* Add 'sc8pr.misc.table' module
+* Add 'sc8pr.misc.hsv.hsvBox'
+* Add 'sc8pr.misc.effect.FastDissolve'
 * Add 'PixelData.pil, 'Image.png' and 'Image.jpg' properties
+* Add 'invert' parameter to 'misc.plot.coordTr'
+* Add 'hoverable' property to Graphic class and add 'includeAll' argument to 'Canvas.objectAt'
+* Add 'Graphic.scale'
+* Add 'Canvas.flatten'
+
+
+**** Add 'sc8pr.plot' package
+**** Add 'plot.shape.PLine'
+**** Add 'Canvas.scroll' and 'Canvas.scrollTo' methods, SCROLL event
+**** Add additional 'Graphic' and 'Canvas' methods to support new plotting/scrolling package
 
 !!! Add 'util.borderRadius'

@@ -30,7 +30,7 @@ class Robot(sc8pr.robot.Robot):
             if name is None: name = "Robot"
             title = "{} says...".format(name)
         return title
-    
+
     def confirm(self, prompt, title=None, response=True):
         "Synchronous input to the robot brain"
         sk = self.sketch
@@ -39,7 +39,7 @@ class Robot(sc8pr.robot.Robot):
         mb.config(pos=sk.center).setCanvas(sk)
         while mb.result is None: self.updateSensors()
         return mb.result
-    
+
     def textinput(self, prompt, title=None, allowCancel=False, num=False):
         "Synchronous input to the robot brain"
         sk = self.sketch
@@ -49,6 +49,6 @@ class Robot(sc8pr.robot.Robot):
         mb.config(pos=sk.center).setCanvas(sk).bind(onaction=nothing)
         while mb.result is None: self.updateSensors()
         return mb.remove().result
-    
+
     def numinput(self, prompt, title=None, allowCancel=False):
         return self.textinput(prompt, title, allowCancel, True)

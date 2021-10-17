@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -31,7 +31,7 @@ def hsva(h, s, v=100, a=100):
 
 def hsvBox(color, hue=None, sat=None, val=None):
     "Check if color is within specified color wheel 'box'"
-    h, s, v = color.hsva[:3]
+    h, s, v = pygame.Color(color).hsva[:3]
     return (hue is None or _between(h, *hue)) and (sat is None
         or _between(s, *sat)) and (val is None or _between(v, *val))
 
