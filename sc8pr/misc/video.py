@@ -23,6 +23,7 @@ from sc8pr.util import hasAlpha, fileExt
 from time import time
 
 def _indx(obj, i):
+    "Correct negative/omitted frame index"
     n = len(obj)
     if i is None: i = n
     elif i < 0: i += n

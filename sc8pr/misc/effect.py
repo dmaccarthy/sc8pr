@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2021 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -26,15 +26,27 @@ from sc8pr.util import rgba, style
 pi2 = 2 * pi
 
 
+def shift(gr, dt):
+    "Shift effect timing"
+    for e in gr.effects:
+        try:
+            t0, t1 = e._time
+            e._time = t0 + dt, t1 + dt
+        except: pass
+    return gr
+
+
 class Effect:
     "Base class for all effects / transitions"
     _time = None
 
     def time(self, fullEffect, noEffect=0):
+        "Set effect timing"
         self._time = fullEffect, noEffect
         return self
 
     def transition(self, img, n):
+        "Apply an effect as a transition in/out"
         if self._time is None: n = 0
         else:
             t0, t1 = self._time
@@ -353,4 +365,4 @@ try:
 
 except:
     FastDissolve = Dissolve
-    print("FastDissolve effect is unavailable; install numpy to fix", file=stderr)
+    print("FastDissolve effect is unavailable; substituting Dissolve", file=stderr)

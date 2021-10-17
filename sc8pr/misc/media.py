@@ -156,13 +156,13 @@ class FFWriter(_FF):
 
     def writePixelData(self, pix):
         "Write a PixelData instance: DOES NOT VERIFY SIZE"
-        PixelData._debug("numpy.array")
+#         PixelData._debug("numpy.array")
         self._io.append_data(self._fd(pix))
         return self
 
     def writePIL(self, pil):
         "Write a PIL image: DOES NOT VERIFY SIZE"
-        PixelData._debug("numpy.array")
+#         PixelData._debug("numpy.array")
         self._io.append_data(modules["numpy"].array(pil))
         return self
 
