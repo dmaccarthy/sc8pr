@@ -13,7 +13,7 @@ An educational programming package for [Python 3.4+](https://www.python.org). In
 * curve plotting
 * robotics simulator
 
-For more information, please see the [documentation](http://dmaccarthy.github.io/sc8pr/).
+For more information, please see the [tutorial and reference](http://dmaccarthy.github.io/sc8pr/).
 
 # Installation
 
@@ -32,7 +32,7 @@ Development version (2.2.x):
 pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
 ```
 
-Please note that currently (2021 October 6), **pygame 1.9** is available on PyPI.org up to Python 3.8 only. Attempting to install an older version of **sc8pr** in Python 3.9 may fail as the **pygame** requirement is unavailable. For Python 3.9, you can use **sc8pr** versions (2.1.4, 2.2.a3) that are compatible with **pygame 2.0**.
+Please note that currently (2021 October 6), **pygame 1.9** is available on [PyPI.org](https://pypi.org/project/pygame/) up to Python 3.8 only. Attempting to install an older version of **sc8pr** in Python 3.9 may fail as the **pygame** requirement is unavailable. For Python 3.9, you can use the most recent **sc8pr** versions (2.1.4, 2.2.a3) that accept **pygame 2.0** OR **1.9** as a requirement.
 
 See the documentation for more [detailed instructions](https://dmaccarthy.github.io/sc8pr/?inst).
 
