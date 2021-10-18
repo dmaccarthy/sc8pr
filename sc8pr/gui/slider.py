@@ -50,8 +50,8 @@ class Slider(Canvas):
     _lastButton = None
     focusable = True
     allowButton = 1, 4, 5
-    methodNames = ["Click", "Scroll", "Drag", "Key"]
-
+    _methodNames = ["Click", "Scroll", "Drag", "Key"]
+    
     def __init__(self, size=(128,16), knob="grey", lower=0, upper=1, steps=0):
         super().__init__(size)
         self.steps = steps
@@ -65,6 +65,9 @@ class Slider(Canvas):
         self.lower = lower
         self.upper = upper
         self.val = lower
+
+    @property
+    def methodNames(self): return self._methodNames
 
     def _knobSize(self):
         w, h = self.size

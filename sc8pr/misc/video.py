@@ -211,7 +211,7 @@ class Video(Sprite):
             start = _indx(self, start)
             end = _indx(self, end)
             start = range(start, end, 1 if end > start else -1)
-        vid._costumes = [costumes[i] for i in start]
+        vid._costumes = [costumes[_indx(self, i)] for i in start]
         vid.meta = dict(self.meta)
         return vid
 

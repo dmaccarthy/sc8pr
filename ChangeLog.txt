@@ -8,27 +8,20 @@ sc8pr 2.2.dev...
 
 
 *** Add 'geom.smallAngle' and 'geom.shiftAlongNormal'
-*** Add 'Slider.methodNames'
-*** 'Video.clip' accepts negative 'start' and 'end' arguments
-*** 'Video.__getitem__' accepts slices and calls 'Video.clip'
 *** Add 'Video' methods 'splice', 'info', '__add__', 'effect', 'effectInPlace', 'play'
 *** Add 'TextInputCanvas' class and call 'tk.getClipboard'
 *** Add 'TextInput.blurAction'
 *** Add 'Image.crop', 'Image.flip', and 'Image.cut'
 *** Add 'Image.autocrop' and 'util.autocrop' (depends on pygame.surfarray -> numpy)
-*** Allow 'Canvas.__isub__' to accept a string; add 'Canvas.removeItems'
-*** Add 'Canvas.clipArea', 'Canvas.resizeContent', 'Canvas.icons, 'Canvas.iconSize'
+*** Add 'Canvas.icons, 'Canvas.iconSize'
 *** Add FOCUS event and 'Graphic.focus' method; add; 'trigger' argument to 'Graphic.blur'
 *** Add 'Ellipse' and 'Arc' classes to 'sc8pr.shape'
 *** Create 'util.circle_intersect'
-*** Add 'Sketch.resizeTrigger' to trigger 'onresize' handler for programmatic resizing
 *** Add 'scrollable' property and 'iconofy'/'deiconify' methods to 'Graphic' class
 *** Add 'sc8pr.gui.scroll' and 'sc8pr.gui.tk' modules
 *** Add 'robot.gyroSample' and 'robot.gyroChange' in 'sc8pr.robot.arena'
 *** 'WebCache' does not overwrite existing cache file if URL is different
 *** Add 'LATEX_URL', 'LATEX_FMT', 'latex_url' to 'sc8pr.misc.webcache'
-*** 'Plot.clockwise' and 'Plot.units' properties
-*** 'Plot' constructor can take an object with 'size' attribute in place of a size literal
 *** Add 'QCircle' and make 'Circle' faster drawing
 
 
@@ -41,6 +34,13 @@ sc8pr 2.2.dev...
 ** Allow clipboard paste into text input
 ** Add support for selection, copy, cut, and paste operations in 'TextInput'
 ** Add 'sc8pr.examples.vector2d'
+* Add 'Canvas.clipArea', 'Canvas.resizeContent'
+* Allow 'Canvas.__isub__' to accept a string; add 'Canvas.removeItems'
+* 'Video.__getitem__' accepts slices and calls 'Video.clip'
+* 'Video.clip' accepts negative 'start' and 'end' arguments
+* Add 'Slider.methodNames'
+* 'Plot.clockwise' and 'Plot.units' properties
+* 'Plot' constructor can take an object with 'size' attribute in place of a size literal
 * Sync video capture when sketch does not run at nominal frame rate
 * Standardize attributes (target, focus, hover, handler) for sc8pr events
 * Replace 'Canvas.grid' by 'Table.grid'

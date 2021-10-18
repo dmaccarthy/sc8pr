@@ -781,7 +781,7 @@ class Image(Graphic):
 class Canvas(Graphic):
     _border = rgba("black")
     _scroll = 0, 0
-    clipArea = None
+    _clipArea = None
     weight = 0
     resizeContent = True
     iconSize = 32, 32
@@ -805,6 +805,12 @@ class Canvas(Graphic):
         self._items = []
         self.icons = [] # !!!
         self.bg = bg
+
+    @property
+    def clipArea(self): return self._clipArea
+
+    @clipArea.setter
+    def clipArea(self, r): self._clipArea = pygame.Rect(r)
 
     @property
     def clockwise(self): return True
