@@ -425,33 +425,33 @@ class Graphic:
     def bubble(self, eventName, ev):
         "Pass an event to a different handler"
         self.sketch.evMgr.handle(self, eventName, ev)
-
-    @staticmethod
-    def _deiconify(icon, ev):
-        "Icon 'onclick' handler"
-        icon.icon_restore.deiconify()
-
-    def iconify(self, **kwargs):
-        "Replace a graphic by its icon"
-        cv = self.canvas
-        if self in cv:
-            attr = dict(pos=self.pos, anchor=self.anchor, size=cv.iconSize)
-            attr.update(kwargs)
-            icon = self.icon.config(icon_restore=self, **attr)
-            self.remove()
-            cv += icon.bind(onclick=self._deiconify)
-            cv.icons.append(icon)
-        return self
-
-    def deiconify(self):
-        "Restore a previously iconified graphic"
-        cv = self.canvas
-        icon = self.icon
-        if icon in cv.icons:
-            icon.remove()
-            cv.icons.remove(icon)
-            cv += self
-        return self
+# 
+#     @staticmethod
+#     def _deiconify(icon, ev):
+#         "Icon 'onclick' handler"
+#         icon.icon_restore.deiconify()
+# 
+#     def iconify(self, **kwargs):
+#         "Replace a graphic by its icon"
+#         cv = self.canvas
+#         if self in cv:
+#             attr = dict(pos=self.pos, anchor=self.anchor, size=cv.iconSize)
+#             attr.update(kwargs)
+#             icon = self.icon.config(icon_restore=self, **attr)
+#             self.remove()
+#             cv += icon.bind(onclick=self._deiconify)
+#             cv.icons.append(icon)
+#         return self
+# 
+#     def deiconify(self):
+#         "Restore a previously iconified graphic"
+#         cv = self.canvas
+#         icon = self.icon
+#         if icon in cv.icons:
+#             icon.remove()
+#             cv.icons.remove(icon)
+#             cv += self
+#         return self
 
     @property
     def timeFactor(self):
@@ -784,7 +784,7 @@ class Canvas(Graphic):
     _clipArea = None
     weight = 0
     resizeContent = True
-    iconSize = 32, 32
+#     iconSize = 32, 32
 
     @staticmethod
     def _px(x): return x
@@ -803,7 +803,7 @@ class Canvas(Graphic):
             size = bg.size
         self._size = size
         self._items = []
-        self.icons = [] # !!!
+#         self.icons = [] # !!!
         self.bg = bg
 
     @property
