@@ -7,6 +7,7 @@ sc8pr 2.2.dev...
 !!! = In progress
 
 
+*** Add 'sc8pr.misc.effect.Pixelate'
 *** Add 'geom.smallAngle' and 'geom.shiftAlongNormal'
 *** Add 'Video' methods 'splice', 'info', '__add__', 'effect', 'effectInPlace', 'play'
 *** Add 'TextInputCanvas' class and call 'tk.getClipboard'

@@ -347,6 +347,31 @@ class ClockHand(MathEffect):
             return h if n >= 0.5 else (y + x * tan((n - 0.25) * pi2))
 
 
+class Pixelate(Effect):
+
+    def __init__(self, size=64, linear=True):
+        if linear: # Better for smaller squares?
+            self._calc = lambda x: max(1, round((1 - x) * size))
+        else:      # Better for larger squares?
+            self._calc = lambda x: round(size ** (1 - x))
+
+    def apply(self, img, n=0):
+        if n >= 1: return img
+        srf, (w, h) = self.srfSize(img, True)
+        r = pygame.Rect(0, 0, w, h)
+        n = self._calc(n)
+        dx = n - (w % n) // 2
+        dy = n - (h % n) // 2
+        for x in range(0, w + n, n):
+            for y in range(0, h + n, n):
+                clip = r.clip(x - dx, y - dy, n, n)
+                if clip.width and clip.height:
+                    subsrf = srf.subsurface(clip)
+                    c = pygame.transform.average_color(subsrf)
+                    subsrf.fill(c)
+        return srf
+
+
 try:
     from pygame.surfarray import pixels_alpha
     

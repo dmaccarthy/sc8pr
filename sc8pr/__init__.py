@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 2, 2, "a4"
+version = 2, 2, "5dev"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import sys, struct, zlib, io
