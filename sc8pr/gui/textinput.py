@@ -317,7 +317,8 @@ class TextInputCanvas(Canvas):
 
     def __init__(self, width=None, data="", prompt=None, center=False, vertical=False, **text):
         ti = self._ti(vertical, data, prompt, **text)
-        super().__init__((width if width else ti.width, ti.height))
+        size = (ti.width, width if width else ti.height) if vertical else (width if width else ti.width, ti.height)
+        super().__init__(size)
         cfg = {"anchor":CENTER, "pos":self.center} if center \
             else {"anchor":TOP, "pos":(self.center[0], 0)} if vertical \
             else {"anchor":LEFT, "pos":(0, self.center[1])}

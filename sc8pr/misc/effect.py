@@ -358,17 +358,18 @@ class Pixelate(Effect):
     def apply(self, img, n=0):
         if n >= 1: return img
         srf, (w, h) = self.srfSize(img, True)
-        r = pygame.Rect(0, 0, w, h)
         n = self._calc(n)
-        dx = n - (w % n) // 2
-        dy = n - (h % n) // 2
-        for x in range(0, w + n, n):
-            for y in range(0, h + n, n):
-                clip = r.clip(x - dx, y - dy, n, n)
-                if clip.width and clip.height:
-                    subsrf = srf.subsurface(clip)
-                    c = pygame.transform.average_color(subsrf)
-                    subsrf.fill(c)
+        if n > 1:
+            r = pygame.Rect(0, 0, w, h)
+            dx = n - (w % n) // 2
+            dy = n - (h % n) // 2
+            for x in range(0, w + n, n):
+                for y in range(0, h + n, n):
+                    clip = r.clip(x - dx, y - dy, n, n)
+                    if clip.width and clip.height:
+                        subsrf = srf.subsurface(clip)
+                        c = pygame.transform.average_color(subsrf)
+                        subsrf.fill(c)
         return srf
 
 

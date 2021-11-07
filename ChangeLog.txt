@@ -7,25 +7,15 @@ sc8pr 2.2.dev...
 !!! = In progress
 
 
-*** Add 'sc8pr.misc.effect.Pixelate'
-*** Add 'geom.smallAngle' and 'geom.shiftAlongNormal'
-*** Add 'Video' methods 'splice', 'info', '__add__', 'effect', 'effectInPlace', 'play'
-*** Add 'TextInputCanvas' class and call 'tk.getClipboard'
-*** Add 'TextInput.blurAction'
-*** Add 'Image.crop', 'Image.flip', and 'Image.cut'
-*** Add 'Image.autocrop' and 'util.autocrop' (depends on pygame.surfarray -> numpy)
-*** Add 'Canvas.icons, 'Canvas.iconSize'
 *** Add FOCUS event and 'Graphic.focus' method; add; 'trigger' argument to 'Graphic.blur'
 *** Add 'Ellipse' and 'Arc' classes to 'sc8pr.shape'
-*** Create 'util.circle_intersect'
-*** Add 'scrollable' property and 'iconofy'/'deiconify' methods to 'Graphic' class
-*** Add 'sc8pr.gui.scroll' and 'sc8pr.gui.tk' modules
-*** Add 'robot.gyroSample' and 'robot.gyroChange' in 'sc8pr.robot.arena'
 *** 'WebCache' does not overwrite existing cache file if URL is different
 *** Add 'LATEX_URL', 'LATEX_FMT', 'latex_url' to 'sc8pr.misc.webcache'
 *** Add 'QCircle' and make 'Circle' faster drawing
+*** Robot simulations
 
 
+?? Add 'Graphic.scrollable' property
 ** Fix minor bug with 'Sketch.caption' getter
 ** Fix divide-by-zero in 'shape.Line' when length is 0
 ** Fix bug in 'Canvas.__init__'
@@ -35,6 +25,7 @@ sc8pr 2.2.dev...
 ** Allow clipboard paste into text input
 ** Add support for selection, copy, cut, and paste operations in 'TextInput'
 ** Add 'sc8pr.examples.vector2d'
+** TextInput use tk clipboard
 * Add 'Canvas.clipArea', 'Canvas.resizeContent'
 * Allow 'Canvas.__isub__' to accept a string; add 'Canvas.removeItems'
 * 'Video.__getitem__' accepts slices and calls 'Video.clip'
@@ -76,11 +67,21 @@ sc8pr 2.2.dev...
 * Add 'hoverable' property to Graphic class and add 'includeAll' argument to 'Canvas.objectAt'
 * Add 'Graphic.scale'
 * Add 'Canvas.flatten'
+* Add 'sc8pr.misc.effect.Pixelate'
+* Add 'geom.smallAngle' and 'geom.shiftAlongNormal'
+* Create 'geom.circle_intersect'
+* Add 'Image.crop', 'Image.flip', and 'Image.cut'
+* Add 'Video' methods 'splice', '__add__', 'effect', 'effectInPlace', 'play'
+* Add 'TextInput.blurAction'
+* Add 'TextInputCanvas' class 
 
 
+**** Add 'sc8pr.gui.tk' module
 **** Add 'sc8pr.plot' package
 **** Add 'plot.shape.PLine'
 **** Add 'Canvas.scroll' and 'Canvas.scrollTo' methods, SCROLL event
 **** Add additional 'Graphic' and 'Canvas' methods to support new plotting/scrolling package
+**** Add 'Canvas.icons, 'Canvas.iconSize'
+**** Add 'iconofy'/'deiconify' methods to 'Graphic' class
 
 !!! Add 'util.borderRadius'
