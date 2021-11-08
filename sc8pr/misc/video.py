@@ -114,13 +114,17 @@ class Video(Sprite):
             self._current = n, img
         return img.config(size=self.size, angle=self.angle)
 
-    def splice(self, i, n=0, vid=None):
+    def splice(self, i, n=0, vid=[]):
         "Insert and/or remove a clip"
         i = _indx(self, i)
         c = self._costumes
+        if not isinstance(vid, Video):
+            clip = Video()
+            for v in vid: clip += v
+            vid = clip
         if i == len(c): self += vid
         else:
-            c[i:i+n] = [] is vid if None else vid._costumes if isinstance(vid, Video) else vid
+            c[i:i+n] = vid._costumes
             if not hasattr(self, "_size") and len(self):
                 self._size = c[0].size
         return self
