@@ -144,7 +144,7 @@ class FFWriter(_FF):
 
     def write(self, srf):
         "Write one frame (surface) to the video file, resizing if necessary"
-        if type(img) is not pygame.Surface:
+        if type(srf) is not pygame.Surface:
             try: srf = srf.image
             except: srf = Image(srf).image
         size = srf.get_size()
@@ -165,6 +165,8 @@ class FFWriter(_FF):
 #         PixelData._debug("numpy.array")
         self._io.append_data(modules["numpy"].array(pil))
         return self
+
+    def capture(self, sk): self.write(sk)
 
     @staticmethod
     def encode(vid, dest=None, fps=None):

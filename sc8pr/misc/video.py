@@ -217,14 +217,14 @@ class Video(Sprite):
 
     def capture(self, sk):
         "Capture the current frame of the sketch"
-        try: n = self.interval
-        except: self.interval = n = 1
-        if sk.frameCount % n == 0:
-            self += sk
-            if self.frameTimes is not None:
-                t = time()
-                if len(self.frameTimes) == 0: self._start = t
-                self.frameTimes.append(t - self._start)
+#         try: n = self.interval
+#         except: self.interval = n = 1
+#         if sk.frameCount % n == 0:
+        self += sk
+        if self.frameTimes is not None:
+            t = time()
+            if len(self.frameTimes) == 0: self._start = t
+            self.frameTimes.append(t - self._start)
 
     def sync(self, fps=30, original=None):
         "Use frameTimes data to correct for dropped frames"

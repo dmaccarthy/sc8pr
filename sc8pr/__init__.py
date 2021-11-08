@@ -1240,7 +1240,8 @@ class Sketch(Canvas):
                 self._clock.tick(self.frameRate)
                 if flip: _pd.flip()
                 else: _pd.update(br)
-                if self.capture is not None: self.capture.capture(self)
+#                 if self.capture is not None: self.capture.capture(self)
+                self._capture()
                 for gr in self.ondrawList:
                     try: gr.ondraw()
                     except: logError()
@@ -1252,6 +1253,14 @@ class Sketch(Canvas):
         mod = sys.modules.get("sc8pr.text")
         if mod: mod.Font.dumpCache()
         return self
+
+    def _capture(self):
+        "Call screen capture method when recording"
+        c = self.capture
+        if c is not None:
+            i = getattr(c, "interval", 1)
+            if self.frameCount % i == 0:
+                c.capture(self)
 
     def _evHandle(self):
         "Handle events in the pygame event queue"
