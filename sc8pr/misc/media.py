@@ -195,14 +195,21 @@ class Movie(Image):
     onreset = None
     
     def __init__(self, src, interval=None, **kwargs):
-        self.reader = FFReader(src, **kwargs)
-        self._t = None
-        self.paused = False
+        self._reader = lambda: FFReader(src, **kwargs)
+        self.restart()
         try:
             self.interval = interval if interval else 60 / self.reader.meta["fps"]
         except:
             self.interval = 1
+
+    def restart(self):
+        try: self.reader.close()
+        except: pass
+        self.paused = False
+        self._t = None
+        self.reader = self._reader()
         self.nextFrame()
+        return self
 
     def nextFrame(self):
         ffr = self.reader
@@ -227,7 +234,7 @@ class Movie(Image):
                 self._t = t = n - 1 + self.interval
             if n >= t:
                 self.nextFrame()
-                self._t = t + self.interval
+                self._t = max(n, t + self.interval)
 
 
 class MovieSprite(Movie, BaseSprite):
