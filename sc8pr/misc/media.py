@@ -22,7 +22,7 @@ Additional features for encoding and decoding media using additional packages
 
 
 import os, struct, pygame
-from sc8pr import PixelData, Graphic, Image, version
+from sc8pr import PixelData, Image, BaseSprite
 from sc8pr.misc.video import Video
 from sc8pr.misc.s8v import S8Vfile
 from sys import modules
@@ -188,3 +188,50 @@ class FFWriter(_FF):
                         if f.size != size:
                             f = PixelData(f.img.config(size=size), True)
                         ffw._io.append_data(ffw._fd(f))
+
+
+class Movie(Image):
+    "Graphics subclass for playing movies by reading frames as needed"
+    onreset = None
+    
+    def __init__(self, src, interval=None, **kwargs):
+        self.reader = FFReader(src, **kwargs)
+        self._t = None
+        self.paused = False
+        try:
+            self.interval = interval if interval else 60 / self.reader.meta["fps"]
+        except:
+            self.interval = 1
+        self.nextFrame()
+
+    def nextFrame(self):
+        ffr = self.reader
+        if ffr:
+            try:
+                try: size = self._size
+                except: size = None
+                srf = ffr.read(1)._costumes[0].srf.convert_alpha()
+                super().__init__(srf)
+                if size: self.config(size=size)
+            except:
+                ffr.close()
+                self.reader = None
+                self.paused = True
+                if self.onreset: self.onreset()
+
+    def ondraw(self):
+        if self.reader and not self.paused:
+            n = self.sketch.frameCount
+            t = self._t
+            if t is None:
+                self._t = t = n - 1 + self.interval
+            if n >= t:
+                self.nextFrame()
+                self._t = t + self.interval
+
+
+class MovieSprite(Movie, BaseSprite):
+
+    def ondraw(self):
+        Movie.ondraw(self)
+        BaseSprite.ondraw(self)

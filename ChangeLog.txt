@@ -25,7 +25,9 @@ sc8pr 2.2.dev...
 ** Allow clipboard paste into text input
 ** Add support for selection, copy, cut, and paste operations in 'TextInput'
 ** Add 'sc8pr.examples.vector2d'
+** Move interval check from 'Video.capture' to 'Sketch._capture'
 ** TextInput use tk clipboard
+** Remove 'ImageIO' class
 * Add 'Canvas.clipArea', 'Canvas.resizeContent'
 * Allow 'Canvas.__isub__' to accept a string; add 'Canvas.removeItems'
 * 'Video.__getitem__' accepts slices and calls 'Video.clip'
@@ -37,8 +39,9 @@ sc8pr 2.2.dev...
 * Standardize attributes (target, focus, hover, handler) for sc8pr events
 * Replace 'Canvas.grid' by 'Table.grid'
 * Normalize examples to use 'play' as name of main function
-* Move Grabber and ImageIO classes to sc8pr.misc.media
-* FFReader and FFWriter classes
+* Move Grabber class to 'sc8pr.misc.media'
+* Add 'FFReader', 'FFWriter', 'Movie' and 'MovieSprite' classes to 'sc8pr.misc.media'
+* Allow 'FFWriter' as 'Sketch.capture'
 * Move 'cover' method from 'Sketch' class to 'Canvas'
 * Modify 'sc8pr.gui.dialog'
 * Ignore collisions for sprites with no 'rect' attribute

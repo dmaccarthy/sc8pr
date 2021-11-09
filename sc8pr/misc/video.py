@@ -116,12 +116,9 @@ class Video(Sprite):
 
     def splice(self, i, n=0, vid=[]):
         "Insert and/or remove a clip"
+        if not isinstance(vid, Video): vid = Video(vid)
         i = _indx(self, i)
         c = self._costumes
-        if not isinstance(vid, Video):
-            clip = Video()
-            for v in vid: clip += v
-            vid = clip
         if i == len(c): self += vid
         else:
             c[i:i+n] = vid._costumes
