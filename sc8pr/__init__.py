@@ -515,6 +515,7 @@ class Renderable(Graphic):
     def remove(self, deleteRect=False): # !!!
         super().remove(deleteRect)
         self.stale = True
+        return self
 
     @property
     def avgColor(self):

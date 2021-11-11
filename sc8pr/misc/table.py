@@ -61,7 +61,7 @@ class Table(Canvas):
             self += Polygon(pts).config(**kwargs)
         return self
 
-    def bottomBoxes(self):
+    def lowerBoxes(self):
         "Move all Polygon instances to the lowest layers"
         boxes = list(self.instOf(Polygon))
         boxes.reverse()
