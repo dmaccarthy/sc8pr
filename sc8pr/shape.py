@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -429,9 +429,8 @@ class Ellipse(Shape):
         r = (0, 0), self._size
         if w:
             if isinstance(self, Arc):
-                a = self.arc
-                a = [-x * DEG for x in a]
-                pygame.draw.arc(srf, self._stroke, r, a[0], a[1], w)
+                a = [-x * DEG for x in self.arc]
+                pygame.draw.arc(srf, self._stroke, r, a[1], a[0], w)
             else:
                 pygame.draw.ellipse(srf, self._stroke, r)
         if f:

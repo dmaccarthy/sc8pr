@@ -7,11 +7,7 @@ sc8pr 2.2.dev...
 !!! = In progress
 
 
-*** Add FOCUS event and 'Graphic.focus' method; add; 'trigger' argument to 'Graphic.blur'
-*** Add 'Ellipse' and 'Arc' classes to 'sc8pr.shape'
 *** 'WebCache' does not overwrite existing cache file if URL is different
-*** Add 'LATEX_URL', 'LATEX_FMT', 'latex_url' to 'sc8pr.misc.webcache'
-*** Add 'QCircle' and make 'Circle' faster drawing
 *** Robot simulations
 
 
@@ -78,6 +74,10 @@ sc8pr 2.2.dev...
 * Add 'TextInput.blurAction'
 * Add 'TextInputCanvas' class 
 * Add 'sc8pr.misc.s8v'
+* Add 'QCircle' and make 'Circle' faster drawing
+* Add 'Ellipse' and 'Arc' classes to 'sc8pr.shape'
+* Add FOCUS event and 'Graphic.focus' method; add; 'trigger' argument to 'Graphic.blur'
+* Add 'LATEX_URL', 'LATEX_FMT', 'latex_url' to 'sc8pr.misc.webcache'
 
 
 **** Add 'sc8pr.gui.tk' module
