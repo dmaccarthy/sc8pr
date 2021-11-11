@@ -46,8 +46,6 @@ class S8Vfile:
 
     def append(self, data):
         "Append a PixelData instance to the file"
-#         if type(data) is not bytes:
-#             data = bytes(PixelData(data, True))
         if type(data) is PixelData: data.compress()
         else: data = PixelData(data, True)
         data = bytes(data)
@@ -77,3 +75,4 @@ class S8Vfile:
     def __enter__(self): return self
     def __exit__(self, *args): self._zf.close()
     close = __exit__
+    capture = append
