@@ -24,7 +24,14 @@ from sc8pr import PixelData, version
 class S8Vfile:
     "Read and append compressed PixelData binary data to an S8V ZipFile"
 
-    def __init__(self, fn, mode="r" , **meta):
+    @staticmethod
+    def info(fn):
+        with ZipFile(fn, "r") as zf:
+            try: meta = loads(str(zf.read("metadata"), encoding="utf-8"))
+            except: meta = {}
+        return meta
+
+    def __init__(self, fn, mode="r", **meta):
         self._zf = ZipFile(fn, mode)
         self.frames = 0
         try:
