@@ -115,12 +115,12 @@ class FFReader(_FF):
     @staticmethod
     def convert(src, dest=None, progress=None, **kwargs):
         "Read a movie and write it as an S8V file"
-        with FFReader(src, **kwargs) as src:
+        with FFReader(src, **kwargs) as ffr:
             if dest is None: dest = src + ".s8v"
-            with S8Vfile(dest, "x", fps=src.meta["fps"]) as s8v:
+            with S8Vfile(dest, "x", frameRate=ffr.meta["fps"]) as s8v:
                 n = 0
-                f = src.estimateFrames()
-                for frame in src:
+                f = ffr.estimateFrames()
+                for frame in ffr:
                     s8v.append(bytes(PixelData(frame, True)))
                     n += 1
                     if progress: progress(n, f)
@@ -156,27 +156,26 @@ class FFWriter(_FF):
 
     def writePixelData(self, pix):
         "Write a PixelData instance: DOES NOT VERIFY SIZE"
-#         PixelData._debug("numpy.array")
         self._io.append_data(self._fd(pix))
         return self
 
     def writePIL(self, pil):
         "Write a PIL image: DOES NOT VERIFY SIZE"
-#         PixelData._debug("numpy.array")
         self._io.append_data(modules["numpy"].array(pil))
         return self
 
-    def capture(self, sk): self.write(sk)
+    capture = write
 
     @staticmethod
     def encode(vid, dest=None, fps=None):
         "Encode a Video instance or S8V file using FFmpeg"
         isVid = isinstance(vid, Video)
-        if isVid and fps is None: fps = vid.meta.get("frameRate")
-        if fps is None: fps = 30
+        if fps is None:
+            fps = vid.meta if isVid else S8Vfile.info(vid)
+            fps = fps.get("frameRate")
         if dest is None:
             dest = "movie.mp4" if isVid else vid + ".mp4"
-        with FFWriter(dest, fps) as ffw:
+        with FFWriter(dest, 30 if fps is None else fps) as ffw:
             if isVid:
                 for f in vid.scaleFrames().frames():
                     ffw._io.append_data(ffw._fd(f))
@@ -195,29 +194,47 @@ class Movie(Image):
     onreset = None
     
     def __init__(self, src, interval=None, **kwargs):
-        self._reader = lambda: FFReader(src, **kwargs)
+        self._s8v = src.split(".")[-1].lower() == "s8v"
+        if self._s8v:
+            self._reader = lambda: S8Vfile(src)
+        else:
+            self._reader = lambda: FFReader(src, **kwargs)
         self.restart()
         try:
-            self.interval = interval if interval else 60 / self.reader.meta["fps"]
+            fps = self.reader.meta["frameRate" if self._s8v else "fps"]
+            self.interval = interval if interval else 60 / fps
         except:
             self.interval = 1
 
+    def _s8vRead(self, s8v):
+        "Frame reader for S8V format"
+        srf = s8v.read(self._frame).srf
+        self._frame += 1
+        return srf
+
     def restart(self):
+        "Restart the movie from the beginning"
         try: self.reader.close()
         except: pass
         self.paused = False
         self._t = None
         self.reader = self._reader()
+        if self._s8v:
+            self._frame = 0
+            self._read = lambda r: self._s8vRead(r)
+        else:
+            self._read = lambda r: r.read(1)._costumes[0].srf.convert_alpha()
         self.nextFrame()
         return self
 
     def nextFrame(self):
+        "Load the next frame of the movie"
         ffr = self.reader
         if ffr:
             try:
                 try: size = self._size
                 except: size = None
-                srf = ffr.read(1)._costumes[0].srf.convert_alpha()
+                srf = self._read(ffr)
                 super().__init__(srf)
                 if size: self.config(size=size)
             except:
@@ -227,6 +244,7 @@ class Movie(Image):
                 if self.onreset: self.onreset()
 
     def ondraw(self):
+        "Update movie after each sketch drawing cylce"
         if self.reader and not self.paused:
             n = self.sketch.frameCount
             t = self._t
