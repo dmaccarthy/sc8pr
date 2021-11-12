@@ -19,13 +19,13 @@
 
 from math import pi, sin, cos, atan2
 from random import randint, uniform, choice, shuffle
-from sc8pr import Image, Canvas, BOTH
+from sc8pr import Sketch, Image, Canvas, BOTH
 from sc8pr.geom import shiftAlongNormal, angleDifference, DEG
 from sc8pr.shape import Polygon, Line, Circle
 from sc8pr.util import rangef
 from sc8pr.robot.gui import Robot as _Robot
 from sc8pr.sprite import physics, Sprite
-from sc8pr.plot import PSketch, PCanvas
+# from sc8pr.plot import PSketch
 
 
 class Robot(_Robot):
@@ -80,7 +80,8 @@ def quilt(sk):
 
 def curve(size, color="blue"):
     size = getattr(size, "size", size)
-    cv = PCanvas(size, [-4, 4, -2, 2]).config(bg="white")
+#     cv = PCanvas(size, [-4, 4, -2, 2]).config(bg="white")
+    cv = Canvas(size).config(bg="white").attachCS([-4, 4, -2, 2])
     c = lambda *x: 2 * size[0] / size[1] * cos(x[0])
     top = [(x, sin(x)) for x in rangef(-pi, pi, pi/40)]
     bot = [shiftAlongNormal(*x, c, -0.08) for x in top]
@@ -89,7 +90,7 @@ def curve(size, color="blue"):
     return cv.snapshot()
 
 
-class BrainSketch(PSketch):
+class BrainSketch(Sketch):
     "Sketch class that binds a robot brain OR attaches a robot remote control"
 
     @staticmethod
@@ -123,50 +124,3 @@ class Arena(BrainSketch):
     @classmethod
     def run(cls, brain=None, pattern=None):
         cls((640,480)).config(brain=brain, pattern=pattern).play("Robot Arena")
-
-
-class ParkingLot(BrainSketch):
-    "Sketch that implements a robot parking challenge"
-
-    def __init__(self, size, brain):
-        self.brain = brain
-        super().__init__(size, [-3, 3, -2, 2])
-        self.config(bg="#f0f0f0")
-
-    def drawLot(self):
-        px = self.px
-        self += Line(px(-2.7, 0), px(2.7, 0)).config(weight=10, stroke="blue")
-        attr = dict(stroke="orange", weight=4)
-        for x in range(-2, 3):
-            self += Line(px(x, 2), px(x, 1)).config(**attr)
-            self += Line(px(x, -2), px(x, -1)).config(**attr)
-        self.flatten()
-        img = Circle(0.4 * self.unit).config(fill="grey", weight=0).snapshot()
-        for x in range(-3, 3):
-            self += Sprite(img).config(pos=px(x + 0.5, 2.36), mass=50, drag=0.02, wrap=0)
-            self += Sprite(img).config(pos=px(x + 0.5, -2.37), mass=50, drag=0.02, wrap=0)
-        return self
-
-    def setup(self):
-        self.drawLot()
-        h = self.height / 4.5
-        attr = dict(height = h, mass = 1, wrap=0)
-        robot = Robot(["#ffd428", "#ff5050"]).config(
-            pos = self.px(uniform(-2, 2), 0), angle = randint(0, 359), **attr)
-        self["Crash"] = self.bindBrain(robot)
-        c = False, False
-        a = 90, 270
-        pos = lambda y: self.px(randint(0, 5) - 2.5, y)
-        br = lambda *x: self.idle if randint(0, 1) == 0 else (lambda x: None)
-        self += Robot(c).bind(brain=br()).config(pos=pos(1.46), angle=choice(a), **attr)
-        self += Robot(c).bind(brain=br()).config(pos=pos(-1.46), angle=choice(a), **attr)
-
-    ondraw = physics
-
-    @staticmethod
-    def idle(r):
-        while r.active: r.updateSensors(0.5)
-
-    @staticmethod
-    def run(brain=None):
-        ParkingLot((640,360), brain).play("Robot Parking Lot", mode=False)

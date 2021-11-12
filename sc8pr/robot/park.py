@@ -28,7 +28,7 @@ class ParkingLot(BrainSketch):
 
     def __init__(self, size, brain):
         self.brain = brain
-        super().__init__(size, [-3, 3, -2, 2])
+        super().__init__(size) #, [-3, 3, -2, 2])
         self.config(bg="#f0f0f0")
 
     def drawLot(self):
@@ -46,7 +46,7 @@ class ParkingLot(BrainSketch):
         return self
 
     def setup(self):
-        self.drawLot()
+        self.attachCS([-3, 3, -2, 2]).drawLot()
         h = self.height / 4.5
         attr = dict(height = h, mass = 1, wrap=0)
         robot = Robot(["#ffd428", "#ff5050"]).config(

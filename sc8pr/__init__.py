@@ -20,11 +20,12 @@ version = 2, 2, "5dev"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import sys, struct, zlib, io
-from math import hypot
+from math import hypot, sqrt
 import pygame
 import pygame.display as _pd
 from pygame.transform import flip as _pyflip
 from sc8pr._event import EventManager
+from sc8pr._cs import _makeCS
 from sc8pr.geom import transform2d, positiveAngle, delta, sigma
 from sc8pr.util import CachedSurface, style, logError, sc8prData, tile, rgba, drawBorder
 
@@ -57,14 +58,6 @@ WINEXPOSED = getattr(pygame, "WINDOWEXPOSED", None)
 class PixelData:
     "A class for storing, compressing, and converting raw pixel data"
 
-#     debug = None
-# 
-#     @classmethod
-#     def _debug(cls, msg):
-#         if cls.debug is not None:
-#             cls.debug += 1
-#             print(cls.debug, msg)
-
     def __str__(self):
         name = type(self).__name__
         kb = len(self._data) / 1024
@@ -87,16 +80,13 @@ class PixelData:
             self.size = img.get_size()
             bits = img.get_bitsize()
             m = "RGB" if bits == 24 else "RGBA" if bits == 32 else None
-#             self._debug("pygame.image.tostring")
             self._data = pygame.image.tostring(img, m)
         else: # Pillow image
             self.size = img.size
             m = img.mode
             if m not in rgb:
                 m = rgb[0]
-#                 self._debug("PIL.Image.convert")
                 img = img.convert(m)
-#             self._debug("PIL.Image.tobytes")
             self._data = img.tobytes()
         if m in rgb: self.mode = m
         else: raise NotImplementedError("Only RGB and RGBA modes are supported")
@@ -106,14 +96,12 @@ class PixelData:
 
     def compress(self):
         if not self.compressed:
-#             self._debug("PixelData.compress")
             self._data = self.codec.compress(self._data)
             self.compressed = True
         return self
 
     def decompress(self):
         if self.compressed:
-#             self._debug("PixelData.decompress")
             self._data = self.codec.decompress(self._data)
             self.compressed = False
         return self
@@ -147,7 +135,6 @@ class PixelData:
         "Convert raw data to an image using the function provided"
         data = self._data
         if self.compressed: data = self.codec.decompress(data)
-#         self._debug(fn.__name__)
         return fn(data, self.size, self.mode)
 
     @property
@@ -158,7 +145,6 @@ class PixelData:
 
     @staticmethod
     def _frombytes(d, s, m):
-#         PixelData._debug("PIL.Image.frombytes")
         return sys.modules["PIL.Image"].frombytes(m, s, d)
 
     @property
@@ -217,30 +203,30 @@ class Graphic:
 
 # Properties for PCanvas (plotting, scrollable)
 
-    def _warn(self):
-        print("Warning: {} has no canvas while setting cvPos or theta".format(str(self)), file=sys.stderr)
-
-    @property
-    def theta(self):
-        cv = self.canvas
-        return self.angle if cv is None or cv.clockwise else -self.angle
-
-    @theta.setter
-    def theta(self, t):
-        cv = self.canvas
-        if cv is None: self._warn()
-        self.angle = t if cv is None or cv.clockwis else -t
-
-    @property
-    def csPos(self):
-        cv = self.canvas
-        return self.pos if cv is None else cv.cs(*self.pos)
-
-    @csPos.setter
-    def csPos(self, pos):
-        cv = self.canvas
-        if cv is None: self._warn()
-        self.pos = pos if cv is None else cv.px(*pos)
+#     def _warn(self):
+#         print("Warning: {} has no canvas while setting cvPos or theta".format(str(self)), file=sys.stderr)
+# 
+#     @property
+#     def theta(self):
+#         cv = self.canvas
+#         return self.angle if cv is None or cv.clockwise else -self.angle
+# 
+#     @theta.setter
+#     def theta(self, t):
+#         cv = self.canvas
+#         if cv is None: self._warn()
+#         self.angle = t if cv is None or cv.clockwise else -t
+# 
+#     @property
+#     def csPos(self):
+#         cv = self.canvas
+#         return self.pos if cv is None else cv.cs(*self.pos)
+# 
+#     @csPos.setter
+#     def csPos(self, pos):
+#         cv = self.canvas
+#         if cv is None: self._warn()
+#         self.pos = pos if cv is None else cv.px(*pos)
 
 # Metrics
 
@@ -781,18 +767,13 @@ class Image(Graphic):
 
 class Canvas(Graphic):
     _border = rgba("black")
-    _scroll = 0, 0
     _clipArea = None
     weight = 0
     resizeContent = True
 #     iconSize = 32, 32
 
-    @staticmethod
-    def _px(x): return x
-
-    _cs = _px
-
     def __init__(self, image, bg=None):
+        self._cs = self._px = lambda x: x
         mode = 0 if type(image) is str else 1 if isinstance(image, Image) else 2
         if mode == 2: # tuple or list
             size = image
@@ -814,16 +795,29 @@ class Canvas(Graphic):
     def clipArea(self, r): self._clipArea = pygame.Rect(r)
 
     @property
-    def clockwise(self): return True
+    def clockwise(self): # return True
+        ux, uy = self.units
+        return ux * uy < 0
 
     @property
-    def units(self): return 1, 1
+    def units(self):
+        return delta(self.px(1, 1), self.px(0, 0))
+#         return 1, 1
 
     @property
-    def unit(self): return 1
+    def unit(self): #return 1
+        ux, uy = self.units
+        return sqrt(abs(ux * uy))
+
+    @property
+    def _scroll(self): return 0, 0
 
     def px(self, *pt): return delta(self._px(pt), self._scroll)
     def cs(self, *pt): return self._cs(sigma(pt, self._scroll))
+
+    def attachCS(self, lrbt, margin=0, size=None):
+        self._cs, self._px = _makeCS(lrbt, size if size else self.size, margin)
+        return self
 
     @property
     def border(self): return self._border

@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -23,20 +23,22 @@ from sc8pr.shape import Shape
 from sc8pr.util import rgba, rangef
 from sc8pr.geom import rotatedSize, transform2dGen
 from sc8pr.text import Text
+from sc8pr._cs import _lrbt
 
 
-def _lrbt(lrbt, w, h):
-    "Calculate coordinate system limits"
-    n = len(lrbt)
-    if n < 4:
-        if not isinstance(lrbt, list): lrbt = list(lrbt)
-        dy = h * (lrbt[1] - lrbt[0]) / w
-        if n == 2:
-            dy /= 2
-            lrbt = lrbt + [-dy, dy]
-        else: lrbt = lrbt + [lrbt[2] + dy]
-    else: lrbt = lrbt[:4]
-    return lrbt
+# def _lrbt(lrbt, w, h):
+#     "Calculate coordinate system limits"
+#     n = len(lrbt)
+#     if n < 4:
+#         if not isinstance(lrbt, list): lrbt = list(lrbt)
+#         dy = h * (lrbt[1] - lrbt[0]) / w
+#         if n == 2:
+#             dy /= 2
+#             lrbt = lrbt + [-dy, dy]
+#         else: lrbt = lrbt + [lrbt[2] + dy]
+#     else: lrbt = lrbt[:4]
+#     return lrbt
+
 
 def locus(func, param, **kwargs):
     "Generate a parameterized sequence of 2D points"
