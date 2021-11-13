@@ -814,6 +814,8 @@ class Canvas(Graphic):
 
     def px(self, *pt): return delta(self._px(pt), self._scroll)
     def cs(self, *pt): return self._cs(sigma(pt, self._scroll))
+    def px_list(self, *args): return [self.px(*pt) for pt in args]
+    def cs_list(self, *args): return [self.cs(*pt) for pt in args]
 
     def attachCS(self, lrbt, margin=0, size=None):
         self._cs, self._px = _makeCS(lrbt, size if size else self.size, margin)
