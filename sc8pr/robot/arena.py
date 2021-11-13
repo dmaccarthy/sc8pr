@@ -25,7 +25,6 @@ from sc8pr.shape import Polygon, Line, Circle
 from sc8pr.util import rangef
 from sc8pr.robot.gui import Robot as _Robot
 from sc8pr.sprite import physics, Sprite
-# from sc8pr.plot import PSketch
 
 
 class Robot(_Robot):
