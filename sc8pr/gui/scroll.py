@@ -52,7 +52,7 @@ class ScrollBars:
         u = ch - sh - (w if other else 0)
         gr = Slider(size=size, knob=knob, upper=u).bind(onchange=self.sliderChange)
         gr.config(bg=self.sliderBg, anchor=a, weight=0,
-            val=-cv._scroll[dim], dim=dim, _scrollAdjust=False)
+            val=-cv._scroll[dim], dim=dim, scrollable=False)
         return gr
     
     @staticmethod
@@ -97,7 +97,7 @@ class _SCanvas(Canvas):
         x, y = self._scroll
         self._scroll = x + dx, y + dy
         for gr in self:
-            if gr._scrollAdjust:
+            if gr.scrollable:
                 x, y = gr.pos
                 gr.pos = x -dx, y - dy
 

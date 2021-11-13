@@ -158,7 +158,7 @@ class Graphic:
     provide a 'image' property which gives a surface that Graphic.draw can use."""
     autoPositionOnResize = True
     _avgColor = None
-    _scrollAdjust = True
+    scrollable = True
     canvas = None
     pos = 0, 0
     anchor = CENTER
@@ -200,33 +200,6 @@ class Graphic:
 
     @property
     def avgColor(self): return self._avgColor
-
-# Properties for PCanvas (plotting, scrollable)
-
-#     def _warn(self):
-#         print("Warning: {} has no canvas while setting cvPos or theta".format(str(self)), file=sys.stderr)
-# 
-#     @property
-#     def theta(self):
-#         cv = self.canvas
-#         return self.angle if cv is None or cv.clockwise else -self.angle
-# 
-#     @theta.setter
-#     def theta(self, t):
-#         cv = self.canvas
-#         if cv is None: self._warn()
-#         self.angle = t if cv is None or cv.clockwise else -t
-# 
-#     @property
-#     def csPos(self):
-#         cv = self.canvas
-#         return self.pos if cv is None else cv.cs(*self.pos)
-# 
-#     @csPos.setter
-#     def csPos(self, pos):
-#         cv = self.canvas
-#         if cv is None: self._warn()
-#         self.pos = pos if cv is None else cv.px(*pos)
 
 # Metrics
 
@@ -411,33 +384,6 @@ class Graphic:
     def bubble(self, eventName, ev):
         "Pass an event to a different handler"
         self.sketch.evMgr.handle(self, eventName, ev)
-# 
-#     @staticmethod
-#     def _deiconify(icon, ev):
-#         "Icon 'onclick' handler"
-#         icon.icon_restore.deiconify()
-# 
-#     def iconify(self, **kwargs):
-#         "Replace a graphic by its icon"
-#         cv = self.canvas
-#         if self in cv:
-#             attr = dict(pos=self.pos, anchor=self.anchor, size=cv.iconSize)
-#             attr.update(kwargs)
-#             icon = self.icon.config(icon_restore=self, **attr)
-#             self.remove()
-#             cv += icon.bind(onclick=self._deiconify)
-#             cv.icons.append(icon)
-#         return self
-# 
-#     def deiconify(self):
-#         "Restore a previously iconified graphic"
-#         cv = self.canvas
-#         icon = self.icon
-#         if icon in cv.icons:
-#             icon.remove()
-#             cv.icons.remove(icon)
-#             cv += self
-#         return self
 
     @property
     def timeFactor(self):
@@ -770,7 +716,6 @@ class Canvas(Graphic):
     _clipArea = None
     weight = 0
     resizeContent = True
-#     iconSize = 32, 32
 
     def __init__(self, image, bg=None):
         self._cs = self._px = lambda x: x
@@ -785,7 +730,6 @@ class Canvas(Graphic):
             size = bg.size
         self._size = size
         self._items = []
-#         self.icons = [] # !!!
         self.bg = bg
 
     @property
@@ -795,17 +739,16 @@ class Canvas(Graphic):
     def clipArea(self, r): self._clipArea = pygame.Rect(r)
 
     @property
-    def clockwise(self): # return True
+    def clockwise(self):
         ux, uy = self.units
         return ux * uy < 0
 
     @property
     def units(self):
         return delta(self.px(1, 1), self.px(0, 0))
-#         return 1, 1
 
     @property
-    def unit(self): #return 1
+    def unit(self):
         ux, uy = self.units
         return sqrt(abs(ux * uy))
 
@@ -1241,7 +1184,6 @@ class Sketch(Canvas):
                 self._clock.tick(self.frameRate)
                 if flip: _pd.flip()
                 else: _pd.update(br)
-#                 if self.capture is not None: self.capture.capture(self)
                 self._capture()
                 for gr in self.ondrawList:
                     try: gr.ondraw()
