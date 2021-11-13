@@ -8,6 +8,7 @@ sc8pr 2.2.dev...
 
 
 *** Add 'Canvas.makeCS', 'Canvas.px', 'Canvas.cs', 'Canvas.px_list' and 'Canvas.cs_list' methods; 'Canvas.units', 'Canvas.unit', 'Canvas.clockwise' properties
+*** Add 'sc8pr.gui.scroll'
 *** 'WebCache' does not overwrite existing cache file if URL is different
 *** Robot simulations
 

@@ -944,6 +944,11 @@ class Canvas(Graphic):
         fx, fy = size[0] / self._size[0], size[1] / self._size[1]
         self._size = size
 
+        # Resize scroll size
+        if getattr(self, "resizeScroll", False):
+            w, h = self.scrollSize
+            self.scrollSize = round(fx * w), round(fy * h)
+
         # Resize content
         if resizeContent is None: resizeContent = self.resizeContent  
         if resizeContent:
@@ -1176,7 +1181,6 @@ class Sketch(Canvas):
                 mode = self._pygameMode(mode)
                 self._mode = mode
             self.image = _pd.set_mode(size, mode)
-#             _pd.flip() # Needed?
             super().resize(self.size)
             self._size = self.size
         if self.dirtyRegions is not None:
@@ -1266,7 +1270,6 @@ class Sketch(Canvas):
             try:
                 if ev.type in (pygame.VIDEOEXPOSE, WINEXPOSED) and self.dirtyRegions is not None:
                     self.dirtyRegions = [pygame.Rect((0,0), self._size)]
-                    # _pd.flip()
                 if ev.type not in (pygame.VIDEORESIZE, SIZECHANGED):
                     self.evMgr.dispatch(ev)
                 elif not resized:
@@ -1275,10 +1278,7 @@ class Sketch(Canvas):
                         resized = True
                         setattr(ev, "originalSize", self._size)
                         self._resize_ev = ev
-                        s = hasattr(self, "_scrollSize")
-                        if s: self.scrollTo()
                         self.resize(size)
-                        if s: self.resizeCoords(ev)
             except: logError()
 
     def _drawDirtyRegions(self, srf):
