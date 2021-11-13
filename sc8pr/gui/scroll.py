@@ -60,8 +60,8 @@ class ScrollBars:
         cv = s.canvas
         x, y = cv._scroll
         z = round(-s.val)
-        if s.dim: cv.scrollTo(x, z)
-        else: cv.scrollTo(z, y)
+        if s.dim: cv._scrollTo(x, z)
+        else: cv._scrollTo(z, y)
         setattr(ev, "dim", "xy"[s.dim])
         setattr(ev, "handler", "onscroll")
         cv.bubble("onscroll", ev)
@@ -83,7 +83,7 @@ class _SCanvas(Canvas):
 
     @scrollSize.setter
     def scrollSize(self, scrollSize):
-        self.scrollTo()
+        self._scrollTo()
         self._scrollInit(self.size, scrollSize)
 
     def draw(self, srf=None, mode=3):
@@ -92,7 +92,7 @@ class _SCanvas(Canvas):
         if s: self += s 
         return super().draw(srf, mode)
 
-    def scroll(self, dx, dy):
+    def _scrollBy(self, dx, dy):
         "Adjust scroll position by specified amounts"
         x, y = self._scroll
         self._scroll = x + dx, y + dy
@@ -101,10 +101,10 @@ class _SCanvas(Canvas):
                 x, y = gr.pos
                 gr.pos = x -dx, y - dy
 
-    def scrollTo(self, x=0, y=0):
+    def _scrollTo(self, x=0, y=0):
         "Adjust scroll position to specified location"
         dx, dy = self._scroll
-        return self.scroll(x-dx, y-dy)
+        return self._scrollBy(x-dx, y-dy)
 
     def scrollSnapshot(self):
         "Take a snapshot of the entire scroll region"
@@ -125,18 +125,18 @@ class _SCanvas(Canvas):
             self.bubble("onscroll", ev)
 
     def _scrollInit(self, size, scrollSize):
-        self._scrollSize = scrollSize
+        self._scrollSize = scrollSize if scrollSize else size
         self._scrollBars = ScrollBars(self, size)
 
     def _scrollReset(self):
-        self.scrollTo()
+        self._scrollTo()
         sb = self._scrollBars
         if sb: self.removeItems(*sb)
 
 
 class ScrollCanvas(_SCanvas):
 
-    def __init__(self, size, scrollSize, bg=None):
+    def __init__(self, size, scrollSize=None, bg=None):
         super().__init__(size, bg)
         self._scrollInit(size, scrollSize)
 
@@ -150,7 +150,7 @@ class ScrollCanvas(_SCanvas):
 class ScrollSketch(_SCanvas, Sketch):
     _fixedAspect = False
 
-    def __init__(self, size=(512, 288), scrollSize=(640, 360)):
+    def __init__(self, size=(512, 288), scrollSize=None):
         super().__init__(size)
         self._scrollInit(size, scrollSize)
 

@@ -7,7 +7,6 @@ sc8pr 2.2.dev...
 !!! = In progress
 
 
-*** Add 'sc8pr.gui.scroll'
 *** 'WebCache' does not overwrite existing cache file if URL is different
 *** Robot simulations
 
@@ -81,6 +80,7 @@ sc8pr 2.2.dev...
 * Add 'Canvas.attachCS', 'Canvas.px', 'Canvas.cs', 'Canvas.px_list' and 'Canvas.cs_list' methods
 * Add 'Canvas.units', 'Canvas.unit', 'Canvas.clockwise' properties
 * Add 'Graphic.scrollable' property
+* Add 'sc8pr.gui.scroll'
 
 
 **** Add 'sc8pr.gui.tk' module
