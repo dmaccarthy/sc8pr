@@ -31,7 +31,7 @@ _ANGLE_ERROR = "Operation is only supported for angles of 0 or 90"
 
 class TextInput(Text):
     """Editable text GUI control:
-    implements ondraw, onclick, ondrag, onkeydown, onblur;
+    implements ondraw, onmousedown, ondrag, onkeydown, onblur;
     triggers onchange, onaction"""
     focusable = True
     cursorTime = 1.0
@@ -239,7 +239,7 @@ class TextInput(Text):
         d = self.data
         return (font.size(d[:i])[0] + font.size(d[:i+1])[0]) // 2
 
-    def onclick(self, ev):
+    def onmousedown(self, ev): # onclick in v2.1
         drag = ev.handler == "ondrag" 
         if drag or ev.button in self.allowButton:
             self._startCursor()
@@ -256,7 +256,7 @@ class TextInput(Text):
             self.stale = True
         elif not hasattr(self, "cursorStart"): self.blur()
 
-    ondrag = onclick
+    ondrag = onmousedown
 
     def onblur(self, ev):
         self._selection = None
@@ -335,7 +335,7 @@ class TextInputCanvas(Canvas):
     @data.setter
     def data(self, data): self.ti.config(data=data)
 
-    def onclick(self, ev): self.ti.focus().onclick(ev)
+    def onmousedown(self, ev): self.ti.focus().onmousedown(ev)
 
 
 clipboardGet()

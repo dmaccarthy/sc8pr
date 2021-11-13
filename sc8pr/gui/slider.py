@@ -110,8 +110,8 @@ class Slider(Canvas):
         if self._flip: x = 1 - x
         return self._calc(x)
 
-    def onclick(self, ev):
-        "Handle CLICK events on the slider canvas"
+    def onmousedown(self, ev):
+        "Handle MOUSEDOWN events on the slider canvas"
         self._lastButton = btn = ev.button
         if btn in self.allowButton:
             dim = tall(*self.size)
