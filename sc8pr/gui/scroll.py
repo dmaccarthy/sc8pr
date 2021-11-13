@@ -32,24 +32,25 @@ class ScrollBars:
         vw, vh = size # if size else cv.size
         sw, sh = cv.scrollSize
         self.bars = []
+        bars = sw > vw, sh > vh
         if sw > vw:
-            self.bars.append(self.makeSlider(cv, 0, vw, sw, vh, sh > vh).config(dim=0, pos=(0, vh))) # cv.height
+            self.bars.append(self.makeSlider(cv, 0, vw, sw, vh, bars).config(dim=0, pos=(0, vh))) # cv.height
         if sh > vh:
-            self.bars.append(self.makeSlider(cv, 1, vh, sh, vw).config(dim=1, pos=(vw, 0))) # cv.width
+            self.bars.append(self.makeSlider(cv, 1, vh, sh, vw, bars).config(dim=1, pos=(vw, 0))) # cv.width
         self.canvas = cv
 
     def __iter__(self):
         for b in self.bars: yield b
 
-    def makeSlider(self, cv, dim, ch, sh, cw, other=False):
+    def makeSlider(self, cv, dim, ch, sh, cw, bars):
         "Create a vertical or horizontal scroll bar"
         w = min(self.sliderWidth, ch - 1, cw // 12)
-        h = ch + 1 - (w if other and dim == 0 else 0)
+        h = ch + 1 - (w if bars[1] and dim == 0 else 0)
         knob = round(ch * (h - 1) / sh)
         knob = Image((w, knob) if dim else (knob, w), self.knobColor)
         size = (w, h) if dim else (h, w)
         a = TOPRIGHT if dim else BOTTOMLEFT
-        u = ch - sh - (w if other else 0)
+        u = ch - sh - (w if bars[1 - dim] else 0)
         gr = Slider(size=size, knob=knob, upper=u).bind(onchange=self.sliderChange)
         gr.config(bg=self.sliderBg, anchor=a, weight=0,
             val=-cv._scroll[dim], dim=dim, scrollable=False)
@@ -77,6 +78,9 @@ class _SCanvas(Canvas):
         "Base coordinate transformation on scroll size instead of actual size"
         self._cs, self._px = _makeCS(lrbt, size if size else self._scrollSize, margin)
         return self
+
+    @property
+    def scrollPos(self): return self._scroll
 
     @property
     def scrollSize(self): return self._scrollSize
