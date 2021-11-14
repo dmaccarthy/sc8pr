@@ -7,6 +7,7 @@ sc8pr 2.2.dev...
 !!! = In progress
 
 
+*** Create 'sc8pr.shape.locus'
 *** 'WebCache' does not overwrite existing cache file if URL is different
 *** Robot simulations
 

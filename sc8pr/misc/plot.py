@@ -19,38 +19,11 @@
 from math import log, exp
 import pygame
 from sc8pr import Renderable, Image, Graphic, BaseSprite
-from sc8pr.shape import Shape
+from sc8pr.shape.locus import locus, Locus, _lrbt, coordTr
 from sc8pr.util import rgba, rangef
 from sc8pr.geom import rotatedSize, transform2dGen
 from sc8pr.text import Text
-from sc8pr._cs import _lrbt
 
-
-# def _lrbt(lrbt, w, h):
-#     "Calculate coordinate system limits"
-#     n = len(lrbt)
-#     if n < 4:
-#         if not isinstance(lrbt, list): lrbt = list(lrbt)
-#         dy = h * (lrbt[1] - lrbt[0]) / w
-#         if n == 2:
-#             dy /= 2
-#             lrbt = lrbt + [-dy, dy]
-#         else: lrbt = lrbt + [lrbt[2] + dy]
-#     else: lrbt = lrbt[:4]
-#     return lrbt
-
-
-def locus(func, param, **kwargs):
-    "Generate a parameterized sequence of 2D points"
-    t0, t1, steps = param
-    dt = (t1 - t0) / steps
-    for i in range(steps + 1):     
-        try:
-            x = t0 + i * dt
-            try: y = func(x, **kwargs)
-            except: y = func(x)
-            yield y if type(y) in (list, tuple) else (x, y)
-        except: pass
 
 def leastSq(x, y):
     "Perform a simple least squares linear regression"
@@ -76,24 +49,6 @@ def expon(x, y):
     y = [log(xi) for xi in y]
     b, a = [exp(a) for a in leastSq(x, y)[1]]
     return (lambda x:a * b**x), (a, b)
-
-
-
-### Functions and classes below are deprecated from v2.2
-
-def coordTr(lrbt, size, invert=False):
-    "Create a transformation for the given coordinate system"
-    if len(lrbt) != 4: lrbt = _lrbt(lrbt, *size)
-    l, r = lrbt[:2]
-    sx = size[0] / (r - l)
-    dx = sx * l
-    b, t = lrbt[2:]
-    sy = size[1] / (b - t)
-    dy = sy * t
-    if invert:
-        return lambda p: ((p[0] + dx) / sx, (p[1] + dy) / sy)
-    else:
-        return lambda p: (sx * p[0] - dx, sy * p[1] - dy)
 
 def _isZero(x, fmt):
     "Check is text is formatted 0"
@@ -364,49 +319,3 @@ class Plot(Renderable):
 
 
 class PlotSprite(Plot, BaseSprite): pass
-
-
-class Locus(Shape):
-    "Class for drawing point sequences directly to the canvas"
-    snapshot = None
-
-    def __init__(self, data, lrbt, param):
-        self.data = data
-        self.lrbt = lrbt
-        self.param = param
-        self.vars = {}
-
-    def _getCoordTr(self):
-        w, h = sz = self.canvas.size
-        return coordTr(_lrbt(self.lrbt, *sz), [w-1, h-1]) 
-
-    def contains(self, pos): return False
-
-    @property
-    def size(self):
-        return self.rect.size if hasattr(self, "rect") else (0,0)
-
-    def draw(self, srf, snapshot=False):
-        "Draw the locus to the sketch or canvas snapshot"
-        if snapshot: x0, y0 = 0, 0
-        else: x0, y0 = self.canvas.rect.topleft
-        tr = self._getCoordTr()
-        d = self.data
-        pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.vars)
-        pts = [tr(p) for p in pts]
-        pts = [(x + x0, y + y0) for (x, y) in pts]
-        if len(pts) > 1:
-            wt = self.weight
-            return pygame.draw.lines(srf, self.stroke, False, pts, wt).inflate(wt, wt)
-        else: return pygame.Rect(0,0,0,0)
-
-    def pointGen(self):
-        "Generate a sequence of points using canvas pixel coordinates"
-        d = self.data
-        pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.vars)
-        tr = self._getCoordTr()
-        for p in pts: yield tr(p)
-
-    @property
-    def pointList(self):
-        return list(self.pointGen())
