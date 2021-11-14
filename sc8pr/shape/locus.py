@@ -18,12 +18,13 @@
 import pygame
 from sc8pr._cs import _lrbt, coordTr
 from sc8pr.shape import Shape
-from sc8pr import TOPLEFT
+from sc8pr import CENTER
 
 
 def locus(func, param, **kwargs):
     "Generate a parameterized sequence of 2D points"
-    t0, t1, steps = param
+    t0, t1 = param[:2]
+    steps = param[2] if len(param) > 2 else 100
     dt = (t1 - t0) / steps
     for i in range(steps + 1):     
         try:
@@ -43,10 +44,11 @@ class Locus(Shape):
     def scrollable(self): return False
 
     @property
-    def pos(self): return 0, 0
+    def pos(self):
+        return self.rect.center if hasattr(self, "rect") else (0,0)
 
     @property
-    def anchor(self): return TOPLEFT
+    def anchor(self): return CENTER
 
     def __init__(self, data, lrbt, param):
         self.data = data
