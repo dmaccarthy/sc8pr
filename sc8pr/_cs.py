@@ -29,7 +29,7 @@ def _lrbt(lrbt, w, h):
     else: lrbt = lrbt[:4]
     return lrbt
 
-def _makeCS(lrbt, size, margin=0):
+def makeCS(lrbt, size, margin=0):
     "Create transformations between pixels and a coordinate system"
     w, h = size
     ml, mr, mb, mt = 4 * [margin] if type(margin) in (int, float) else margin
@@ -44,3 +44,7 @@ def _makeCS(lrbt, size, margin=0):
     cs = lambda p: ((p[0] + dx) / sx, (p[1] + dy) / sy)
     px = lambda p: (sx * p[0] - dx, sy * p[1] - dy)
     return cs, px
+
+def coordTr(lrbt, size, invert=False):
+    "Create a transformation for the given coordinate system"
+    return makeCS(lrbt, size)[0 if invert else 1]

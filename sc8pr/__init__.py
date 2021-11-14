@@ -25,7 +25,7 @@ import pygame
 import pygame.display as _pd
 from pygame.transform import flip as _pyflip
 from sc8pr._event import EventManager
-from sc8pr._cs import _makeCS
+from sc8pr._cs import makeCS
 from sc8pr.geom import transform2d, positiveAngle, delta, sigma
 from sc8pr.util import CachedSurface, style, logError, sc8prData, tile, rgba, drawBorder
 
@@ -281,7 +281,7 @@ class Graphic:
     def scaleVectors(self, fx, fy, attr=("pos", "vel", "acc", "_scrollSize")):
         "Scale one or more 2-vectors"
         for a in attr:
-            try: # Skip undefined attributes
+            try: # Skip undefined or fixed attributes
                 x, y = getattr(self, a)
                 setattr(self, a, (x * fx, y * fy))
             except: pass
@@ -761,7 +761,7 @@ class Canvas(Graphic):
     def cs_list(self, *args): return [self.cs(*pt) for pt in args]
 
     def attachCS(self, lrbt, margin=0, size=None):
-        self._cs, self._px = _makeCS(lrbt, size if size else self.size, margin)
+        self._cs, self._px = makeCS(lrbt, size if size else self.size, margin)
         return self
 
     @property
