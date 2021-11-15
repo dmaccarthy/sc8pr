@@ -33,9 +33,9 @@ class ScrollBars:
         sw, sh = cv.scrollSize
         self.bars = []
         bars = sw > vw, sh > vh
-        if sw > vw:
+        if bars[0]:
             self.bars.append(self.makeSlider(cv, 0, vw, sw, vh, bars).config(dim=0, pos=(0, vh))) # cv.height
-        if sh > vh:
+        if bars[1]:
             self.bars.append(self.makeSlider(cv, 1, vh, sh, vw, bars).config(dim=1, pos=(vw, 0))) # cv.width
         self.canvas = cv
 
