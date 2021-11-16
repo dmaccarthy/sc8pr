@@ -16,39 +16,22 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from math import log, exp
 import pygame
+from sys import stderr
 from sc8pr import Renderable, Image, Graphic, BaseSprite
-from sc8pr.shape.locus import locus, Locus, _lrbt, coordTr
+from sc8pr.shape.locus import locus, Locus, _lrbt, makeCS
 from sc8pr.util import rgba, rangef
 from sc8pr.geom import rotatedSize, transform2dGen
 from sc8pr.text import Text
+from sc8pr.plot.regression import leastSq, expon, power
+
+print("WARNING: sc8pr.misc.plot is deprecated.", file=stderr)
 
 
-def leastSq(x, y):
-    "Perform a simple least squares linear regression"
-    n = len(x)
-    if len(y) != n: raise ValueError("x and y data must be the same size")
-    xav = sum(x) / n
-    yav = sum(y) / n
-    m = sum((x[i] - xav) * (y[i] - yav) for i in range(n))
-    m /= sum((xi - xav) ** 2 for xi in x)
-    b = yav - m * xav
-    return (lambda x: m * x + b), (m, b)
+def coordTr(lrbt, size, invert=False):
+    "Create a transformation for the given coordinate system"
+    return makeCS(lrbt, size)[0 if invert else 1]
 
-def power(x, y):
-    "Least squares fit to model y = a x**n"
-    x = [log(xi) for xi in x]
-    y = [log(xi) for xi in y]
-    n, a = leastSq(x, y)[1]
-    a = exp(a)
-    return (lambda x:a * x**n), (a, n)
-
-def expon(x, y):
-    "Least squares fit to model y = a b**x"
-    y = [log(xi) for xi in y]
-    b, a = [exp(a) for a in leastSq(x, y)[1]]
-    return (lambda x:a * b**x), (a, b)
 
 def _isZero(x, fmt):
     "Check is text is formatted 0"

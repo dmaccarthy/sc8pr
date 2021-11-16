@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 import pygame
-from sc8pr._cs import _lrbt, coordTr
+from sc8pr._cs import _lrbt, makeCS
 from sc8pr.shape import Shape
 from sc8pr import CENTER
 
@@ -62,7 +62,7 @@ class Locus(Shape):
             return lambda p: cv.px(*p)
         else:
             w, h = sz = self.canvas.size
-            return coordTr(_lrbt(self.lrbt, *sz), [w-1, h-1]) 
+            return makeCS(self.lrbt, sz)[1]
 
     def contains(self, pos): return False
 

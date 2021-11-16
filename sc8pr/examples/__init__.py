@@ -16,9 +16,9 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 """
-The sc8pr examples are being moved into the online tutorial and will no longer
-be included in the sc8pr package itself, with the exception of the robotics
-simulations which are being moived...
+The sc8pr examples are being moved online and will no longer be
+included in the sc8pr package itself, with the exception of the
+robotics simulations which are being moved as follows...
 
 sc8pr.examples.soccer -> sc8pr.robot.soccer
 sc8pr.examples.robotSim (Parking Lot simulation) -> sc8pr.robot.park
