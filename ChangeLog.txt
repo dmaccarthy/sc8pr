@@ -7,11 +7,13 @@ sc8pr 2.2.dev...
 !!! = In progress
 
 
+*** Add 'Sketch.minSize'
+*** Add 'sc8pr.gui.slider.Knob'
 *** Create 'sc8pr.shape.locus'
 *** 'WebCache' does not overwrite existing cache file if URL is different
 *** Robot simulations
 
-** Add 'sc8pr._cs' module;
+** Add 'sc8pr._cs' module
 ** Fix minor bug with 'Sketch.caption' getter
 ** Fix divide-by-zero in 'shape.Line' when length is 0
 ** Fix bug in 'Canvas.__init__'

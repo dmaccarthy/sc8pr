@@ -19,6 +19,7 @@
 import pygame
 from pygame.constants import K_LEFT, K_RIGHT, K_UP, K_DOWN
 from sc8pr import Canvas, Image, Graphic
+from sc8pr.sprite import CostumeImage
 from sc8pr.util import tall
 from sc8pr.geom import sigma, delta
 
@@ -45,6 +46,20 @@ def _knobDrag(knob, ev):
 def _knobRelease(knob, ev): knob._dragRel = None
 
 
+class Knob(CostumeImage):
+    colors = "#bdbdbd", "#a0a0a0"
+    
+    def __init__(self, size, colors=None):
+        if colors is None: colors = self.colors
+        try: imgs = [Image(size, c) for c in colors]
+        except: imgs = [Image(size, colors)]
+        super().__init__(imgs)
+
+    def ondraw(self):
+        hov = self is self.sketch.evMgr.hover
+        self.costumeNumber = 1 if hov else 0 # or self.canvas.focussed
+
+
 class Slider(Canvas):
     "A numerical slider GUI control"
     _lastButton = None
@@ -52,10 +67,10 @@ class Slider(Canvas):
     allowButton = 1, 4, 5
     _methodNames = ["Click", "Scroll", "Drag", "Key"]
     
-    def __init__(self, size=(128,16), knob="grey", lower=0, upper=1, steps=0):
+    def __init__(self, size=(128,16), knob=None, lower=0, upper=1, steps=0):
         super().__init__(size)
         self.steps = steps
-        if not isinstance(knob, Graphic): knob = Image(self._knobSize(), knob)
+        if not isinstance(knob, Graphic): knob = Knob(self._knobSize(), knob)
         self += knob.bind(ondrag=_knobDrag, onrelease=_knobRelease)
         self.knob = knob.config(_dragRel=None)
         if upper < lower:
@@ -91,7 +106,7 @@ class Slider(Canvas):
         if self._flip: x = 1 - x
         knob = self.knob
         dim = tall(*self.size)
-        wh = knob.size[dim] + 2
+        wh = knob.size[dim] #+ 2
         w, h = self.size
         knob.pos = (w / 2, wh / 2 + (h - wh) * x) if dim else (wh / 2 + (w - wh) * x, h / 2)
 
@@ -105,8 +120,8 @@ class Slider(Canvas):
     def _eventValue(self, ev):
         "Determine a numerical value from the event coordinates"
         dim = tall(*self.size)
-        wh = self.knob.size[dim] + 2
-        x = self._round((self.relXY(ev.pos)[dim] - wh / 2) / (self.size[dim] - wh))
+        wh = self.knob.size[dim] #+ 2
+        x = self._round((self.relXY(ev.pos)[dim] - wh / 2) / max(1, self.size[dim] - wh))
         if self._flip: x = 1 - x
         return self._calc(x)
 
