@@ -302,12 +302,14 @@ class Graphic:
 
     def remove(self, deleteRect=False):
         "Remove the instance from its canvas"
+        cv = self.canvas
         try:
-            cv = self.canvas
-            self.anon()
             if deleteRect and hasattr(self, "rect"):
                 del self.rect
-            cv._items.remove(self)
+            if cv:
+                self.anon()
+                cv._items.remove(self)
+                if self.focussed: self.blur()
         except: pass
         return self
 
@@ -1012,6 +1014,7 @@ class Canvas(Graphic):
 
 
 class Sketch(Canvas):
+    minSize = 32
     capture = None
     realTime = False
     frameRate = 60
@@ -1116,16 +1119,22 @@ class Sketch(Canvas):
     def resize(self, size, mode=None): # Rewritten (non-recursive!) for v2.2.a3 !!!
         "Resize the sketch, maintaining aspect ratio if required"
         initSize = self._size
-        size = round(size[0]), round(size[1])
-        if self._fixedAspect: size = self._aspectSize(size, initSize)
-        if size != initSize:
-            if mode is None: mode = self._mode
-            else:
-                mode = self._pygameMode(mode)
-                self._mode = mode
-            self.image = _pd.set_mode(size, mode)
-            super().resize(self.size)
-            self._size = self.size
+        ms = self.minSize
+        if self._fixedAspect:
+            size = self._aspectSize(size, initSize)
+            f = max(1, ms / min(size))
+            size = round(f * size[0]), round(f * size[1])
+        else:
+            size = max(ms, round(size[0])), max(ms, round(size[1]))
+#         if size != initSize:
+        if mode is None: mode = self._mode
+        else:
+            mode = self._pygameMode(mode)
+            self._mode = mode
+        self.image = _pd.set_mode(size, mode)
+        super().resize(self.size)
+        self._size = self.size
+# end-if
         if self.dirtyRegions is not None:
             self.dirtyRegions = [pygame.Rect((0,0), self._size)]
         evMgr = self.evMgr
