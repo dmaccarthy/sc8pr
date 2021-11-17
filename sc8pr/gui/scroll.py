@@ -17,44 +17,62 @@
 
 
 import pygame
-from sc8pr.gui.slider import Slider
+from sc8pr.gui.slider import Slider, Knob
 from sc8pr import Image, Canvas, Sketch, BOTTOMLEFT, TOPRIGHT
 from sc8pr._cs import makeCS
 
 
 class ScrollBars:
     "Scroll bar slider controls for a scrolling canvas"
-    sliderBg = "#f0f0f0"
+    sliderBg = "#e0e0e0"
     sliderWidth = 16
-    knobColor = "#cdcdcd"
-
-    def __init__(self, cv, size):
-        vw, vh = size # if size else cv.size
-        sw, sh = cv.scrollSize
-        self.bars = []
-        bars = sw > vw, sh > vh
-        if bars[0]:
-            self.bars.append(self.makeSlider(cv, 0, vw, sw, vh, bars).config(dim=0, pos=(0, vh))) # cv.height
-        if bars[1]:
-            self.bars.append(self.makeSlider(cv, 1, vh, sh, vw, bars).config(dim=1, pos=(vw, 0))) # cv.width
-        self.canvas = cv
 
     def __iter__(self):
         for b in self.bars: yield b
 
-    def makeSlider(self, cv, dim, ch, sh, cw, bars):
-        "Create a vertical or horizontal scroll bar"
-        w = min(self.sliderWidth, ch - 1, cw // 12)
-        h = ch + 1 - (w if bars[1] and dim == 0 else 0)
-        knob = round(ch * (h - 1) / sh)
-        knob = Image((w, knob) if dim else (knob, w), self.knobColor)
-        size = (w, h) if dim else (h, w)
-        a = TOPRIGHT if dim else BOTTOMLEFT
-        u = ch - sh - (w if bars[1 - dim] else 0)
-        gr = Slider(size=size, knob=knob, upper=u).bind(onchange=self.sliderChange)
-        gr.config(bg=self.sliderBg, anchor=a, weight=0,
-            val=-cv._scroll[dim], dim=dim, scrollable=False)
-        return gr
+    def __init__(self, cv, size):
+        "Create vertical and horizontal scroll bars for canvas"
+        self.canvas = cv
+
+        # Get dimensions
+        canvasW, canvasH = size
+        scrollW, scrollH = cv.scrollSize
+        thickness  = max(min(self.sliderWidth, (min(size) - 1) // 8), 4)
+
+        # Calculate which bars are required and remaining canvas size
+        bars = 0
+        if canvasW < scrollW:
+            bars += 1
+            canvasH -= thickness
+        if canvasH < scrollH:
+            bars += 2
+            canvasW -= thickness
+            if bars == 2 and canvasW < scrollW:
+                bars += 1
+                canvasH -= thickness
+
+        # Create the scroll bars
+        self.bars = []
+        x, y = cv._scroll
+        if bars & 1:
+            sb = self.makeScrollBar(0, bars, thickness, canvasW, scrollW)
+            self.bars.append(sb.config(val=-x, anchor=BOTTOMLEFT, pos=(0, canvasH + thickness)))
+        if bars & 2:
+            sb = self.makeScrollBar(1, bars, thickness, canvasH, scrollH)
+            self.bars.append(sb.config(val=-y, anchor=TOPRIGHT, pos=(canvasW + thickness, 0)))
+
+    def makeScrollBar(self, dim, bars, thickness, canvasW, scrollW):
+        "Create one of the scroll bars"
+
+        # Calculate slider and knob size
+        sliderW = canvasW + (thickness if dim == 1 and bars == 3 or bars == 1 else 0)
+        knobW = max(2, round(sliderW * canvasW / scrollW))
+        knobSize = (thickness, knobW) if dim else (knobW, thickness)
+        sliderSize = (thickness, sliderW) if dim else (sliderW, thickness)
+
+        # Make knob and slider
+        slider = Slider(sliderSize, Knob(knobSize), upper=(canvasW-scrollW)).bind(onchange=self.sliderChange)
+        return slider.config(bg=self.sliderBg, dim=dim, scrollable=False, weight=0)
     
     @staticmethod
     def sliderChange(s, ev):
@@ -92,8 +110,9 @@ class _SCanvas(Canvas):
 
     def draw(self, srf=None, mode=3):
         "Move scroll bars to top layer before drawing"
-        s = self._scrollBars
-        if s: self += s 
+        for sb in self._scrollBars:
+            if sb in self: sb.layer = -1
+            else: self += sb
         return super().draw(srf, mode)
 
     def _scrollBy(self, dx, dy):
