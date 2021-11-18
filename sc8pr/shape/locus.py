@@ -16,8 +16,9 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 import pygame
-from sc8pr._cs import _lrbt, makeCS
+from sc8pr._cs import makeCS #, _lrbt
 from sc8pr.shape import Shape
+from sc8pr.geom import sigma
 from sc8pr import CENTER
 
 
@@ -37,6 +38,11 @@ def locus(func, param, **kwargs):
 
 class Locus(Shape):
     "Class for drawing point sequences directly to the canvas"
+    
+    
+    # Deprecated subclass sc8pr.misc.plot.Locus inherits the following attributes:
+    # autoPositionOnResize, snapshot, scrollable, pos, anchor, contains, size, pointList
+    
     autoPositionOnResize = False
     snapshot = None
 
@@ -50,19 +56,10 @@ class Locus(Shape):
     @property
     def anchor(self): return CENTER
 
-    def __init__(self, data, lrbt, param):
+    def __init__(self, data, param):
         self.data = data
-        self.lrbt = lrbt
         self.param = param
         self.vars = {}
-
-    def _getCoordTr(self):
-        if self.lrbt is True:
-            cv = self.canvas
-            return lambda p: cv.px(*p)
-        else:
-            w, h = sz = self.canvas.size
-            return makeCS(self.lrbt, sz)[1]
 
     def contains(self, pos): return False
 
@@ -74,22 +71,20 @@ class Locus(Shape):
         "Draw the locus to the sketch or canvas snapshot"
         if snapshot: x0, y0 = 0, 0
         else: x0, y0 = self.canvas.rect.topleft
-        tr = self._getCoordTr()
         d = self.data
         pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.vars)
-        pts = [tr(p) for p in pts]
-        pts = [(x + x0, y + y0) for (x, y) in pts]
+        cv = self.canvas
+        pts = [sigma((x0, y0), cv.px(*p)) for p in pts]
         if len(pts) > 1:
             wt = self.weight
             return pygame.draw.lines(srf, self.stroke, False, pts, wt).inflate(wt, wt)
         else: return pygame.Rect(0,0,0,0)
 
     def pointGen(self):
-        "Generate a sequence of points using canvas pixel coordinates"
+        "Generate a sequence of points"
         d = self.data
         pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.vars)
-        tr = self._getCoordTr()
-        for p in pts: yield tr(p)
+        for p in pts: yield p
 
     @property
     def pointList(self):

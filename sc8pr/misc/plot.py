@@ -19,7 +19,8 @@
 import pygame
 from sys import stderr
 from sc8pr import Renderable, Image, Graphic, BaseSprite
-from sc8pr.shape.locus import locus, Locus, _lrbt, makeCS
+from sc8pr._cs import _lrbt
+from sc8pr.shape.locus import locus, makeCS, Locus as _Locus
 from sc8pr.util import rgba, rangef
 from sc8pr.geom import rotatedSize, transform2dGen
 from sc8pr.text import Text
@@ -37,6 +38,47 @@ def _isZero(x, fmt):
     "Check is text is formatted 0"
     fmt = fmt.format(0)
     return x == fmt or x == "-" + fmt
+
+
+class Locus(_Locus):
+    "Class for drawing point sequences directly to the canvas"
+
+    def __init__(self, data, lrbt, param):
+        self.data = data
+        self.lrbt = lrbt
+        self.param = param
+        self.vars = {}
+
+    def _getCoordTr(self):
+        if self.lrbt is True:
+            cv = self.canvas
+            return lambda p: cv.px(*p)
+        else:
+            w, h = sz = self.canvas.size
+            return makeCS(self.lrbt, sz)[1]
+
+    def contains(self, pos): return False
+
+    def draw(self, srf, snapshot=False):
+        "Draw the locus to the sketch or canvas snapshot"
+        if snapshot: x0, y0 = 0, 0
+        else: x0, y0 = self.canvas.rect.topleft
+        tr = self._getCoordTr()
+        d = self.data
+        pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.vars)
+        pts = [tr(p) for p in pts]
+        pts = [(x + x0, y + y0) for (x, y) in pts]
+        if len(pts) > 1:
+            wt = self.weight
+            return pygame.draw.lines(srf, self.stroke, False, pts, wt).inflate(wt, wt)
+        else: return pygame.Rect(0,0,0,0)
+
+    def pointGen(self):
+        "Generate a sequence of points using canvas pixel coordinates"
+        d = self.data
+        pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.vars)
+        tr = self._getCoordTr()
+        for p in pts: yield tr(p)
 
 
 class Series:
