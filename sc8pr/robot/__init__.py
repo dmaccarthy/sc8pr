@@ -293,31 +293,6 @@ class Robot(Sprite):
                 pygame.draw.circle(orig, (0,0,0), pos, r, 1)
             srfs.dumpCache()
 
-#     def say(self, msg=""):
-#         "Display a message in the 'chat' area"
-#         try: self.chat.config(data="", prompt=msg)
-#         except: raise AttributeError("ChatRobot I/O is unavailable")
-#         return self
-# 
-#     def listen(self, msg=None, validate=None):
-#         "Wait for a chat response"
-#         ti = self.chat
-#         waiting = True
-#         while waiting:
-#             while ti.focussed or not ti.data: self.sleep()
-#             data = ti.data
-#             try:
-#                 if validate: data = validate(ti.data)
-#                 waiting = False
-#             except: pass
-#         if msg is not None: self.say(msg)
-#         return data
-# 
-#     def ask(self, prompt, msg=None, validate=None):
-#         "Display a chat message and await a response"
-#         self.say(prompt)
-#         return self.listen(msg, validate)
-
     @staticmethod
     def remoteControl(sk, ev):
         "ONKEYDOWN handler to operate robot by space and arrow keys"
