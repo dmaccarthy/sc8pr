@@ -7,7 +7,6 @@ sc8pr 2.2.dev...
 !!! = In progress
 
 
-*** Add 'Sketch.minSize'
 *** Add 'sc8pr.gui.slider.Knob'
 *** Create 'sc8pr.shape.locus'
 *** 'WebCache' does not overwrite existing cache file if URL is different
@@ -66,7 +65,7 @@ sc8pr 2.2.dev...
 * Add 'PixelData.pil, 'Image.png' and 'Image.jpg' properties
 * Add 'invert' parameter to 'misc.plot.coordTr'
 * Add 'hoverable' property to Graphic class and add 'includeAll' argument to 'Canvas.objectAt'
-* Add 'Graphic.scale'
+* Add 'Graphic.scale' and 'Graphic.xy'
 * Add 'Canvas.flatten'
 * Add 'sc8pr.misc.effect.Pixelate'
 * Add 'geom.smallAngle' and 'geom.shiftAlongNormal'
@@ -84,6 +83,8 @@ sc8pr 2.2.dev...
 * Add 'Canvas.units', 'Canvas.unit', 'Canvas.clockwise' properties
 * Add 'Graphic.scrollable' property
 * Add 'sc8pr.gui.scroll'
+* Add 'Sketch.minSize'
+* Add 'px_delta', 'cs_delta', 'resetCS' and 'restoreCS' methods to 'Canvas'
 
 
 **** Add 'sc8pr.gui.tk' module
