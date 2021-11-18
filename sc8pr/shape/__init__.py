@@ -21,8 +21,7 @@ from math import hypot, ceil
 import pygame
 from sc8pr import Graphic, BaseSprite, CENTER, Image
 from sc8pr.util import rgba, hasAny
-from sc8pr.geom import transform2dGen, dist, delta, polar2d, circle_intersect, DEG,\
-    sigma
+from sc8pr.geom import transform2dGen, dist, delta, polar2d, circle_intersect, DEG, sigma
 
 
 class Shape(Graphic):
@@ -50,31 +49,43 @@ class Shape(Graphic):
     def contains(self, pos):
         "Determine if the point is within the shape, accounting for canvas offset"
         cv = self.canvas
-        cvPos = delta(pos, cv.rect.topleft) if cv else pos
-        return self.containsPoint(cvPos)
+        if cv: pos = cv.cs(*delta(pos, cv.rect.topleft))
+        return self.containsPoint(pos)
 
 
-class QCircle(Shape):
-    radius = None # Override Graphic.radius
-#    shape = None
+class Circle(Shape):
+    quickDraw = False
 
-    def __init__(self, r):
-        self.radius = r
+    def __init__(self, r): self.r = r
+
+    def setCanvas(self, cv, key=None):
+        "Preserve 'xy' property instead of 'pos' when changing canvas"
+        xy = self.xy
+        return super().setCanvas(cv, key).config(xy=xy)
+
+    def __str__(self):
+        return "<Circle '{}': r={:.3g}, xy=({:.3g}, {:.3g})>".format(id(self), self._r, *self.xy)
+
+    @property
+    def r(self): return self._r
+
+    @r.setter
+    def r(self, r):
+        self._r = r
         self._srf = None
 
     @property
-    def image(self):
-        if self._srf: return self._srf
-        srf = pygame.Surface(self.size, pygame.SRCALPHA)
-        r = round(self.radius)
-        w = self.weight
-        if w: pygame.draw.circle(srf, self._stroke, (r,r), r)
-        f = self._fill
-        if f or w:
-            if not f: f = 0, 0, 0, 0
-            pygame.draw.circle(srf, f, (r,r), r-w)
-        self._srf = srf
-        return srf
+    def radius(self):
+        "Radius in pixels"
+        try: u = self.canvas.unit
+        except: u = 1
+        return u * self._r
+
+    @radius.setter
+    def radius(self, radius):
+        try: u = self.canvas.unit
+        except: u = 1
+        self.r = radius / u
 
     @property
     def size(self):
@@ -83,35 +94,40 @@ class QCircle(Shape):
 
     def resize(self, size):
         self.radius = min(size) / 2
-        self._srf = None
 
     def config(self, **kwargs):
-        keys = "fill", "stroke", "weight", "radius"
+        keys = "fill", "stroke", "weight"
         if hasAny(kwargs, keys): self._srf = None
         return super().config(**kwargs)
 
-    def containsPoint(self, pos):
-        "Determine if the point is within the circle; do not account for canvas offset"
-        return dist(self.pos, pos) < self.radius
+    def containsPoint(self, xy):
+        "Determine if the point is within the circle"
+        return dist(self.xy, xy) < self.r
 
     def intersect(self, other):
         "Find the intersection(s) of two circles as list of points"
-        return circle_intersect(self.pos, self.radius, other.pos, other.radius)
+        return circle_intersect(self.xy, self.r, other.xy, other.r)
 
-
-class Circle(QCircle):
-
-    def draw(self, srf):
-        c = self.canvas.rect.topleft
-        pos = [round(x) for x in sigma(c, self.pos)]
+    @property
+    def image(self):
+        "Create a surface and draw the circle onto it"
+        if self._srf: return self._srf
+        srf = pygame.Surface(self.size, pygame.SRCALPHA)
         r = round(self.radius)
+        pos = r, r
         wt = self.weight
         f = self._fill
         s = self._stroke
-        rect = None
-        if f: rect = pygame.draw.circle(srf, f, pos, r)
-        if s and wt: rect = pygame.draw.circle(srf, s, pos, r, wt).inflate(wt, wt)
-        return pygame.Rect((0, 0), (0, 0)) if rect is None else rect
+        if self.quickDraw: # Faster
+            if f: pygame.draw.circle(srf, f, pos, r)
+            if s and wt: pygame.draw.circle(srf, s, pos, r, wt)
+        else: # Higher quality
+            if wt: pygame.draw.circle(srf, s, pos, r)
+            if f or wt:
+                if not f: f = 0, 0, 0, 0
+                pygame.draw.circle(srf, f, pos, r-wt)
+        self._srf = srf
+        return srf
 
 
 class Line(Shape):
