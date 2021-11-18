@@ -243,6 +243,17 @@ class Graphic:
         size = self.size
         return (size[0] - 1) / 2, (size[1] - 1) / 2
 
+    @property
+    def xy(self):
+        "Position relative to canvas coordinate system"
+        try: return self.canvas.cs(*self.pos)
+        except: return self.pos
+
+    @xy.setter
+    def xy(self, pos):
+        try: self.pos = self.canvas.px(*pos)
+        except: self.pos = pos
+
     def blitPosition(self, offset, blitSize):
         "Return the position (top left) to which the graphic is drawn"
         x, y = self.pos
@@ -720,7 +731,8 @@ class Canvas(Graphic):
     resizeContent = True
 
     def __init__(self, image, bg=None):
-        self._cs = self._px = lambda x: x
+        self.resetCS()
+#         self._cs = self._px = lambda x: x
         mode = 0 if type(image) is str else 1 if isinstance(image, Image) else 2
         if mode == 2: # tuple or list
             size = image
@@ -741,29 +753,47 @@ class Canvas(Graphic):
     def clipArea(self, r): self._clipArea = pygame.Rect(r)
 
     @property
+    def _scroll(self): return 0, 0
+
+    @property
     def clockwise(self):
         ux, uy = self.units
         return ux * uy < 0
 
     @property
-    def units(self):
-        return delta(self.px(1, 1), self.px(0, 0))
+    def units(self): return self._units
+
+    def px_delta(self, dx=0, dy=0):
+        ux, uy = self._units
+        return dx*ux, dy*uy
+
+    def cs_delta(self, dx=0, dy=0):
+        ux, uy = self._units
+        return dx/ux, dy/uy
 
     @property
     def unit(self):
         ux, uy = self.units
         return sqrt(abs(ux * uy))
 
-    @property
-    def _scroll(self): return 0, 0
-
     def px(self, *pt): return delta(self._px(pt), self._scroll)
     def cs(self, *pt): return self._cs(sigma(pt, self._scroll))
     def px_list(self, *args): return [self.px(*pt) for pt in args]
     def cs_list(self, *args): return [self.cs(*pt) for pt in args]
 
+    def resetCS(self):
+        u = lambda x: x
+        return self.restoreCS((u, u))
+
+    def restoreCS(self, cs):
+        try: old = self._cs, self._px
+        except: old = None
+        self._cs, self._px = cs
+        self._units = delta(self.px(1, 1), self.px(0, 0))
+        return old
+
     def attachCS(self, lrbt, margin=0, size=None):
-        self._cs, self._px = makeCS(lrbt, size if size else self.size, margin)
+        self.restoreCS(makeCS(lrbt, size if size else self.size, margin))
         return self
 
     @property
