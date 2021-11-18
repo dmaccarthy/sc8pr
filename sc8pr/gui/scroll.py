@@ -94,8 +94,7 @@ class _SCanvas(Canvas):
 
     def attachCS(self, lrbt, margin=0, size=None):
         "Base coordinate transformation on scroll size instead of actual size"
-        self._cs, self._px = makeCS(lrbt, size if size else self._scrollSize, margin)
-        return self
+        return super().attachCS(lrbt, margin, size if size else self._scrollSize)
 
     @property
     def scrollPos(self): return self._scroll
