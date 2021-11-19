@@ -65,6 +65,7 @@ class Slider(Canvas):
     _lastButton = None
     focusable = True
     allowButton = 1, 4, 5
+    reverseWheel = False
     _methodNames = ["Click", "Scroll", "Drag", "Key"]
     
     def __init__(self, size=(128,16), knob=None, lower=0, upper=1, steps=0):
@@ -131,6 +132,7 @@ class Slider(Canvas):
         if btn in self.allowButton:
             dim = tall(*self.size)
             lims = [self.lower, self.upper]
+            if btn in (4, 5) and self.reverseWheel: btn = 9 - btn
             if btn == 4: x = lims[dim]
             elif btn == 5: x = lims[1-dim]
             else: x = self._eventValue(ev)
