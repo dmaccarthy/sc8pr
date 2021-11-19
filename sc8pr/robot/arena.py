@@ -79,13 +79,11 @@ def quilt(sk):
 
 def curve(size, color="blue"):
     size = getattr(size, "size", size)
-#     cv = PCanvas(size, [-4, 4, -2, 2]).config(bg="white")
     cv = Canvas(size).config(bg="white").attachCS([-4, 4, -2, 2])
     c = lambda *x: 2 * size[0] / size[1] * cos(x[0])
     top = [(x, sin(x)) for x in rangef(-pi, pi, pi/40)]
-    bot = [shiftAlongNormal(*x, c, -0.08) for x in top]
-    blu = [cv.px(*x) for x in (top + list(reversed(bot)))]
-    cv += Polygon(blu).config(fill=color, weight=0)
+    bot = list(reversed([shiftAlongNormal(*x, c, -0.08) for x in top]))
+    cv += Polygon(top + bot).config(fill=color, weight=0)
     return cv.snapshot()
 
 

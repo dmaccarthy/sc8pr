@@ -28,21 +28,20 @@ class ParkingLot(BrainSketch):
 
     def __init__(self, size, brain):
         self.brain = brain
-        super().__init__(size) #, [-3, 3, -2, 2])
+        super().__init__(size)
         self.config(bg="#f0f0f0")
 
     def drawLot(self):
-        px = self.px
-        self += Line(px(-2.7, 0), px(2.7, 0)).config(weight=10, stroke="blue")
+        self += Line((-2.7, 0), (2.7, 0)).config(weight=10, stroke="blue")
         attr = dict(stroke="orange", weight=4)
         for x in range(-2, 3):
-            self += Line(px(x, 2), px(x, 1)).config(**attr)
-            self += Line(px(x, -2), px(x, -1)).config(**attr)
+            self += Line((x, 2), (x, 1)).config(**attr)
+            self += Line((x, -2), (x, -1)).config(**attr)
         self.flatten()
         img = Circle(0.4 * self.unit).config(fill="grey", weight=0).snapshot()
         for x in range(-3, 3):
-            self += Sprite(img).config(pos=px(x + 0.5, 2.36), mass=50, drag=0.02, wrap=0)
-            self += Sprite(img).config(pos=px(x + 0.5, -2.37), mass=50, drag=0.02, wrap=0)
+            self += Sprite(img).config(xy=(x + 0.5, 2.36), mass=50, drag=0.02, wrap=0)
+            self += Sprite(img).config(xy=(x + 0.5, -2.37), mass=50, drag=0.02, wrap=0)
         return self
 
     def setup(self):
@@ -50,14 +49,14 @@ class ParkingLot(BrainSketch):
         h = self.height / 4.5
         attr = dict(height = h, mass = 1, wrap=0)
         robot = Robot(["#ffd428", "#ff5050"]).config(
-            pos = self.px(uniform(-2, 2), 0), angle = randint(0, 359), **attr)
+            xy = (uniform(-2, 2), 0), angle = randint(0, 359), **attr)
         self["Crash"] = self.bindBrain(robot)
         c = False, False
         a = 90, 270
-        pos = lambda y: self.px(randint(0, 5) - 2.5, y)
+        pos = lambda y: (randint(0, 5) - 2.5, y)
         br = lambda *x: self.idle if randint(0, 1) == 0 else (lambda x: None)
-        self += Robot(c).bind(brain=br()).config(pos=pos(1.46), angle=choice(a), **attr)
-        self += Robot(c).bind(brain=br()).config(pos=pos(-1.46), angle=choice(a), **attr)
+        self += Robot(c).bind(brain=br()).config(xy=pos(1.46), angle=choice(a), **attr)
+        self += Robot(c).bind(brain=br()).config(xy=pos(-1.46), angle=choice(a), **attr)
 
     ondraw = physics
 

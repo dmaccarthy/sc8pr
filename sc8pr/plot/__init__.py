@@ -32,7 +32,7 @@ def plot(cv, x, y=None, markers=5, offset=None, **kwargs):
     data = _data(x, y)
     if type(markers) is int:
         h = 2 * markers
-        markers = Circle(max(32, markers)).config(**kwargs).snapshot()
+        markers = Circle(1).config(radius=max(32, markers), **kwargs).snapshot()
     if type(markers) is str:
         marker = lambda *i: Text(markers.format(x=i[0], y=i[1])).config(**kwargs)
     else:
@@ -40,7 +40,7 @@ def plot(cv, x, y=None, markers=5, offset=None, **kwargs):
     i = 0
     dx, dy = (0, 0) if offset is None else offset
     for x, y in data:
-        cv += marker(x, y, i).config(pos=cv.px(x+dx, y+dy))
+        cv += marker(x, y, i).config(xy=(x+dx, y+dy))
         i += 1
 
 def bars(cv, x, y=None, width=1, **kwargs):
@@ -48,8 +48,8 @@ def bars(cv, x, y=None, width=1, **kwargs):
     for x, y in _data(x, y):
         x0 = x - width / 2
         x1 = x + width / 2
-        pts = cv.px_list((x0, 0), (x1, 0), (x1, y), (x0, y))
-        cv += Polygon(pts).config(**kwargs)
+        pts = (x0, 0), (x1, 0), (x1, y), (x0, y)
+        cv += Polygon(pts, anchor=(x,y)).config(**kwargs)
 
 def _gridlines(cv, x, y, dim, **config):
     "Draw gridlines in EITHER x or y direction"
@@ -58,7 +58,7 @@ def _gridlines(cv, x, y, dim, **config):
     if x0 > x1: x0, x1 = x1, x0
     while x0 <= x1:
         pts = [(y0, x0), (y1, x0)] if dim else [(x0, y0), (x0, y1)]
-        cv += Line(*cv.px_list(*pts)).config(**config)
+        cv += Line(*pts).config(**config)
         x0 += x2
 
 def gridlines(cv, x=(0,1,2), y=(0,1,2), **config):
