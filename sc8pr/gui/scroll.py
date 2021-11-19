@@ -56,10 +56,10 @@ class ScrollBars:
         x, y = cv._scroll
         if bars & 1:
             sb = self.makeScrollBar(0, bars, thickness, canvasW, scrollW)
-            self.bars.append(sb.config(val=-x, anchor=BOTTOMLEFT, pos=(0, canvasH + thickness)))
+            self.bars.append(sb.config(val=-x, anchor=BOTTOMLEFT, corner=(0, canvasH + thickness)))
         if bars & 2:
             sb = self.makeScrollBar(1, bars, thickness, canvasH, scrollH)
-            self.bars.append(sb.config(val=-y, anchor=TOPRIGHT, pos=(canvasW + thickness, 0)))
+            self.bars.append(sb.config(val=-y, anchor=TOPRIGHT, corner=(canvasW + thickness, 0)))
 
     def makeScrollBar(self, dim, bars, thickness, canvasW, scrollW):
         "Create one of the scroll bars"
@@ -71,7 +71,10 @@ class ScrollBars:
         sliderSize = (thickness, sliderW) if dim else (sliderW, thickness)
 
         # Make knob and slider
-        slider = Slider(sliderSize, Knob(knobSize), upper=(canvasW-scrollW)).bind(onchange=self.sliderChange)
+        maxScroll = scrollW - canvasW
+        kwargs = dict(upper = -maxScroll, steps = max(2, maxScroll))
+        slider = Slider(sliderSize, Knob(knobSize), **kwargs).bind(onchange=self.sliderChange)
+        if dim == 0: slider.config(reverseWheel = True)
         return slider.config(bg=self.sliderBg, dim=dim, scrollable=False, weight=0)
     
     @staticmethod
@@ -111,7 +114,12 @@ class _SCanvas(Canvas):
         "Move scroll bars to top layer before drawing"
         for sb in self._scrollBars:
             if sb in self: sb.layer = -1
-            else: self += sb
+            else:
+                self += sb
+                c = getattr(sb, "corner", None)
+                if c:
+                    sb.config(pos=c)
+                    del sb.corner
         return super().draw(srf, mode)
 
     def _scrollBy(self, dx, dy):

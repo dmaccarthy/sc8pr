@@ -6,7 +6,10 @@ sc8pr 2.2.dev...
 ****= Experimental
 !!! = In progress
 
+!!! Modify 'Line' and other shapes to use canvas coordinate system
 
+*** Add 'Slider.reverseWheel'
+*** Preserve 'xy' instead of 'pos' when adding to a canvas
 *** Add 'sc8pr.gui.slider.Knob'
 *** Create 'sc8pr.shape.locus'
 *** 'WebCache' does not overwrite existing cache file if URL is different
@@ -89,10 +92,6 @@ sc8pr 2.2.dev...
 
 **** Add 'sc8pr.gui.tk' module
 **** Add 'sc8pr.plot' package
-**** Add 'plot.shape.PLine'
-**** Add 'Canvas.scroll' and 'Canvas.scrollTo' methods, SCROLL event
-**** Add additional 'Graphic' and 'Canvas' methods to support new plotting/scrolling package
-**** Add 'Canvas.icons, 'Canvas.iconSize'
-**** Add 'iconofy'/'deiconify' methods to 'Graphic' class
+
 
 !!! Add 'util.borderRadius'

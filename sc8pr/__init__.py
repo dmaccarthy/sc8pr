@@ -174,6 +174,12 @@ class Graphic:
         "The key used when adding the instance to a canvas"
         return getattr(self, "_name", None)
 
+    @property
+    def _str_name(self):
+        name = self.name
+        if name is None: name = id(self)
+        return "{} '{}'".format(type(self).__name__, name)
+
     def anon(self):
         "Remove the instance's key (_name)"
         if hasattr(self, "_name"): del self._name
@@ -300,15 +306,21 @@ class Graphic:
 
 # Canvas interaction
 
-    def setCanvas(self, cv, key=None):
-        "Add the object to a canvas"
+    def _setCanvas(self, cv, key):
         self.remove()
-        if key: 
+        if key:
             if key in cv and cv[key] is not self:
                 raise KeyError("Key '{}' is already in use".format(key))
             self._name = key
         self.canvas = cv
         cv._items.append(self)
+
+    def setCanvas(self, cv, key=None):
+        "Add the object to a canvas"
+        xy = self.xy # !!!
+        self._setCanvas(cv, key)
+        try: self.config(xy=xy) # !!!
+        except: pass
         return self
 
     def remove(self, deleteRect=False):
