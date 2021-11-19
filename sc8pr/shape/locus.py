@@ -39,15 +39,11 @@ def locus(func, param, **kwargs):
 class Locus(Shape):
     "Class for drawing point sequences directly to the canvas"
     
-    
     # Deprecated subclass sc8pr.misc.plot.Locus inherits the following attributes:
     # autoPositionOnResize, snapshot, scrollable, pos, anchor, contains, size, pointList
     
     autoPositionOnResize = False
     snapshot = None
-
-    @property
-    def scrollable(self): return False
 
     @property
     def pos(self):
