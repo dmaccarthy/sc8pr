@@ -20,6 +20,12 @@ from math import hypot, pi, sin, cos, asin, atan2, floor, sqrt
 
 DEG = pi / 180
 
+try: from math import prod
+except:
+    def prod(iterable, start=1):
+        for x in iterable: start *= x
+        return start
+
 def positiveAngle(a):
     "Return an angle between 0 and 360"
     return a - 360 * floor(a / 360)
@@ -35,10 +41,6 @@ def angleDifference(a2, a1=0):
 def dist(p1, p2):
     "Distance between two points"
     return hypot(p2[0] - p1[0], p2[1] - p1[1])
-
-def sprod(v1, v2):
-    "2D scalar product"
-    return v1[0] * v2[0] + v1[1] * v2[1]
 
 def sigma(*args):
     "Sum one or more vectors"
@@ -57,6 +59,13 @@ def delta(v2, v1=None, mag=None):
             x *= mag
             y *= mag
     return x, y
+
+# 2D Vector multiplications
+def neg(v): return -v[0], -v[1]
+def smult(s, v):return s * v[0], s * v[1]
+def sprod(v1, v2): return v1[0] * v2[0] + v1[1] * v2[1]
+def vmult(v1, v2): return v1[0] * v2[0], v1[1] * v2[1]
+def vprod(v1, v2): return v1[0] * v2[1] - v1[1] * v2[0]
 
 def shiftAlongNormal(x, y, deriv, dr):
     m = deriv(x, y)
