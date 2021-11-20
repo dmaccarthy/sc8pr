@@ -21,7 +21,7 @@ from math import hypot, ceil
 import pygame
 from sc8pr import Graphic, Canvas, BaseSprite, CENTER, Image
 from sc8pr.util import rgba, hasAny
-from sc8pr.geom import transform2dGen, dist, delta, polar2d, circle_intersect, DEG, sigma
+from sc8pr.geom import transform2dGen, transform2d, dist, delta, polar2d, circle_intersect, DEG, sigma
 
 
 class Shape(Graphic):
@@ -56,14 +56,11 @@ class Shape(Graphic):
         return self.containsPoint(pos)
 
 
-class Circle(Shape):
+class _Ellipse(Shape):
     xy = 0, 0
-    quickDraw = False
 
-    def __init__(self, r): self.r = r
-
-    def __str__(self):
-        return "<{}: r={:.3g}, xy=({:.3g}, {:.3g})>".format(self._str_name, self._r, *self.xy)
+    @property
+    def anchor(self): return CENTER
 
     @property
     def pos(self):
@@ -76,8 +73,14 @@ class Circle(Shape):
         try: self.xy = self.canvas.cs(*pos)
         except: self.xy = pos
 
-    @property
-    def anchor(self): return CENTER
+
+class Circle(_Ellipse):
+    quickDraw = True
+
+    def __init__(self, r): self.r = r
+
+    def __str__(self):
+        return "<{}: r={:.3g}, xy=({:.3g}, {:.3g})>".format(self._str_name, self._r, *self.xy)
 
     @property
     def r(self): return self._r
@@ -441,22 +444,28 @@ MIDDLE = None
 TAIL = True
 
 class Arrow(Polygon):
-    "Arrow shaped graphic"
+    "Arrow shaped polygon"
 
     def __init__(self, length, width=0.1, head=0.1, flatness=2, anchor=TIP):
-        if anchor == TAIL: anchor = (-length, 0)
         width *= length / 2
         head *= length
         y = head * flatness / 2
         pts = [(0,0), (-head, y), (-head, width), (-length, width),
             (-length, -width), (-head, -width), (-head, -y)]
+        if anchor == TAIL: anchor = (-length, 0)
         super().__init__(pts, anchor)
         self.xy = 0, 0
 
     @staticmethod
-    def between(tail, tip, width=0.1, head=0.1, flatness=2):
+    def between(tail, tip, width=0.1, head=0.1, flatness=2, anchor=TIP):
         r, a = polar2d(*delta(tip, tail))
-        return Arrow(r, width, head, flatness, TIP).config(xy=tip, angle=a)
+        arrow = Arrow(r, width, head, flatness, TIP).config(xy=tip, angle=a)
+        if anchor == TIP: arrow.config(anchor=tip)
+        elif anchor == TAIL: arrow.config(anchor=tail)
+        else:
+            x, y = sigma(tail, tip)
+            arrow.config(anchor=(x/2, y/2))
+        return arrow
 
 
 class ArrowSprite(Arrow, BaseSprite):
@@ -471,62 +480,85 @@ class CircleSprite(Circle, BaseSprite): pass
 class PolygonSprite(Polygon, BaseSprite): pass
 
 
-# !!!! Re-write for canvas coordinates!
+class Ellipse(_Ellipse):
 
+    def __init__(self, size): self.axes = size
 
-class Ellipse(Shape):
-    anchor = CENTER
+    @property
+    def axes(self): return self._cssize
 
-    def resize(self, size):
-        self._size = size
+    @axes.setter
+    def axes(self, size):
+        self._cssize = (size, size) if type(size) in (int, float) else size
         self._srf = None
 
-    __init__ = resize
+    def resize(self, size):
+        w, h = self.size
+        fx, fy = size[0] / w, size[1] / h
+        w, h = self._cssize
+        self.axes = fx * w, fy * h
+
+    @property
+    def size(self):
+        try:
+            w, h = self.canvas.px_delta(*self._cssize)
+            return ceil(abs(w)), ceil(abs(h))
+        except:
+            return self._cssize
+
+    @size.setter
+    def size(self, size): self.resize(size)
 
     def config(self, **kwargs):
-        keys = "fill", "stroke", "weight", "size", "arc"
+        keys = "fill", "stroke", "weight", "angle"
         if hasAny(kwargs, keys): self._srf = None
         return super().config(**kwargs)
 
     @property
     def image(self):
         if self._srf: return self._srf
-        srf = pygame.Surface(self._size, pygame.SRCALPHA)
-        w = self.weight
-        f = self._fill
-        r = (0, 0), self._size
-        if w:
-            if isinstance(self, Arc):
-                a = [-x * DEG for x in self.arc]
-                pygame.draw.arc(srf, self._stroke, r, a[1], a[0], w)
-            else:
-                pygame.draw.ellipse(srf, self._stroke, r)
-        if f:
-            r = w / 2, w / 2, self.width - w, self.height - w
-            if not f: f = 0, 0, 0, 0
-            pygame.draw.ellipse(srf, f, r)
+        srf = pygame.Surface(self.size, pygame.SRCALPHA)
+        r = pygame.Rect((0, 0), self.size)
+        self._render(srf, r)
         if self.angle:
             srf = pygame.transform.rotate(srf, -self.angle)
         self._srf = srf
         return srf
+    
+    def _render(self, srf, r):
+        w = self.weight
+        f = self._fill
+        s = self._stroke
+        if s and w:
+            pygame.draw.ellipse(srf, s, r)
+            d = -2 * w
+            r.inflate_ip(d, d)
+            tp = not f
+            if tp: f = pygame.Color((255, 255, 255, 255) if s[0] < 128 else (0, 0, 0, 255))
+        else: tp = False
+        if f:
+            pygame.draw.ellipse(srf, f, r)
+            if tp: 
+                pygame.PixelArray(srf).replace(f, (255,255,255,0))
+        return srf
 
-    def containsPoint(self, pos):
-        a, b = [x/2 for x in self.size]
-        x, y = self.relXY(pos)
-        return ((x - a) / a) ** 2 + ((y - b) / b) ** 2 <= 1
+    def containsPoint(self, xy):
+        w, h = self._cssize
+        xc, yc = self.xy
+        a = -1 if self.clockwise else 1
+        x, y = transform2d(xy, preShift=(-xc, -yc), rotate=a*self.angle)
+        return (x / w) ** 2 + (y / h) ** 2 <= 0.25
 
 
 class Arc(Ellipse):
+    contains = Image.contains
     arc = 0, 360
 
-    @property
-    def fill(self): return None
-
-    @fill.setter
-    def fill(self, f): raise NotImplementedError("Arc class does not support fill operation")
-
-    def __init__(self, size):
-        if type(size) in (int, float): size = size, size
-        super().__init__(size)
-
-    contains = Image.contains
+    def _render(self, srf, r):
+        w = self.weight
+        s = self._stroke
+        if s and w:
+            a = -1 if self.clockwise else 1
+            arc = [a*x * DEG for x in self.arc]
+            if a == -1: pygame.draw.arc(srf, s, r, arc[1], arc[0], w)
+            else: pygame.draw.arc(srf, s, r, arc[0], arc[1], w)

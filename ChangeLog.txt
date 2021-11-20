@@ -8,10 +8,9 @@ sc8pr 2.2.dev...
 
 !!! Modify 'Line' and other shapes to use canvas coordinate system
 
-*** Add 'Slider.reverseWheel'
+*** Re-do 'sc8pr.shape'; create 'sc8pr.shape.locus'
 *** Preserve 'xy' instead of 'pos' when adding to a canvas
 *** Add 'sc8pr.gui.slider.Knob'
-*** Create 'sc8pr.shape.locus'
 *** 'WebCache' does not overwrite existing cache file if URL is different
 *** Robot simulations
 
@@ -32,7 +31,7 @@ sc8pr 2.2.dev...
 * Allow 'Canvas.__isub__' to accept a string; add 'Canvas.removeItems'
 * 'Video.__getitem__' accepts slices and calls 'Video.clip'
 * 'Video.clip' accepts negative 'start' and 'end' arguments
-* Add 'Slider.methodNames'
+* Add 'Slider.methodNames' and 'Slider.reverseWheel'
 * 'Plot.clockwise' and 'Plot.units' properties
 * 'Plot' constructor can take an object with 'size' attribute in place of a size literal
 * Sync video capture when sketch does not run at nominal frame rate
@@ -78,7 +77,6 @@ sc8pr 2.2.dev...
 * Add 'TextInput.blurAction'
 * Add 'TextInputCanvas' class 
 * Add 'sc8pr.misc.s8v'
-* Add 'QCircle' and make 'Circle' faster drawing
 * Add 'Ellipse' and 'Arc' classes to 'sc8pr.shape'
 * Add FOCUS event and 'Graphic.focus' method; add; 'trigger' argument to 'Graphic.blur'
 * Add 'LATEX_URL', 'LATEX_FMT', 'latex_url' to 'sc8pr.misc.webcache'
@@ -88,7 +86,8 @@ sc8pr 2.2.dev...
 * Add 'sc8pr.gui.scroll'
 * Add 'Sketch.minSize'
 * Add 'px_delta', 'cs_delta', 'resetCS' and 'restoreCS' methods to 'Canvas'
-
+* Add 'Graphic.clockwise' and 'Graphic.theta'
+* Add 'Sketch.beforeResize', 'Canvas.attr_get' and 'Canvas.attr_set'
 
 **** Add 'sc8pr.gui.tk' module
 **** Add 'sc8pr.plot' package
