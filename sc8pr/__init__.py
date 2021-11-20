@@ -189,6 +189,15 @@ class Graphic:
         name = self.name
         return "<{} '{}'>".format(type(self).__name__, name if name else id(self))
 
+    def _config(self, error_mode=1, **kwargs):
+        "Set multiple instance properties; handle excpetions"
+        for i in kwargs.items():
+            try: setattr(self, *i)
+            except Exception as e:
+                if error_mode == 1: logError()
+                elif error_mode == 2: raise e
+        return self
+
     def config(self, **kwargs):
         "Set multiple instance properties"
         for i in kwargs.items(): setattr(self, *i)
@@ -250,6 +259,11 @@ class Graphic:
         return (size[0] - 1) / 2, (size[1] - 1) / 2
 
     @property
+    def clockwise(self):
+        try: return self.canvas.clockwise
+        except: return True
+
+    @property
     def xy(self):
         "Position relative to canvas coordinate system"
         try: return self.canvas.cs(*self.pos)
@@ -259,6 +273,15 @@ class Graphic:
     def xy(self, pos):
         try: self.pos = self.canvas.px(*pos)
         except: self.pos = pos
+
+    @property
+    def theta(self):
+        "Graphic angle in the same sense as the coordinate system"
+        return self.angle if self.clockwise else -self.angle
+
+    @theta.setter
+    def theta(self, theta):
+        self.angle = theta if self.clockwise else -theta
 
     def blitPosition(self, offset, blitSize):
         "Return the position (top left) to which the graphic is drawn"
@@ -317,10 +340,10 @@ class Graphic:
 
     def setCanvas(self, cv, key=None):
         "Add the object to a canvas"
-        xy = self.xy # !!!
+        xy = self.xy
+        t = self.theta
         self._setCanvas(cv, key)
-        try: self.config(xy=xy) # !!!
-        except: pass
+        self._config(0, xy=xy, theta=t)
         return self
 
     def remove(self, deleteRect=False):
@@ -744,7 +767,6 @@ class Canvas(Graphic):
 
     def __init__(self, image, bg=None):
         self.resetCS()
-#         self._cs = self._px = lambda x: x
         mode = 0 if type(image) is str else 1 if isinstance(image, Image) else 2
         if mode == 2: # tuple or list
             size = image
@@ -770,7 +792,7 @@ class Canvas(Graphic):
     @property
     def clockwise(self):
         ux, uy = self.units
-        return ux * uy < 0
+        return ux * uy > 0
 
     @property
     def units(self): return self._units
@@ -795,12 +817,15 @@ class Canvas(Graphic):
 
     def resetCS(self):
         u = lambda x: x
-        return self.restoreCS((u, u))
+        old = self.restoreCS((u, u))
+        self._hasCS = False
+        return old
 
     def restoreCS(self, cs):
         try: old = self._cs, self._px
         except: old = None
         self._cs, self._px = cs
+        self._hasCS = True
         self._units = delta(self.px(1, 1), self.px(0, 0))
         return old
 
@@ -1049,10 +1074,23 @@ class Canvas(Graphic):
             if criteria(gr): yield gr
 
     def scroll(self, dx=0, dy=0):
-        raise NotImplementedError("Use PCanvas class to scroll.")
+        raise NotImplementedError("Use ScrollCanvas class.")
 
     def cover(self):
         return Image(self.size, "#ffffffc0").config(anchor=TOPLEFT)
+
+    def attr_get(self, *args):
+        data = {}
+        for gr in self:
+            data[gr] = d = {}
+            for a in args:
+                try: d[a] = getattr(gr, a)
+                except: pass
+        return data
+
+    @staticmethod
+    def attr_set(data):
+        for gr, d in data.items(): gr._config(0, **d)
 
 
 class Sketch(Canvas):
@@ -1063,6 +1101,7 @@ class Sketch(Canvas):
     _fixedAspect = True
     dirtyRegions = []
     resizeTrigger = False
+    beforeResize = None
 
     def __init__(self, size=(512,288)):
         super().__init__(size, "white")
@@ -1168,15 +1207,14 @@ class Sketch(Canvas):
             size = round(f * size[0]), round(f * size[1])
         else:
             size = max(ms, round(size[0])), max(ms, round(size[1]))
-#         if size != initSize:
         if mode is None: mode = self._mode
         else:
             mode = self._pygameMode(mode)
             self._mode = mode
         self.image = _pd.set_mode(size, mode)
+        if self.beforeResize: self.beforeResize(initSize)
         super().resize(self.size)
         self._size = self.size
-# end-if
         if self.dirtyRegions is not None:
             self.dirtyRegions = [pygame.Rect((0,0), self._size)]
         evMgr = self.evMgr
