@@ -35,17 +35,20 @@ class Table(Canvas):
     @property
     def rows(self): return len(self._rows)
 
-    def cell(self, c, r):
-        "Return a pygame.Rect describing the cell's location within the canvas"
+    def _cell(self, c, r, corner):
         cols = self._cols
         rows = self._rows
-        if type(c) is int: c1 = c + 1
+        if type(c) is int: c1 = len(cols) if c == -1 else c + 1
         else: c, c1 = c
-        if type(r) is int: r1 = r + 1
+        if type(r) is int: r1 = len(rows) if r == -1 else r + 1
         else: r, r1 = r
         p = self._padding
         xy = sum(cols[:c]) + p, sum(rows[:r]) + p
-        return pygame.Rect(xy, (sum(cols[c:c1]), sum(rows[r:r1])))
+        if corner: return xy
+        else: return pygame.Rect(xy, (sum(cols[c:c1]), sum(rows[r:r1])))
+
+    def cell(self, c, r): return self._cell(c, r, False)
+    def corner(self, c, r): return self._cell(c, r, True)
 
     def box(self, c=None, r=None, **kwargs):
         "Draw a border around a cell or a rectangular group of cells"
