@@ -76,6 +76,7 @@ class _Ellipse(Shape):
 
 class Circle(_Ellipse):
     quickDraw = True
+    _preserve = "xy", "r"
 
     def __init__(self, r): self.r = r
 
@@ -149,6 +150,7 @@ class Circle(_Ellipse):
 class Line(Shape):
     resolution = 1e-10
     snapshot = None
+    _preserve = "xy", "length"
 
     @property
     def xy(self): return self._start
@@ -279,6 +281,7 @@ class Line(Shape):
 
 class Polygon(Shape):
     _angle = 0
+    _preserve = "anchor", "vertices"
 
     def setPoints(self, pts, anchor=None):
         self._dumpCache()
@@ -481,6 +484,7 @@ class PolygonSprite(Polygon, BaseSprite): pass
 
 
 class Ellipse(_Ellipse):
+    _preserve = "xy", "axes"
 
     def __init__(self, size): self.axes = size
 

@@ -6,13 +6,12 @@ sc8pr 2.2.dev...
 ****= Experimental
 !!! = In progress
 
-!!! Modify 'Line' and other shapes to use canvas coordinate system
 
+*** Add 'sc8pr.plot' package
 *** Re-do 'sc8pr.shape'; create 'sc8pr.shape.locus'
 *** Preserve 'xy' instead of 'pos' when adding to a canvas
 *** Add 'sc8pr.gui.slider.Knob'
 *** 'WebCache' does not overwrite existing cache file if URL is different
-*** Robot simulations
 
 ** Add 'sc8pr._cs' module
 ** Fix minor bug with 'Sketch.caption' getter
@@ -88,9 +87,9 @@ sc8pr 2.2.dev...
 * Add 'px_delta', 'cs_delta', 'resetCS' and 'restoreCS' methods to 'Canvas'
 * Add 'Graphic.clockwise' and 'Graphic.theta'
 * Add 'Sketch.beforeResize', 'Canvas.attr_get' and 'Canvas.attr_set'
+* Robot simulations
 
 **** Add 'sc8pr.gui.tk' module
-**** Add 'sc8pr.plot' package
 
 
 !!! Add 'util.borderRadius'

@@ -44,6 +44,7 @@ class Locus(Shape):
     
     autoPositionOnResize = False
     snapshot = None
+    _preserve = ()
 
     @property
     def pos(self):

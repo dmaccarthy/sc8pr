@@ -158,6 +158,7 @@ class Graphic:
     provide a 'image' property which gives a surface that Graphic.draw can use."""
     autoPositionOnResize = True
     _avgColor = None
+    _preserve = "xy", "size"
     scrollable = True
     canvas = None
     pos = 0, 0
@@ -1082,10 +1083,11 @@ class Canvas(Graphic):
     def attr_get(self, *args):
         data = {}
         for gr in self:
-            data[gr] = d = {}
-            for a in args:
+            d = {}
+            for a in (args if args else gr._preserve):
                 try: d[a] = getattr(gr, a)
                 except: pass
+            if d: data[gr] = d
         return data
 
     @staticmethod
