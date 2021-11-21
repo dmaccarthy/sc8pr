@@ -27,21 +27,32 @@ def _data(x, y=None):
     if type(y) in (int, float): y = len(x) * [y]
     return zip(x, y) if y else x
 
+def _marker(m, x, y, i):
+    m = m[i]
+    if type(m) is str:
+        m = Text(m.format(x,y))
+    return m
+
 def plot(cv, x, y=None, markers=5, offset=None, **kwargs):
     "Draw markers (Graphic instances) at a sequence of points"
     data = _data(x, y)
     if type(markers) is int:
         h = 2 * markers
         markers = Circle(1).config(radius=max(32, markers), **kwargs).snapshot()
+        kwargs = {"height": h}
     if type(markers) is str:
         marker = lambda *i: Text(markers.format(x=i[0], y=i[1])).config(**kwargs)
+    elif isinstance(markers, Graphic):
+        markers = Image(markers)
+        marker = lambda *i: Image(markers).config(**kwargs)
     else:
-        marker = lambda *i: Image(markers).config(height=h) if isinstance(markers, Graphic) else markers[i[2]]
+        marker = lambda *i: _marker(markers, *i).config(**kwargs)
     i = 0
     dx, dy = (0, 0) if offset is None else offset
     for x, y in data:
         cv += marker(x, y, i).config(xy=(x+dx, y+dy))
         i += 1
+    return cv
 
 def bars(cv, x, y=None, width=1, **kwargs):
     "Draw bar graph data"
@@ -50,6 +61,7 @@ def bars(cv, x, y=None, width=1, **kwargs):
         x1 = x + width / 2
         pts = (x0, 0), (x1, 0), (x1, y), (x0, y)
         cv += Polygon(pts, anchor=(x,y)).config(**kwargs)
+    return cv
 
 def _gridlines(cv, x, y, dim, **config):
     "Draw gridlines in EITHER x or y direction"
@@ -65,6 +77,7 @@ def gridlines(cv, x=(0,1,2), y=(0,1,2), **config):
     "Draw gridlines (or an axis) on a canvas"
     if len(x) > 2: _gridlines(cv, x, y, 0, **config)
     if len(y) > 2: _gridlines(cv, y, x, 1, **config)
+    return cv
 
 
 # Convert MatPlotLib plots...
