@@ -16,7 +16,6 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 import pygame
-from sc8pr._cs import makeCS #, _lrbt
 from sc8pr.shape import Shape
 from sc8pr.geom import sigma
 from sc8pr import CENTER
@@ -53,7 +52,7 @@ class Locus(Shape):
     @property
     def anchor(self): return CENTER
 
-    def __init__(self, data, param):
+    def __init__(self, data, param=None):
         self.data = data
         self.param = param
         self.vars = {}
