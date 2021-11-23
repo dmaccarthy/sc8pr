@@ -41,8 +41,8 @@ class CoordSys:
         w -= ml + mr
         h -= mb + mt
         self.viewport = pygame.Rect(ml, mt, w, h)
-        self.lrbt = lrbt = _lrbt(lrbt, w, h)
-        l, r, b, t = lrbt
+        l, r, b, t = lrbt = _lrbt(lrbt, w, h)
+        self.lrbt = tuple(lrbt)
         sx = (w - 1) / (r - l)
         sy = (h - 1) / (b - t)
         dx = sx * l - ml

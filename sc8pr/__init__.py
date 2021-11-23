@@ -818,7 +818,7 @@ class Canvas(Graphic):
 
     _attachWarn = "WARNING: Attaching coordinate system to canvas while resizeContent is True; this could end badly!"
 
-    def attachCS(self, lrbt=None, margin=0, size=None):
+    def attachCS(self, lrbt, margin=0, size=None):
         "Attach a coordinate system to the canvas"
         if self.resizeContent:
             print(self._attachWarn, file=sys.stderr)
@@ -1099,7 +1099,7 @@ class Canvas(Graphic):
             if d: data[gr] = d
         return data
 
-    def attr_set(self, data, scale=False):
+    def attr_set(self, data, scale=None):
         for gr, d in data.items():
             if scale and "size" in d:
                 d = d.copy()
