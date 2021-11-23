@@ -86,8 +86,10 @@ sc8pr 2.2.dev...
 * Add 'Sketch.minSize'
 * Add 'px_delta', 'cs_delta', 'resetCS' and 'restoreCS' methods to 'Canvas'
 * Add 'Graphic.clockwise' and 'Graphic.theta'
-* Add 'Sketch.beforeResize', 'Canvas.attr_get' and 'Canvas.attr_set'
+* Add 'Canvas.attr_get' and 'Canvas.attr_set'
 * Robot simulations
+* 'Polygon.vertices' setter
+
 
 **** Add 'sc8pr.gui.tk' module
 
