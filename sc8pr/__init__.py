@@ -25,8 +25,8 @@ import pygame
 import pygame.display as _pd
 from pygame.transform import flip as _pyflip
 from sc8pr._event import EventManager
-from sc8pr._cs import makeCS
-from sc8pr.geom import transform2d, positiveAngle, delta, sigma
+from sc8pr._cs import CoordSys
+from sc8pr.geom import transform2d, positiveAngle, delta, sigma, vmult
 from sc8pr.util import CachedSurface, style, logError, sc8prData, tile, rgba, drawBorder
 
 # Anchor point constants
@@ -816,22 +816,33 @@ class Canvas(Graphic):
     def px_list(self, *args): return [self.px(*pt) for pt in args]
     def cs_list(self, *args): return [self.cs(*pt) for pt in args]
 
-    def resetCS(self):
-        u = lambda x: x
-        old = self.restoreCS((u, u))
-        self._hasCS = False
-        return old
+    _attachWarn = "WARNING: Attaching coordinate system to canvas while resizeContent is True; this could end badly!"
 
-    def restoreCS(self, cs):
-        try: old = self._cs, self._px
-        except: old = None
-        self._cs, self._px = cs
-        self._hasCS = True
+    def attachCS(self, lrbt=None, margin=0, size=None):
+        "Attach a coordinate system to the canvas"
+        if self.resizeContent:
+            print(self._attachWarn, file=sys.stderr)
+        if size is None: size = getattr(self, "scrollSize", self.size)
+        self.coordSys = cs = CoordSys(lrbt, size, margin)
+        self._cs, self._px = cs._tr
         self._units = delta(self.px(1, 1), self.px(0, 0))
-        return old
+        return self
 
-    def attachCS(self, lrbt, margin=0, size=None):
-        self.restoreCS(makeCS(lrbt, size if size else self.size, margin))
+    def updateCS(self, adjust=None, scale=True):
+        "Update the current coordinate system for the resized canvas"
+        lrbt, m, (w0, h0) = self.coordSys._args
+        size = getattr(self, "scrollSize", self.size)
+        if scale: scale = size[0] / w0, size[1] / h0
+        self.attachCS(lrbt, m)
+        if adjust: self.attr_set(adjust, scale)
+        return self
+
+    def resetCS(self):
+        "Remove the canvas coordinate system and reset to pixel coordinates"
+        u = lambda x: x
+        self._cs, self._px = u, u
+        self._units = 1, 1
+        self.coordSys = None
         return self
 
     @property
@@ -1027,8 +1038,6 @@ class Canvas(Graphic):
             if g.snapshot is not None:
                 img = g.snapshot().image
                 srf.blit(img, g.blitPosition((0,0), img.get_size()))
-#                 xy = g.blitPosition((0,0), g.size)
-#                 srf.blit(g.snapshot().image, xy)
             else: g.draw(srf, snapshot=True)
 
         # Draw border
@@ -1090,9 +1099,12 @@ class Canvas(Graphic):
             if d: data[gr] = d
         return data
 
-    @staticmethod
-    def attr_set(data):
-        for gr, d in data.items(): gr._config(0, **d)
+    def attr_set(self, data, scale=False):
+        for gr, d in data.items():
+            if scale and "size" in d:
+                d = d.copy()
+                d["size"] = vmult(d["size"], scale)
+            gr._config(0, **d)
 
 
 class Sketch(Canvas):

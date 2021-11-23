@@ -19,7 +19,6 @@
 import pygame
 from sc8pr.gui.slider import Slider, Knob
 from sc8pr import Image, Canvas, Sketch, BOTTOMLEFT, TOPRIGHT
-from sc8pr._cs import makeCS
 
 
 class ScrollBars:
@@ -94,10 +93,6 @@ class _SCanvas(Canvas):
     _scroll = 0, 0
     resizeContent = False
     resizeScroll = False
-
-    def attachCS(self, lrbt, margin=0, size=None):
-        "Base coordinate transformation on scroll size instead of actual size"
-        return super().attachCS(lrbt, margin, size if size else self._scrollSize)
 
     @property
     def scrollPos(self): return self._scroll

@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
+import pygame
 
 def _lrbt(lrbt, w, h):
     "Calculate coordinate system limits"
@@ -29,18 +30,26 @@ def _lrbt(lrbt, w, h):
     else: lrbt = lrbt[:4]
     return lrbt
 
-def makeCS(lrbt, size, margin=0):
-    "Create transformations between pixels and a coordinate system"
-    w, h = size
-    ml, mr, mb, mt = 4 * [margin] if type(margin) in (int, float) else margin
-    w -= ml + mr
-    h -= mb + mt
-    lrbt = _lrbt(lrbt, w, h)
-    l, r, b, t = lrbt
-    sx = (w - 1) / (r - l)
-    sy = (h - 1) / (b - t)
-    dx = sx * l - ml
-    dy = sy * t - mt
-    cs = lambda p: ((p[0] + dx) / sx, (p[1] + dy) / sy)
-    px = lambda p: (sx * p[0] - dx, sy * p[1] - dy)
-    return cs, px
+
+class CoordSys:
+    "Representation of a coordinate system associated with a Canvas"
+
+    def __init__(self, lrbt, size, margin=0):
+        self._args = lrbt, margin, size
+        w, h = size
+        ml, mr, mb, mt = 4 * [margin] if type(margin) is int else margin
+        w -= ml + mr
+        h -= mb + mt
+        self.viewport = pygame.Rect(ml, mt, w, h)
+        self.lrbt = lrbt = _lrbt(lrbt, w, h)
+        l, r, b, t = lrbt
+        sx = (w - 1) / (r - l)
+        sy = (h - 1) / (b - t)
+        dx = sx * l - ml
+        dy = sy * t - mt
+        cs = lambda p: ((p[0] + dx) / sx, (p[1] + dy) / sy)
+        px = lambda p: (sx * p[0] - dx, sy * p[1] - dy)
+        self._tr = cs, px
+
+
+def makeCS(lrbt, size, margin=0): return CoordSys(lrbt, size, margin)._tr

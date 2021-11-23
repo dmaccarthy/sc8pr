@@ -19,8 +19,8 @@
 import pygame
 from sys import stderr
 from sc8pr import Renderable, Image, Graphic, BaseSprite
-from sc8pr._cs import _lrbt
-from sc8pr.shape.locus import locus, makeCS, Locus as _Locus
+from sc8pr._cs import _lrbt, makeCS
+from sc8pr.shape.locus import locus, Locus as _Locus
 from sc8pr.util import rgba, rangef
 from sc8pr.geom import rotatedSize, transform2dGen
 from sc8pr.text import Text
