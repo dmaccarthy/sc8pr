@@ -284,16 +284,23 @@ class Polygon(Shape):
     _preserve = "anchor", "vertices"
 
     def setPoints(self, pts, anchor=None):
+        self.vertices = pts
+        self.anchor = anchor
+
+    __init__ = setPoints
+
+    @property
+    def vertices(self): return self._vertices
+    
+    @vertices.setter
+    def vertices(self, pts):
         self._dumpCache()
-        self.vertices = v = []
+        self._vertices = v = []
         p0 = None
         for p in pts:
             if p != p0: v.append(p)
             p0 = p
         self._metrics()
-        self.anchor = anchor
-
-    __init__ = setPoints
 
     @staticmethod
     def _findRect(pts):
@@ -304,7 +311,7 @@ class Polygon(Shape):
         # Metrics in canvas coordinates
         if not self.canvas: self.canvas = Canvas((10, 10))
         cv = self.canvas
-        v = self.vertices
+        v = self._vertices
         (x0, x1), (y0, y1) = self._findRect(v)
         c = (x0 + x1) / 2, (y0 + y1) / 2
         self._csrect = dict(
@@ -353,7 +360,7 @@ class Polygon(Shape):
 
     @anchor.setter
     def anchor(self, a):
-        if type(a) is int: self._anchor = self.vertices[a]
+        if type(a) is int: self._anchor = self._vertices[a]
         elif a: self._anchor = a
         else: self._anchor = self._csrect["center"]
 
@@ -363,7 +370,7 @@ class Polygon(Shape):
     @xy.setter
     def xy(self, xy):
         d = delta(xy, self._anchor)
-        pts = (sigma(v, d) for v in self.vertices)
+        pts = (sigma(v, d) for v in self._vertices)
         self.setPoints(pts)
         self._anchor = xy
 
@@ -395,7 +402,7 @@ class Polygon(Shape):
 
     def _segments(self):
         "Generate the line segments of the polygon"
-        pts = self.vertices
+        pts = self._vertices
         p1 = pts[-1]
         for i in range(len(pts)):
             p2 = pts[i]
@@ -431,7 +438,7 @@ class Polygon(Shape):
     def transform(self, rotate=0, scale=1):
         "Rotate and scale the Polygon around its anchor point"
         shift = self._anchor
-        pts = transform2dGen(self.vertices, shift=shift, preShift=True, rotate=rotate, scale=scale)
+        pts = transform2dGen(self._vertices, shift=shift, preShift=True, rotate=rotate, scale=scale)
         return self.setPoints(list(pts), self._anchor)
 
     def resize(self, size):
