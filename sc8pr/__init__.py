@@ -816,23 +816,26 @@ class Canvas(Graphic):
     def px_list(self, *args): return [self.px(*pt) for pt in args]
     def cs_list(self, *args): return [self.cs(*pt) for pt in args]
 
-    _attachWarn = "WARNING: Attaching coordinate system to canvas while resizeContent is True; this could end badly!"
+    attachWarn = "WARNING: Attaching coordinate system to {} while 'resizeContent' is True"
 
     def attachCS(self, lrbt, margin=0, size=None):
         "Attach a coordinate system to the canvas"
-        if self.resizeContent:
-            print(self._attachWarn, file=sys.stderr)
+        if self.resizeContent and self.attachWarn:
+            print(self.attachWarn.format(self), file=sys.stderr)
         if size is None: size = getattr(self, "scrollSize", self.size)
         self.coordSys = cs = CoordSys(lrbt, size, margin)
         self._cs, self._px = cs._tr
         self._units = delta(self.px(1, 1), self.px(0, 0))
         return self
 
-    def updateCS(self, adjust=None, scale=True):
+    def updateCS(self, adjust=True, scale=True):
         "Update the current coordinate system for the resized canvas"
+        if self.coordSys is None:
+            raise AttributeError("{} has no coordinate system to update".format(self))
         lrbt, m, (w0, h0) = self.coordSys._args
         size = getattr(self, "scrollSize", self.size)
         if scale: scale = size[0] / w0, size[1] / h0
+        if adjust is True: adjust = self.attr_get()
         self.attachCS(lrbt, m)
         if adjust: self.attr_set(adjust, scale)
         return self
@@ -1115,7 +1118,7 @@ class Sketch(Canvas):
     _fixedAspect = True
     dirtyRegions = []
     resizeTrigger = False
-    beforeResize = None
+#     beforeResize = None
 
     def __init__(self, size=(512,288)):
         super().__init__(size, "white")
@@ -1226,7 +1229,7 @@ class Sketch(Canvas):
             mode = self._pygameMode(mode)
             self._mode = mode
         self.image = _pd.set_mode(size, mode)
-        if self.beforeResize: self.beforeResize(initSize)
+#         if self.beforeResize: self.beforeResize(initSize)
         super().resize(self.size)
         self._size = self.size
         if self.dirtyRegions is not None:

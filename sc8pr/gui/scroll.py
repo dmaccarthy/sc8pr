@@ -88,7 +88,7 @@ class ScrollBars:
         cv.bubble("onscroll", ev)
 
 
-class _SCanvas(Canvas):
+class BaseScroll(Canvas):
     "Base class for scrolling Canvas and Sketch subclasses"
     _scroll = 0, 0
     resizeContent = False
@@ -159,7 +159,7 @@ class _SCanvas(Canvas):
         if sb: self.removeItems(*sb)
 
 
-class ScrollCanvas(_SCanvas):
+class ScrollCanvas(BaseScroll):
 
     def __init__(self, size, scrollSize=None, bg=None):
         super().__init__(size, bg)
@@ -172,7 +172,7 @@ class ScrollCanvas(_SCanvas):
         self._scrollEvent()
 
 
-class ScrollSketch(_SCanvas, Sketch):
+class ScrollSketch(BaseScroll, Sketch):
     _fixedAspect = False
 
     def __init__(self, size=(512, 288), scrollSize=None):
