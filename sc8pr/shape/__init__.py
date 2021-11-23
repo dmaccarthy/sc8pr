@@ -20,7 +20,7 @@ from random import random
 from math import hypot, ceil
 import pygame
 from sc8pr import Graphic, Canvas, BaseSprite, CENTER, Image
-from sc8pr.util import rgba, hasAny
+from sc8pr.util import rgba, hasAny, logError
 from sc8pr.geom import transform2dGen, transform2d, dist, delta, polar2d, circle_intersect, DEG, sigma
 
 
@@ -120,6 +120,12 @@ class Circle(_Ellipse):
     def containsPoint(self, xy):
         "Determine if the point is within the circle"
         return dist(self.xy, xy) < self.r
+
+    def contains(self, pos):
+        "Determine if the sketch position is within the blit radius"
+        cv = self.canvas
+        pos = delta(pos, cv.rect.topleft)
+        return dist(self.pos, pos) < self.r * cv.unit
 
     def intersect(self, other):
         "Find the intersection(s) of two circles as list of points"
@@ -268,8 +274,16 @@ class Line(Shape):
         r = pygame.draw.line(srf, self._stroke, (x1+dx,y1+dy), (x2+dx,y2+dy), wt)
         return r.inflate(wt, wt)
 
+    def containsPoint(self, xy):
+        "Check if a point is exactly on the line"
+        return dist(self.closest(xy), xy) == 0
+
     def contains(self, pos):
-        return abs(self.parameters(pos)[1]) <= 1 + self.weight / 2
+        "Determine if the sketch position is 'near' the line"
+        cv = self.canvas
+        xy = cv.cs(*delta(pos, cv.rect.topleft))
+        d = cv.px_delta(*delta(self.closest(xy), xy))
+        return ceil(2 * hypot(*d)) <= max(2, self.weight)
 
     def resize(self, size):
         ux, uy = self.u
