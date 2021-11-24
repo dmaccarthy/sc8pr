@@ -824,7 +824,7 @@ class Canvas(Graphic):
         self._units = delta(self.px(1, 1), self.px(0, 0))
         return self
 
-    def updateCS(self, adjust=True, scale=True):
+    def _updateCS(self, adjust=True, scale=True):
         "Update the current coordinate system for the resized canvas"
         if self.coordSys is None:
             raise AttributeError("{} has no coordinate system to update".format(self))
@@ -975,7 +975,7 @@ class Canvas(Graphic):
         # Resize content
         if resizeContent is None: resizeContent = self.resizeContent  
         if resizeContent:
-            if self.coordSys: self.updateCS()
+            if self.coordSys: self._updateCS()
             else:
                 for g in self:
                     if g.autoPositionOnResize: g.scaleVectors(fx, fy)
