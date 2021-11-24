@@ -816,12 +816,8 @@ class Canvas(Graphic):
     def px_list(self, *args): return [self.px(*pt) for pt in args]
     def cs_list(self, *args): return [self.cs(*pt) for pt in args]
 
-    attachWarn = "WARNING: Attaching coordinate system to {} while 'resizeContent' is True"
-
     def attachCS(self, lrbt, margin=0, size=None):
         "Attach a coordinate system to the canvas"
-        if self.resizeContent and self.attachWarn:
-            print(self.attachWarn.format(self), file=sys.stderr)
         if size is None: size = getattr(self, "scrollSize", self.size)
         self.coordSys = cs = CoordSys(lrbt, size, margin)
         self._cs, self._px = cs._tr
@@ -979,10 +975,12 @@ class Canvas(Graphic):
         # Resize content
         if resizeContent is None: resizeContent = self.resizeContent  
         if resizeContent:
-            for g in self:
-                if g.autoPositionOnResize: g.scaleVectors(fx, fy)
-                w, h = g.size
-                g.resize((w * fx, h * fy))
+            if self.coordSys: self.updateCS()
+            else:
+                for g in self:
+                    if g.autoPositionOnResize: g.scaleVectors(fx, fy)
+                    w, h = g.size
+                    g.resize((w * fx, h * fy))
 
     def draw(self, srf=None, mode=3):
         "Draw the canvas to a surface"
