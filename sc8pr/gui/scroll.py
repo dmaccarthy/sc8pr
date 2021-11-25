@@ -20,6 +20,9 @@ import pygame
 from sc8pr.gui.slider import Slider, Knob
 from sc8pr import Image, Canvas, Sketch, BOTTOMLEFT, TOPRIGHT
 
+CANVAS = 1
+SCROLL = 2
+BOTH = 3    # Same as sc8pr.BOTH
 
 class ScrollBars:
     "Scroll bar slider controls for a scrolling canvas"
@@ -102,8 +105,15 @@ class BaseScroll(Canvas):
 
     @scrollSize.setter
     def scrollSize(self, scrollSize):
-        self._scrollTo()
+        self._scrollReset()
         self._scrollInit(self.size, scrollSize)
+        if self.resizeContent and self.coordSys: self._updateCS()
+
+    def scale(self, sx, sy=None, mode=CANVAS):
+        if mode & CANVAS: super().scale(sx, sy)
+        if mode & SCROLL:
+            w, h = self._scrollSize
+            self.scrollSize = round(sx * w), round(h * (sy if sy else sx))
 
     def draw(self, srf=None, mode=3):
         "Move scroll bars to top layer before drawing"
@@ -168,7 +178,7 @@ class ScrollCanvas(BaseScroll):
     def resize(self, size, resizeContent=None):
         self._scrollReset()
         super().resize(size, resizeContent)
-        self._scrollBars = ScrollBars(self, size)
+        self._scrollBars = ScrollBars(self, self._size)
         self._scrollEvent()
 
 

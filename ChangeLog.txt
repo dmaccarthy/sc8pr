@@ -12,6 +12,7 @@ sc8pr 2.2.dev...
 *** Preserve 'xy' instead of 'pos' when adding to a canvas
 *** Add 'sc8pr.gui.slider.Knob'
 *** 'WebCache' does not overwrite existing cache file if URL is different
+*** Add 'BaseScroll.scale' and 'sc8pr.gui.scroll' constants (CANVAS, SCROLL)
 
 ** Add 'sc8pr._cs' module
 ** Fix minor bug with 'Sketch.caption' getter
@@ -25,7 +26,8 @@ sc8pr 2.2.dev...
 ** Add 'sc8pr.examples.vector2d'
 ** Move interval check from 'Video.capture' to 'Sketch._capture'
 ** TextInput use tk clipboard
-** Remove 'ImageIO' class
+** Resize coordinate systems with 'Canvas._updateCS'
+* Remove 'ImageIO' class
 * Add 'Canvas.clipArea', 'Canvas.resizeContent'
 * Allow 'Canvas.__isub__' to accept a string; add 'Canvas.removeItems'
 * 'Video.__getitem__' accepts slices and calls 'Video.clip'
