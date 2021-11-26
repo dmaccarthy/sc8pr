@@ -141,10 +141,13 @@ class BaseScroll(Canvas):
         dx, dy = self._scroll
         return self._scrollBy(x-dx, y-dy)
 
-    def scrollSnapshot(self):
+    def snapshot(self, viewport=True):
         "Take a snapshot of the entire scroll region"
+        if viewport: return super().snapshot()
         cv = Canvas(self.scrollSize, bg=self.bg)
-        cv.config(weight=self.weight, border=self.border)        
+        if self.coordSys:
+            cv.attachCS(*self.coordSys._args)
+        cv.config(weight=self.weight, border=self.border)
         for gr in list(self):
             if gr not in self._scrollBars: gr.setCanvas(cv)
         img = cv.snapshot()
