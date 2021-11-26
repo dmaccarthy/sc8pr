@@ -29,6 +29,7 @@ from sc8pr._cs import CoordSys
 from sc8pr.geom import transform2d, positiveAngle, delta, sigma, vmult
 from sc8pr.util import CachedSurface, style, logError, sc8prData, tile, rgba, drawBorder
 
+
 # Anchor point constants
 TOPLEFT = 0
 TOP = 1
