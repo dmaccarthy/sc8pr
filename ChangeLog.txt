@@ -7,12 +7,15 @@ sc8pr 2.2.dev...
 !!! = In progress
 
 
+*** Add 'Text.renderer' property
+*** Add 'sc8pr.misc.typeset' module
 *** Add 'sc8pr.plot' package
 *** Re-do 'sc8pr.shape'; create 'sc8pr.shape.locus'
 *** Preserve 'xy' instead of 'pos' when adding to a canvas
 *** Add 'sc8pr.gui.slider.Knob'
 *** 'WebCache' does not overwrite existing cache file if URL is different
 *** Add 'BaseScroll.scale' and 'sc8pr.gui.scroll' constants (CANVAS, SCROLL)
+*** Add 'CoordSys.calcSize'
 
 ** Add 'sc8pr._cs' module
 ** Fix minor bug with 'Sketch.caption' getter

@@ -128,6 +128,10 @@ class Text(Renderable):
             setattr(self, a, v)
         return self
 
+    @property
+    def renderer(self):
+        return Font.get(self.font, self.fontSize, self.fontStyle)
+
     def render(self):
         "Render the text as an Image"
         font = Font.get(self.font, self.fontSize, self.fontStyle)
