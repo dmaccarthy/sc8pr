@@ -7,8 +7,6 @@ sc8pr 2.2.dev...
 !!! = In progress
 
 
-*** Add 'Text.renderer' property
-*** Add 'sc8pr.misc.typeset' module
 *** Add 'sc8pr.plot' package
 *** Re-do 'sc8pr.shape'; create 'sc8pr.shape.locus'
 *** Preserve 'xy' instead of 'pos' when adding to a canvas
@@ -94,6 +92,8 @@ sc8pr 2.2.dev...
 * Add 'Canvas.attr_get' and 'Canvas.attr_set'
 * Robot simulations
 * 'Polygon.vertices' setter
+* Add 'Text.renderer' property
+* Add 'sc8pr.misc.typeset' module
 
 
 **** Add 'sc8pr.gui.tk' module

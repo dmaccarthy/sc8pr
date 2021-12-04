@@ -26,21 +26,22 @@ def breakLine(text, font, width, chars=" -"):
         n = len(text)
         spaces = [i for i in range(n) if text[i] in chars] + [n]
         for i in spaces:
-            if font.size(text[:i])[0] < width:
-                ltext = text[:i]
+            if font.size(text[:i+1])[0] < width:
+                ltext = text[:i+1]
             else: break
         if ltext is None:
-            try: ltext = text[:spaces[0]]
+            try: ltext = text[:spaces[0]+1]
             except: ltext = text
-        lines += ("\n" if lines else "") + ltext              
+        lines += ("\n" if lines else "") + ltext.strip()
         text = text[len(ltext):].strip()
     return lines
 
-def breakLines(text, font, width):
+def breakLines(text, font, width, chars=" -"):
     "Break a text into parapgraphs and lines"
-    return [breakLine(t if t else " ", font, width) for t in text.split("\n")]
+    if type(text) is str: text = text.split("\n")
+    return [breakLine(t if t else " ", font, width, chars) for t in text]
 
-def typeset(text, width, spaceBetween=0, padding=0, strictWidth=False, **kwargs):
+def typeset(text, width, padding=0, spaceBetween=None, strictWidth=False, chars=" -", **kwargs):
     "Create a canvas containing one or more Text instances"
     attr = {} if "align" in kwargs else {"align": LEFT}
     attr.update(kwargs)
@@ -48,7 +49,9 @@ def typeset(text, width, spaceBetween=0, padding=0, strictWidth=False, **kwargs)
     if "anchor" not in attr:
         attr["anchor"] = TOPRIGHT if a == RIGHT else (TOPLEFT if a == LEFT else TOP)
     font = Text().config(**attr).renderer
-    para = breakLines(text, font, width)
+    if spaceBetween is None:
+       spaceBetween = 3 * attr.get("spacing", Text.spacing)
+    para = breakLines(text, font, width, chars)
     text = [Text(t).config(**attr) for t in para]
     if strictWidth: w = width
     else:
@@ -56,7 +59,8 @@ def typeset(text, width, spaceBetween=0, padding=0, strictWidth=False, **kwargs)
         for t in text:
             if t.width > w: w = t.width
     x = y = padding
-    x += w - 1 if a == RIGHT else (0 if a == LEFT else (w-1)//2)
+    if a != LEFT:
+        x += w - 1 if a == RIGHT else (w-1)//2
     for t in text:
         t.config(pos=(x,y))
         y += t.height + spaceBetween
