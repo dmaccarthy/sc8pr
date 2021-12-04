@@ -51,5 +51,15 @@ class CoordSys:
         px = lambda p: (sx * p[0] - dx, sy * p[1] - dy)
         self._tr = cs, px
 
+    @staticmethod
+    def calcSize(lrbt, margin, scale):
+        if type(margin) is int: margin = 4 * [margin]
+        mx = sum(margin[:2]) + 1
+        my = sum(margin[2:]) + 1
+        l, r, b, t = lrbt
+        try: sx, sy = scale
+        except: sx, sy = scale, scale
+        return round(abs((r - l) * sx) + mx), round(abs((t - b) * sy) + my)
+
 
 def makeCS(lrbt, size, margin=0): return CoordSys(lrbt, size, margin)._tr
