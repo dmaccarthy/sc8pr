@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
-version = 2, 2, "b0"
+version = 2, 2, "b1-dev"
 ver = "{}.{}.{}".format(*version)
 archive = "master" if version[-1] == "dev" else "v" + ver
-with open("README.txt", encoding="utf8") as f: readme = f.read()
+with open("README.md", encoding="utf8") as f: readme = f.read()
 
 setup(
     # Package info
@@ -27,6 +27,7 @@ setup(
 
     # Details
     description = "A simple framework for new and experienced Python programmers to create animations, games, robotics simulations, and other graphics-based programs",
+    long_description_content_type = "text/markdown",
     long_description = readme,
 
     # Additional data
