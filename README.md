@@ -32,8 +32,6 @@ Development version (2.2.x):
 pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
 ```
 
-Please note that currently (2021 October 6), **pygame 1.9** is available on [PyPI.org](https://pypi.org/project/pygame/) up to Python 3.8 only. Attempting to install an older version of **sc8pr** in Python 3.9 may fail as the **pygame** requirement is unavailable. For Python 3.9, you can use the most recent **sc8pr** versions (2.1.4, 2.2.b0) that accept **pygame 2.0** OR **1.9** as a requirement.
-
 See the documentation for more [detailed instructions](https://dmaccarthy.github.io/sc8pr/?inst).
 
 # Try It First
