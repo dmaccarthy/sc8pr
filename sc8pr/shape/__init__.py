@@ -17,7 +17,8 @@
 
 
 from random import random
-from math import hypot, ceil
+from math import hypot, ceil, sin, cos, pi
+from sys import stderr
 import pygame
 from sc8pr import Graphic, Canvas, BaseSprite, CENTER, Image
 from sc8pr.util import rgba, hasAny, logError
@@ -466,22 +467,27 @@ class Polygon(Shape):
 TIP = 0
 MIDDLE = None
 TAIL = True
+SHARP = 1
+SIMPLE = 2
 
 class Arrow(Polygon):
     "Arrow shaped polygon"
 
-    def __init__(self, length, width=0.1, head=0.1, flatness=2, anchor=TIP):
-        width *= length / 2
-        head *= length
-        y = head * flatness / 2
-        pts = [(0,0), (-head, y), (-head, width), (-length, width),
-            (-length, -width), (-head, -width), (-head, -y)]
+    def __init__(self, length, width=0.1, head=0.1, flatness=2, anchor=TIP, pts=None):
+        if pts is None:
+            print("WARNING: This version of the Arrow constructor is deprecated", file=stderr)
+            width *= length / 2
+            head *= length
+            y = head * flatness / 2
+            pts = [(0,0), (-head, y), (-head, width), (-length, width),
+                (-length, -width), (-head, -width), (-head, -y)]
         if anchor == TAIL: anchor = (-length, 0)
         super().__init__(pts, anchor)
         self.xy = 0, 0
 
     @staticmethod
     def between(tail, tip, width=0.1, head=0.1, flatness=2, anchor=TIP):
+        print("WARNING: Arrow.between is deprecated", file=stderr)
         r, a = polar2d(*delta(tip, tail))
         arrow = Arrow(r, width, head, flatness, TIP).config(xy=tip, angle=a)
         if anchor == TIP: arrow.config(anchor=tip)
@@ -490,6 +496,65 @@ class Arrow(Polygon):
             x, y = sigma(tail, tip)
             arrow.config(anchor=(x/2, y/2))
         return arrow
+
+    @staticmethod
+    def create(tail, tip=None, **kwargs):
+        if tip is None:
+            tip = (tail, 0)
+            tail = (0, 0)
+        r, a = polar2d(*delta(tip, tail))
+        T = kwargs.get("width", None)
+        H = kwargs.get("head", None)
+        A = kwargs.get("angle", 35)
+        shape = kwargs.get("shape", 0)
+        if kwargs.get("relative", False):
+            T *= r
+            H *= r
+        pts = Arrow._vert(r, T, H, A, shape)
+        a = Arrow(r, pts=pts).config(xy=tip, angle=a)
+        anchor = kwargs.get("anchor", TIP)
+        if anchor == TAIL: a.config(anchor=tail)
+        elif anchor == MIDDLE: a.config(anchor=a.middle)
+        return a
+
+    @property
+    def tip(self): return self.vertices[0]
+
+    @property
+    def tail(self):
+        v = self.vertices
+        n = len(v) // 2
+        v, u = v[n:n+2]
+        return (v[0] + u[0]) / 2, (v[1] + u[1]) / 2
+
+    @property
+    def middle(self):
+        v = self.vertices[0]
+        u = self.tail
+        return (v[0] + u[0]) / 2, (v[1] + u[1]) / 2
+
+    @staticmethod
+    def _vert(L, T=None, H=None, A=35, shape=0):
+        # www.desmos.com/calculator/kr61ws62tm
+        if T is None: T = L / 14
+        if H is None: H = 4 * T
+        A *= pi / 180
+        c = cos(A)
+        s = sin(A)
+        T2 = T / 2;
+        x1 = -H * c
+        x2 = x1 - T * s
+        y1 = H * s
+        y2 = y1 - T * c
+        x3 = x2 - (T2 - y2) * c / s
+        if x3 < x2 or shape == 2: x3 = x2
+        if y2 < T2: y2 = T2
+        pts = [(0,0), (x1, y1), (x2, y2), (x3, T2), (-L, T2),
+            (-L, -T2), (x3, -T2), (x2, -y2), (x1, -y1)]
+        if (shape or y1 < T2):
+            del pts[8]
+            del pts[1]
+        return pts
 
 
 class ArrowSprite(Arrow, BaseSprite):

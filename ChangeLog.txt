@@ -7,7 +7,7 @@ sc8pr 2.2.dev...
 !!! = In progress
 
 
-*** Add 'sc8pr.plot' package
+*** Add 'Arrow.create'
 *** Re-do 'sc8pr.shape'; create 'sc8pr.shape.locus'
 *** Preserve 'xy' instead of 'pos' when adding to a canvas
 *** Add 'sc8pr.gui.slider.Knob'
@@ -93,6 +93,7 @@ sc8pr 2.2.dev...
 * Robot simulations
 * 'Polygon.vertices' setter
 * Add 'Text.renderer' property
+* Add 'sc8pr.plot' package
 * Add 'sc8pr.misc.typeset' module
 
 

@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 2, 2, "b0"
+version = 2, 2, "b1-dev"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import sys, struct, zlib, io
@@ -28,7 +28,6 @@ from sc8pr._event import EventManager
 from sc8pr._cs import CoordSys
 from sc8pr.geom import transform2d, positiveAngle, delta, sigma, vmult
 from sc8pr.util import CachedSurface, style, logError, sc8prData, tile, rgba, drawBorder
-
 
 # Anchor point constants
 TOPLEFT = 0
