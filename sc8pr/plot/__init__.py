@@ -84,22 +84,3 @@ def gridlines(cv, x=(0,1,2), y=(0,1,2), **config):
     if len(x) > 2: i += _gridlines(cv, x, y, 0, **config)
     if len(y) > 2: i += _gridlines(cv, y, x, 1, **config)
     return i
-
-
-# Convert MatPlotLib plots...
-
-import pygame
-from io import BytesIO
-
-def plotAsSurface(p, **kwargs):
-    "Convert MatPlotLib plot to pygame.Surface"
-    a = {"format":"png"}
-    a.update(kwargs)
-    f = BytesIO()
-    p.savefig(f, **a)
-    f.seek(0)
-    return pygame.image.load(f, "a.{}".format(a["format"]))
-
-def plotAsImage(p, **kwargs):
-    "Convert MatPlotLib plot to Image"
-    return Image(plotAsSurface(p, **kwargs))
