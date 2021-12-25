@@ -17,7 +17,7 @@
 
 
 from random import random
-from math import hypot, ceil, sin, cos, pi
+from math import hypot, ceil, sin, cos, pi, atan
 from sys import stderr
 import pygame
 from sc8pr import Graphic, Canvas, BaseSprite, CENTER, Image
@@ -473,49 +473,35 @@ SIMPLE = 2
 class Arrow(Polygon):
     "Arrow shaped polygon"
 
-    def __init__(self, length, width=0.1, head=0.1, flatness=2, anchor=TIP, pts=None):
-        if pts is None:
-            print("WARNING: This version of the Arrow constructor is deprecated", file=stderr)
-            width *= length / 2
-            head *= length
-            y = head * flatness / 2
-            pts = [(0,0), (-head, y), (-head, width), (-length, width),
-                (-length, -width), (-head, -width), (-head, -y)]
-        if anchor == TAIL: anchor = (-length, 0)
-        super().__init__(pts, anchor)
-        self.xy = 0, 0
-
-    @staticmethod
-    def between(tail, tip, width=0.1, head=0.1, flatness=2, anchor=TIP):
-        print("WARNING: Arrow.between is deprecated", file=stderr)
-        r, a = polar2d(*delta(tip, tail))
-        arrow = Arrow(r, width, head, flatness, TIP).config(xy=tip, angle=a)
-        if anchor == TIP: arrow.config(anchor=tip)
-        elif anchor == TAIL: arrow.config(anchor=tail)
-        else:
-            x, y = sigma(tail, tip)
-            arrow.config(anchor=(x/2, y/2))
-        return arrow
-
-    @staticmethod
-    def create(tail, tip=None, **kwargs):
-        if tip is None:
-            tip = (tail, 0)
-            tail = (0, 0)
-        r, a = polar2d(*delta(tip, tail))
-        T = kwargs.get("width", None)
-        H = kwargs.get("head", None)
-        A = kwargs.get("angle", 35)
-        shape = kwargs.get("shape", 0)
-        if kwargs.get("relative", False):
-            T *= r
-            H *= r
-        pts = Arrow._vert(r, T, H, A, shape)
-        a = Arrow(r, pts=pts).config(xy=tip, angle=a)
+#     def __init__(self, length, width=0.1, head=0.1, flatness=2, anchor=TIP, pts=None):
+    def __init__(self, **kwargs):
         anchor = kwargs.get("anchor", TIP)
-        if anchor == TAIL: a.config(anchor=tail)
-        elif anchor == MIDDLE: a.config(anchor=a.middle)
-        return a
+        tail = kwargs.get("tail", (0,0))
+        tip = kwargs.get("tip", None)
+        if tip is None:
+            length, a = kwargs["length"], 0
+            tip = (tail[0] + length, tail[1])
+        else:
+            tip = kwargs["tip"]
+            length, a = polar2d(*delta(tip, tail))
+        T = kwargs.get("width", 1/14)
+        H = kwargs.get("head", 2/7)
+        A = kwargs.get("angle", None)
+        if A is None:
+            f = kwargs.get("flatness", None)
+            if f is None: A = 35
+            else:
+                A = atan(f/2) / pi * 180
+                print("WARNING: 'flatness' option is deprecated; use 'angle'", file=stderr)
+        shape = kwargs.get("shape", 0)
+        if kwargs.get("relative", True):
+            T *= length
+            H *= length
+        pts = Arrow._vert(length, T, H, A, shape)
+        super().__init__(pts, TIP)
+        self.config(xy=tip, angle=a)
+        if anchor == TAIL: self.config(anchor=tail)
+        elif anchor == MIDDLE: self.config(anchor=self.middle)
 
     @property
     def tip(self): return self.vertices[0]
@@ -557,16 +543,9 @@ class Arrow(Polygon):
         return pts
 
 
-class ArrowSprite(Arrow, BaseSprite):
-
-    @staticmethod
-    def between(tail, tip, width=0.1, head=0.1, flatness=2):
-        r, a = polar2d(*delta(tip, tail))
-        return ArrowSprite(r, width, head, flatness, TIP).config(xy=tip, angle=a)
-
-
 class CircleSprite(Circle, BaseSprite): pass
 class PolygonSprite(Polygon, BaseSprite): pass
+class ArrowSprite(Arrow, BaseSprite): pass
 
 
 class Ellipse(_Ellipse):
