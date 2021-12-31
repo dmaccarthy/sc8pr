@@ -19,26 +19,25 @@
 
 import pygame, io, sys
 from sc8pr import Image
-from sc8pr.text import Font
 
-plt = sys.modules["matplotlib.pyplot"]
+def fonts(math="stix", sans=None, serif=None, mono=None):
+    p = sys.modules["matplotlib"].rcParams
+    if math: p["mathtext.fontset"] = math
+    if sans: p["font.sans-serif"] = sans
+    if sans: p["font.serif"] = serif
+    if mono: p["font.monospace"] = mono
 
-def sc8prFonts():
-    "Use sc8pr default fonts with matplotlib"
-    p = plt.rcParams
-    p["font.serif"][:0] = Font._serif
-    p["font.sans-serif"][:0] = Font._sans
-    p["font.monospace"][:0] = Font._mono
-
-def figure(fig, dpi=150, image=True):
+def figure(fig, image=True, **kwargs):
     "Covert a matplotlib figure to a sc8pr.Image or PNG data"
     png = io.BytesIO()
-    fig.savefig(png, dpi=dpi, transparent=True, format="png", bbox_inches="tight", pad_inches=0.0)
+    attr = dict(dpi=300, transparent=True, bbox_inches="tight", pad_inches=0.025)
+    attr.update(kwargs)
+    fig.savefig(png, format="png", **attr)
     png.seek(0)
     return Image(pygame.image.load(png, "a.png")) if image else png.read()
 
-def text(text, color="black", fontsize=12, dpi=300, image=True):
+def text(text, color="black", fontsize=12, image=True, **kwargs):
     "Use matplotlib to render text/math as a sc8pr.Image or PNG data"
-    fig = plt.figure(figsize=(0.01, 0.01))
-    fig.text(0, 0, text, fontsize=fontsize, color=color)
-    return figure(fig, dpi, image)
+    fig = sys.modules["matplotlib.figure"].Figure(figsize=(0.01, 0.01))
+    fig.text(0, 0, text, fontsize=float(fontsize), color=color)
+    return figure(fig, image, **kwargs)
