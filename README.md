@@ -19,7 +19,7 @@ For more information, please see the [tutorial and reference](http://dmaccarthy.
 
 Latest release (2.2):
 ```
-pip3 install sc8pr==2.2
+pip3 install sc8pr
 ```
 
 Bug fixes for v2.1:
