@@ -16,7 +16,7 @@ For more information, please see the [documentation](http://dmaccarthy.github.io
 
 # Installation
 
-This relase (v2.1.4):
+This relase (v2.1):
 ```
-pip3 install sc8pr==2.1.4
+pip3 install sc8pr==2.1
 ```
