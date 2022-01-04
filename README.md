@@ -17,9 +17,9 @@ For more information, please see the [tutorial and reference](http://dmaccarthy.
 
 # Installation
 
-Latest release (2.2b0):
+Latest release (2.2):
 ```
-pip3 install sc8pr==2.2b0
+pip3 install sc8pr==2.2
 ```
 
 Bug fixes for v2.1:
