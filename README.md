@@ -22,11 +22,6 @@ Latest release (2.2):
 pip3 install sc8pr
 ```
 
-Bug fixes for v2.1:
-```
-pip3 install https://github.com/dmaccarthy/sc8pr/archive/BugFix-2.1.zip
-```
-
 Development version (2.2.x):
 ```
 pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
