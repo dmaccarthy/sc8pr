@@ -55,7 +55,7 @@ class Locus(Shape):
     def __init__(self, data, param=None):
         self.data = data
         self.param = param
-        self.vars = {}
+        self.coeff = {}
 
     def contains(self, pos): return False
 
@@ -68,7 +68,7 @@ class Locus(Shape):
         if snapshot: x0, y0 = 0, 0
         else: x0, y0 = self.canvas.rect.topleft
         d = self.data
-        pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.vars)
+        pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.coeff)
         cv = self.canvas
         pts = [sigma((x0, y0), cv.px(*p)) for p in pts]
         if len(pts) > 1:
@@ -79,7 +79,7 @@ class Locus(Shape):
     def pointGen(self):
         "Generate a sequence of points"
         d = self.data
-        pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.vars)
+        pts = d if type(d) in (list, tuple) else locus(d, self.param, **self.coeff)
         for p in pts: yield p
 
     @property
