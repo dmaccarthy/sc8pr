@@ -50,5 +50,5 @@ def autocrop(srf, bg=True, replace=None):
     if i or j < n - 1:
         h = srf.get_size()[0]
         srf = srf.subsurface([0, i, h, j - i + 1])
-    if replace: pygame.PixelArray(srf).replace(bg, pygame.Color(replace))
+    if replace: pygame.PixelArray(srf).replace(bg, pygame.Color(*replace))
     return Image(srf)
