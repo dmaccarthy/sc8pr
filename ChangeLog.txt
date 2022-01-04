@@ -8,8 +8,6 @@ sc8pr 2.2.dev...
 
 
 *** Add 'sc8pr.misc.crop'
-*** Add 'sc8pr.plot.mpl'
-*** Re-do 'sc8pr.shape'; create 'sc8pr.shape.locus'
 *** Preserve 'xy' instead of 'pos' when adding to a canvas
 *** Add 'sc8pr.gui.slider.Knob'
 *** 'WebCache' does not overwrite existing cache file if URL is different
@@ -97,6 +95,8 @@ sc8pr 2.2.dev...
 * Add 'sc8pr.plot' package
 * Add 'sc8pr.misc.typeset' module
 * Revise 'Arrow' class
+* Re-do 'sc8pr.shape'; create 'sc8pr.shape.locus'
+* Add 'sc8pr.plot.mpl'
 
 
 **** Add 'sc8pr.gui.tk' module
