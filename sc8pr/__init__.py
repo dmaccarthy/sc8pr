@@ -1170,7 +1170,7 @@ class Sketch(Canvas):
     @cursor.setter
     def cursor(self, c):
         if c is True: c = pygame.cursors.arrow
-        elif c is False: c = (8,8), (5,4), (0,0,0,0,0,0,0,0), (0,0,0,0,0,0,0,0)
+        elif c is False: c = (8,8), (5,4), 8*(0,), 8*(0,)
         pygame.mouse.set_cursor(*c)
 
     def save(self, fn=None):

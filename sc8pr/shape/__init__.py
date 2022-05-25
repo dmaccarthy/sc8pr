@@ -1,4 +1,4 @@
-# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2022 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -476,13 +476,18 @@ class Arrow(Polygon):
 #     def __init__(self, length, width=0.1, head=0.1, flatness=2, anchor=TIP, pts=None):
     def __init__(self, **kwargs):
         anchor = kwargs.get("anchor", TIP)
-        tail = kwargs.get("tail", (0,0))
+        tail = kwargs.get("tail", None)
         tip = kwargs.get("tip", None)
+        if tail is None:
+            if tip is None: tail = (0, 0)
+            else: # Added in 2.2.1
+                length, a = kwargs["length"], 0
+                tail = (tip[0] - length, tip[1])                
         if tip is None:
             length, a = kwargs["length"], 0
             tip = (tail[0] + length, tail[1])
         else:
-            tip = kwargs["tip"]
+#             tip = kwargs["tip"]
             length, a = polar2d(*delta(tip, tail))
         T = kwargs.get("width", 1/14)
         H = kwargs.get("head", 2/7)
