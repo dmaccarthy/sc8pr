@@ -32,7 +32,8 @@ def hsva(h, s, v=100, a=100):
 def hsvBox(color, hue=None, sat=None, val=None):
     "Check if color is within specified color wheel 'box'"
     if not isinstance(color, pygame.Color):
-        color = pygame.Color(color)
+        try: color = pygame.Color(color)
+        except: color = pygame.Color(*color)
     h, s, v = color.hsva[:3]
     return (hue is None or _between(h, *hue)) and (sat is None
         or _between(s, *sat)) and (val is None or _between(v, *val))
