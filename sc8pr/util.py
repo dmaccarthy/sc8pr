@@ -1,4 +1,4 @@
-# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2022 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -41,13 +41,20 @@ def resolvePath(rel, start=__file__, isDir=False):
     if not isDir: p = p.parent
     return str(p.joinpath(rel).resolve())
 
+def _pgc(c):
+    if not isinstance(c, pygame.Color):
+        try: c = pygame.Color(c)
+        except: c = pygame.Color(*c)
+    return c
+    
 def _rgba(*args):
     "Generate a sequence of pygame.Color instances"
     for c in args:
         t = type(c)
         if t is bool: # Random color
             c = [randint(0,255) for i in range(4 if c else 3)]
-        yield pygame.Color(c) if t is str else pygame.Color(*c)
+##        yield pygame.Color(c) if t is str else pygame.Color(*c)
+        yield _pgc(c)
 
 def rgba(*args):
     "Return a color or list of colors from str or tuple data"
