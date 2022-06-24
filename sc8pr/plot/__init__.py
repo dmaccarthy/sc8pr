@@ -30,7 +30,7 @@ def _data(x, y=None):
 def _marker(m, x, y, i):
     m = m[i]
     if type(m) is str:
-        m = Text(m.format(x,y))
+        m = Text(m.format(x=x, y=y))
     return m
 
 def plot(cv, x, y=None, markers=5, offset=None, **kwargs):
