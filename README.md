@@ -27,6 +27,6 @@ Development version (2.2.x):
 pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
 ```
 
-Alternatively, you can run **sc8pr** from the source code without installing it. Just unzip the **sc8pr** package into your PYTHONPATH and ensure that **pygame 2** is installed.
+Alternatively, you can run **sc8pr** from the source code without installing it. Just unzip the [**sc8pr** release](https://github.com/dmaccarthy/sc8pr/archive/refs/tags/v2.2.2.zip) and move the **sc8pr** package into your PYTHONPATH. Ensure that **pygame 2** is installed!
 
 See the documentation for more [detailed instructions](https://dmaccarthy.github.io/sc8pr/?inst).
