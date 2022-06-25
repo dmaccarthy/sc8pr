@@ -1,4 +1,4 @@
-# Copyright 2015-2021 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2022 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
