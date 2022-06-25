@@ -1,6 +1,6 @@
 # sc8pr
 
-An educational programming package for [Python 3.4+](https://www.python.org). Inspired by [Scratch](https://scratch.mit.edu) and [Processing](https://www.processing.org), **sc8pr**’s aim is to make it easy for new and experienced Python programmers to create animations, games, and other graphics-based programs.
+An educational programming package for [Python 3](https://www.python.org). Inspired by [Scratch](https://scratch.mit.edu) and [Processing](https://www.processing.org), **sc8pr**’s aim is to make it easy for new and experienced Python programmers to create animations, games, and other graphics-based programs.
 
 ![Screenshot](https://dmaccarthy.github.io/sc8pr/img/soccer.png)
 
@@ -27,8 +27,6 @@ Development version (2.2.x):
 pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
 ```
 
+Alternatively, you can run **sc8pr** from the source code without installing it. Just unzip the **sc8pr** package into your PYTHONPATH and ensure that **pygame 2** is installed.
+
 See the documentation for more [detailed instructions](https://dmaccarthy.github.io/sc8pr/?inst).
-
-# Try It First
-
-**sc8pr** is pure Python 3 code, so you can try it without running the setup. Just unzip the **sc8pr** package into your PYTHONPATH. You will still need **pygame 1.9** or **2.0** installed for current **sc8pr** versions and **pygame 1.9** for older versions.
