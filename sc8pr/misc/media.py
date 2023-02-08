@@ -1,4 +1,4 @@
-# Copyright 2015-2021 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2023 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -77,13 +77,16 @@ class FFReader(_FF):
 
     def __next__(self):
         "Return the next frame as an uncompressed PixelData instance"
-        return PixelData((next(self._iter), self._info))
+        return PixelData((bytes(next(self._iter)), self._info))
 
-    def read(self, n=None):
+    def read(self, n=None, compress=None):
         "Return a Video instance from the next n frames"
         vid = Video()
+        if compress is None:
+            compress = n is None or n > 20
         while n or n is None:
-            try: vid += next(self._iter), self._info
+            try:
+                vid += (next(self._iter), self._info) if compress else next(self)
             except: n = 0
             if n: n -= 1
         return vid

@@ -86,6 +86,8 @@ class Video(Sprite):
         "Append a frame to the video"
         if isinstance(img, Video): return self.extend(img._costumes)
         if not isinstance(img, PixelData):
+            if type(img[0]) is not bytes:
+                img = bytes(img[0]), img[1]
             img = PixelData(img, True)
         self._costumes.append(img)
         if not hasattr(self, "_size"): self._size = img.size

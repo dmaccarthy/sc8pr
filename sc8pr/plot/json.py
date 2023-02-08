@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-"EXPERIMENTAL!!! Create a Canvas from a description stored in a JSON file"
+"EXPERIMENTAL!!! Create a Canvas from a description stored in a dictionary / JSON file"
 
 import json
 from sc8pr import Sketch, Canvas
@@ -23,14 +23,18 @@ from sc8pr.shape import Circle, Ellipse, Line, Arrow, Polygon
 from sc8pr.plot import plot, gridlines
 from sc8pr.text import Font
 from sc8pr.util import ondrag
+import sc8pr.plot.mpl as mpl
 
-data = None
 
 def canvas(data):
-    cv = Canvas(data["size"])
+    "Create a Canvas instance from data in a dictionary or JSON file"
+    if type(data) is str:
+        with open(data) as f: data = json.load(f)
+    bg = data.get("bg")
     dr = data.get("drag")
     cs = data.get("coords")
-    bg = data.get("bg")
+
+    cv = Canvas(data["size"])
     if bg: cv.config(bg=bg)
     if cs:
         cv.attachCS(cs, data.get("margin", 1))
@@ -42,13 +46,14 @@ def canvas(data):
                 if len(g) > 2: a.update(g[2])
                 gridlines(cv, *g[:2], **a)
             if data.get("flatten_grid", True): cv.flatten()
-    data = data.get("items", [])
-    for item, key, args, cfg in data:
+
+    for item, key, args, cfg in data.get("items", []):
         if item == "circ":
             item = Circle(args) if type(args) in (int, float) else Ellipse(args) 
         elif item == "line": item = Line(*args)
         elif item == "poly": item = Polygon(args)
         elif item == "arrow": item = Arrow(**args)
+        elif item == "mpl": item = mpl.text(args[0], **args[1])
         else: key = None
         if key: cv[key] = item.config(**cfg)
         elif item == "plot":
@@ -61,19 +66,8 @@ def canvas(data):
         for gr in cv: gr.bind(ondrag)
     return cv
 
-def render(fn, mode=0):
-    # Mode... 0 --> Canvas, 1 --> Image, 2 --> BytesIO, 3 --> bytes
-    global data
-    with open(fn) as f:
-        data = json.load(f)
-        cv = canvas(data)
-        if mode:
-            cv = cv.snapshot()
-            if mode > 1:
-                cv = cv.png
-                if mode == 3: cv = cv.read()
-        return cv
-
-def save_png(json, png):
-    with open(png, "wb") as png:
-        png.write(render(json, 3))
+def save_png(json_fn, png_fn):
+    "Convert JSON file data to PNG image"
+    with open(png_fn, "wb") as f:
+        data = canvas(json_fn).snapshot().png
+        f.write(data.read())
