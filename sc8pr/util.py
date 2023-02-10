@@ -1,4 +1,4 @@
-# Copyright 2015-2022 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2023 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -211,6 +211,38 @@ def mix(x, y):
                 for p in mix(i, [y]): yield p
     except:
         for p in mix([x], y): yield p
+
+
+def _allPixels(px, c):
+    "Check if all pixels in a column are equal to the specified value"
+    return max(px) == c and min(px) == c
+
+def _h_crop(pxa, c):
+    "Find blank PixelArray columns"
+    n = len(pxa)
+    i = 0
+    j = n - 1
+    while i < n and _allPixels(pxa[i], c): i += 1
+    while j > i and _allPixels(pxa[j], c): j -= 1
+    return i, j, n
+
+def crop(srf, bg=True, replace=None):
+    "Crop surface to content"
+    pxa = pygame.PixelArray(srf)
+    if bg is True: bg = pxa[0][0]
+    elif type(bg) is not int: bg = srf.map_rgb(pygame.Color(bg))
+    i, j, n = _h_crop(pxa, bg)
+    if i or j < n - 1:
+        h = srf.get_size()[1]
+        srf = srf.subsurface([i, 0, j - i + 1, h])
+        pxa = pygame.PixelArray(srf)
+    pxa = pxa.transpose()
+    i, j, n = _h_crop(pxa, bg)
+    if i or j < n - 1:
+        h = srf.get_size()[0]
+        srf = srf.subsurface([0, i, h, j - i + 1])
+    if replace: pygame.PixelArray(srf).replace(bg, pygame.Color(*replace))
+    return srf
 
 
 class CachedSurface:

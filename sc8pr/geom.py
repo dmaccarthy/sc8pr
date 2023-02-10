@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2023 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -93,34 +93,44 @@ def subtend(P, C, r, maxSep=None):
         half = 180.0 if sep < r else asin(r / sep) / DEG
         return sep, direct, half
 
-def _matrix(rotate=0, scale=1, rev=False):
-    "Create a 2x2 matrix (as a 4-tuple) to perform a scale transformation and a rotation"
-    sx, sy = (scale, scale) if type(scale) in (float, int) else scale
-    if rotate:
-        rotate *= DEG
-        c, s = cos(rotate), sin(rotate)
-    else: c, s = 1, 0
-    if rev: # Rotate before scaling
-        return sx * c, -sx * s, sy * s, sy * c
-    else:   # Scale before rotating
-        return sx * c, -sy * s, sx * s, sy * c
+def transform_gen(pts, shift1=None, scale1=1, matrix=(1,0,0,1), scale2=1, shift2=None):
+    "Transform (rotate, scale, translate) a sequence of 2D points"
+    isNum = lambda x: type(x) in (int, float)
+    if shift2 is True: shift2 = neg(shift1)
+    elif shift1 is True: shift1 = neg(shift2)
+    if isNum(scale1): s1x = s1y = scale1
+    else: s1x, s1y = scale1
+    if isNum(scale2): s2x = s2y = scale2
+    else: s2x, s2y = scale2
+    if isNum(matrix):
+        r = matrix * DEG
+        c, s = cos(r), sin(r)
+        matrix = c, -s, s, c
+    m0, m1, m2, m3 = matrix
+    m0 *= s2x * s1x
+    m1 *= s2x * s1y
+    m2 *= s2y * s1x
+    m3 *= s2y * s1y
+    cx, cy = shift1 if shift1 else (0, 0)
+    sx, sy = shift2 if shift2 else (0, 0)
+    for (x, y) in pts:
+        x += cx
+        y += cy
+        yield m0 * x + m1 * y + sx, m2 * x + m3 * y + sy
 
-def transform2dGen(pts, mx=None, shift=(0,0), preShift=None, **kwargs):
-    "Generator to perform a linear transformation and shift on a sequence of points"
-    xa, ya = shift
-    if preShift is True: xb, yb = -xa, -ya
-    elif preShift: xb, yb = preShift
-    m0, m1, m2, m3 = mx if mx else _matrix(**kwargs)
-    for (x,y) in pts:
-        if preShift:
-            x += xb
-            y += yb
-        x, y = m0 * x + m1 * y, m2 * x + m3 * y
-        yield (x + xa, y + ya)
+def transform2d_new(pt, shift1=None, scale1=1, matrix=(1,0,0,1), scale2=1, shift2=None):
+    "Perform a transformation on a single point"
+    return next(transform_gen((pt,), shift1, scale1, matrix, scale2, shift2))
+
+def transform2dGen(pts, mx=None, shift=(0,0), preShift=None, rotate=0, scale=1, rev=False):
+    if mx is None: mx = rotate
+    s2 = 1
+    if rev: scale, s2 = s2, scale
+    return transform_gen(pts, preShift, scale, mx, s2, shift)
 
 def transform2d(pt, **kwargs):
     "Perform a linear transformation and shift on a single point"
-    return tuple(transform2dGen((pt,), **kwargs))[0]
+    return next(transform2dGen((pt,), **kwargs))
 
 def rotatedSize(w, h, angle):
     pts = (w,h), (w,-h), (-w,h), (-w,-h)

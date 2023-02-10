@@ -1,4 +1,4 @@
-# Copyright 2015-2022 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2023 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -22,7 +22,7 @@ from sys import stderr
 import pygame
 from sc8pr import Graphic, Canvas, BaseSprite, CENTER, Image
 from sc8pr.util import rgba, hasAny, logError
-from sc8pr.geom import transform2dGen, transform2d, dist, delta, polar2d, circle_intersect, DEG, sigma
+from sc8pr.geom import transform_gen, transform2d, dist, delta, polar2d, circle_intersect, DEG, sigma, neg
 
 
 class Shape(Graphic):
@@ -453,8 +453,8 @@ class Polygon(Shape):
     def transform(self, rotate=0, scale=1):
         "Rotate and scale the Polygon around its anchor point"
         shift = self._anchor
-        pts = transform2dGen(self._vertices, shift=shift, preShift=True, rotate=rotate, scale=scale)
-        return self.setPoints(list(pts), self._anchor)
+        pts = list(transform_gen(self._vertices, True, scale, rotate, 1, self._anchor))
+        return self.setPoints(pts, self._anchor)
 
     def resize(self, size):
         "Resize the polygon (e.g. when scaling the canvas)"
@@ -617,10 +617,9 @@ class Ellipse(_Ellipse):
         return srf
 
     def containsPoint(self, xy):
-        w, h = self._cssize
-        xc, yc = self.xy
         a = -1 if self.clockwise else 1
-        x, y = transform2d(xy, preShift=(-xc, -yc), rotate=a*self.angle)
+        w, h = self._cssize
+        x, y = transform2d(xy, preShift=neg(self.xy), rotate=a*self.angle)
         return (x / w) ** 2 + (y / h) ** 2 <= 0.25
 
 

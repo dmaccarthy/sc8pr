@@ -79,6 +79,14 @@ class FFReader(_FF):
         "Return the next frame as an uncompressed PixelData instance"
         return PixelData((bytes(next(self._iter)), self._info))
 
+    def __iter__(self):
+        "Iterate through all frames returning data as uncompressed PixelData"
+        try:
+            while True: yield next(self)
+        except StopIteration: pass
+#         for f in self._io:
+#             yield PixelData((bytes(f), self._info))
+
     def read(self, n=None, compress=None):
         "Return a Video instance from the next n frames"
         vid = Video()
@@ -99,11 +107,6 @@ class FFReader(_FF):
                 n -= 1
             except: n = 0
         return self
-
-    def __iter__(self):
-        "Iterate through all frames returning data as uncompressed PixelData"
-        for f in self._io:
-            yield PixelData((bytes(f), self._info))
 
     def estimateFrames(self):
         "Try to estimate frames from movie metadata"

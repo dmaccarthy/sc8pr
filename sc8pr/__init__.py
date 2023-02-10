@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 2, 3, "a0"
+version = 2, 3, "a1"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import sys, struct, zlib, io
@@ -26,8 +26,8 @@ import pygame.display as _pd
 from pygame.transform import flip as _pyflip
 from sc8pr._event import EventManager
 from sc8pr._cs import CoordSys
-from sc8pr.geom import transform2d, positiveAngle, delta, sigma, vmult
-from sc8pr.util import CachedSurface, style, logError, sc8prData, tile, rgba, drawBorder
+from sc8pr.geom import transform2d, positiveAngle, delta, sigma, vmult, neg
+from sc8pr.util import CachedSurface, style, logError, sc8prData, tile, rgba, drawBorder, crop
 
 # Anchor point constants
 TOPLEFT = 0
@@ -142,6 +142,20 @@ class PixelData:
 
     @property
     def img(self): return Image(self.srf)
+
+    @staticmethod
+    def export(srf, fn="a.png"):
+        "Write a surface to a different format"
+        b = io.BytesIO(b"")
+        pygame.image.save(srf, b, fn)
+        b.seek(0)
+        return b
+
+    @property
+    def png(self): return self.export(self.srf).read()
+
+    @property
+    def jpg(self): return self.export(self.srf, "a.jpg").read()
 
     @staticmethod
     def _frombytes(d, s, m):
@@ -303,13 +317,10 @@ class Graphic:
     def relXY(self, pos):
         "Calculate coordinates relative to the graphic object"
         if self.angle:
-            xc, yc = self.rect.center
-            x, y = transform2d(pos, preShift=(-xc,-yc), rotate=-self.angle)
-            xc, yc = self.center
-            return round(x + xc), round(y + yc)
+            x, y = transform2d(pos, preShift=neg(self.rect.center), rotate=-self.angle, shift=self.center)
+            return round(x), round(y)
         else:
-            r = self.rect.topleft
-            return pos[0] - r[0], pos[1] - r[1]
+            return delta(pos, self.rect.topleft)
 
     def contains(self, pos):
         "Check if the graphic contains the coordinates"
@@ -475,8 +486,7 @@ class Graphic:
             try: r = self.rect
             except: r = pygame.Rect((0,0), srf.get_size())
         if r.collidepoint(pos):
-            x, y = r.topleft
-            x, y = transform2d(pos, shift=(-x,-y))
+            x, y = delta(pos, r.topleft) 
             try: return srf.get_at((round(x), round(y)))
             except: pass
 
@@ -729,7 +739,8 @@ class Image(Graphic):
 
     def crop(self, *args):
         "Create a new Image instance by cropping an existing image"
-        return Image(self.image.subsurface(pygame.Rect(*args)))
+        srf = self.image
+        return Image(srf.subsurface(pygame.Rect(*args)) if args else crop(srf)) 
 
     @property
     def image(self):
@@ -745,17 +756,11 @@ class Image(Graphic):
         pygame.image.save(self._srf.original, fn)
         return self
 
-    def _export(self, fn="a.png"):
-        b = io.BytesIO(b"")
-        pygame.image.save(self.image, b, fn)
-        b.seek(0)
-        return b
+    @property
+    def png(self): return PixelData.export(self.image)
 
     @property
-    def png(self): return self._export()
-
-    @property
-    def jpg(self): return self._export("a.jpg")
+    def jpg(self): return PixelData.export(self.image, "a.jpg")
         
     def copy(self): return Image(self.image.copy())
 
