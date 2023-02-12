@@ -1302,7 +1302,6 @@ class Sketch(Canvas):
                     except:
                         try:
                             print("{}.ondraw rejects event argument".format(type(gr).__name__), file=sys.stderr)
-                            logError()
                             gr.ondraw()
                         except: logError()
                 if self.ondraw: self.ondraw(customEv(target=self, handler="ondraw"))
