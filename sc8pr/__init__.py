@@ -16,9 +16,10 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 2, 3, "a1"
+version = 3, 0, "dev0"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
+import PIL.Image  # Omit from sc8pr-core
 import sys, struct, zlib, io
 from math import hypot, sqrt
 import pygame
@@ -27,7 +28,7 @@ from pygame.transform import flip as _pyflip
 from sc8pr._event import EventManager
 from sc8pr._cs import CoordSys
 from sc8pr.geom import transform2d, positiveAngle, delta, sigma, vmult, neg
-from sc8pr.util import CachedSurface, style, logError, sc8prData, tile, rgba, drawBorder, crop
+from sc8pr.util import CachedSurface, style, logError, sc8prData, tile, rgba, drawBorder, crop, export, customEv
 
 # Anchor point constants
 TOPLEFT = 0
@@ -143,26 +144,19 @@ class PixelData:
     @property
     def img(self): return Image(self.srf)
 
-    @staticmethod
-    def export(srf, fn="a.png"):
-        "Write a surface to a different format"
-        b = io.BytesIO(b"")
-        pygame.image.save(srf, b, fn)
-        b.seek(0)
-        return b
+    @property
+    def png(self): return export(self.srf).read()
 
     @property
-    def png(self): return self.export(self.srf).read()
+    def jpg(self): return export(self.srf, "a.jpg").read()
+
+# Omit pil and _frombytes from sc8pr-core
 
     @property
-    def jpg(self): return self.export(self.srf, "a.jpg").read()
+    def pil(self): return self._image(self._frombytes)
 
     @staticmethod
-    def _frombytes(d, s, m):
-        return sys.modules["PIL.Image"].frombytes(m, s, d)
-
-    @property
-    def pil(self): return self._image(PixelData._frombytes)
+    def _frombytes(d, s, m): return PIL.Image.frombytes(m, s, d)
 
 
 class Graphic:
@@ -317,7 +311,7 @@ class Graphic:
     def relXY(self, pos):
         "Calculate coordinates relative to the graphic object"
         if self.angle:
-            x, y = transform2d(pos, preShift=neg(self.rect.center), rotate=-self.angle, shift=self.center)
+            x, y = transform2d(pos, shift1=neg(self.rect.center), matrix=-self.angle, shift2=self.center)
             return round(x), round(y)
         else:
             return delta(pos, self.rect.topleft)
@@ -441,8 +435,10 @@ class Graphic:
     @property
     def dialog(self): return self.path[-2]
 
-    def bubble(self, eventName, ev):
+    def bubble(self, eventName, ev={}):
         "Pass an event to a different handler"
+        if not isinstance(ev, pygame.event.EventType):
+            ev = pygame.event.Event(pygame.USEREVENT, **ev)
         self.sketch.evMgr.handle(self, eventName, ev)
 
     @property
@@ -550,7 +546,7 @@ class BaseSprite(Graphic):
     # Edge behaviours
     wrap = REMOVE
     bounce = bounceType = 0
-    onbounce = None
+#     onbounce = None
 
     # Kinematics
     spin = 0
@@ -580,36 +576,34 @@ class BaseSprite(Graphic):
         self._size = size
         self.penReset()
 
-    def onwrap(self, update): self.penReset()
+    def onwrap(self, ev=None): self.penReset()
 
-    def _bounce(self, cv):
+    def _simpleBounce(self, cv):
         "Bounce sprite from the edge of its canvas"
         vx, vy = self.vel
         w, h = cv.size
         b = self.bounce
-        update = 0
+        where = CENTER
         if self.bounceType == 0:
             x, y = delta(self.rect.center, cv.rect.topleft)
             r = self.radius
             if b & HORIZONTAL and (x < r and vx < 0 or x > w-r and vx > 0):
                 self.vel = -vx, vy
-                update += HORIZONTAL
+                where += -1 if vx < 0 else 1
             if b & VERTICAL and (y < r and vy < 0 or y > h-r and vy > 0):
                 self.vel = vx, -vy
-                update += VERTICAL
+                where += -4 if vy < 0 else 4
         else:
             r = self.rect
             if b & HORIZONTAL and (r.left < 0 and vx < 0 or r.right >= w and vx > 0):
                 self.vel = -vx, vy
-                update += HORIZONTAL
+                where += -1 if x < r else 1
             if b & VERTICAL and (r.top < 0 and vy < 0 or r.bottom >= h and vy > 0):
                 self.vel = vx, -vy
-                update += VERTICAL  
-        return update
+                where += -4 if vy < 0 else 4
+        return where
 
-    circleBounce = _bounce
-
-    def simpleWrap(self, cv):
+    def _simpleWrap(self, cv):
         "Wrap sprite when it leaves the canvas"
         r = self.rect
         x, y = self.pos
@@ -619,32 +613,33 @@ class BaseSprite(Graphic):
                 dx, dy = cv.rect.topleft
                 r.move_ip((-dx, -dy))
             w = self.wrap
+            where = CENTER
             if w is True: w = BOTH
             if w & 5: # HORIZONTAL | REMOVE_X
                 d = r.width + cv.width
-                wrapX = True
-                if r.right < 0 and vx <= 0: x += d
-                elif r.left >= cv.width and vx >= 0: x -= d
-                else: wrapX = False
-                if wrapX and (w & 4):
+                if r.right < 0 and vx <= 0:
+                    x += d
+                    where -= 1
+                elif r.left >= cv.width and vx >= 0:
+                    x -= d
+                    where += 1
+                if where != CENTER and (w & 4):
                     self.remove()
                     return
-            else: wrapX = False
             if w & 10: # VERTICAL | REMOVE_Y
-                wrapY = True
                 d = r.height + cv.height
-                if r.bottom < 0 and vy <= 0: y += d
-                elif r.top >= cv.height and vy >= 0: y -= d
-                else: wrapY = False
-                if wrapY and (w & 8):
+                if r.bottom < 0 and vy <= 0:
+                    y += d
+                    where -= 4
+                elif r.top >= cv.height and vy >= 0:
+                    y -= d
+                    where += 4
+                if (w & 8) and where not in (4, 5, 6):
                     self.remove()
                     return
-            else: wrapY = False
-            if wrapX or wrapY:
-                update = HORIZONTAL if wrapX else 0
-                if wrapY: update += VERTICAL
-                self.onwrap(update)
             self.pos = x, y
+            if where != CENTER: # and hasattr(self, "onwrap"):
+                self.bubble("onwrap", {"where":where})
 
     def kinematics(self):
         "Update motion based on spin, vel, acc, and drag properties"
@@ -665,13 +660,14 @@ class BaseSprite(Graphic):
             self.vel = d * vx, d * vy
             self.spin *= 1 - s 
 
-    def ondraw(self):
+    def ondraw(self, ev=None):
         "Update sprite properties after drawing each frame"
         cv = self.canvas
         if self.bounce:
-            update = self._bounce(cv)
-            if update and self.onbounce: self.onbounce(update)
-        if self.wrap and self.simpleWrap(cv): return True
+            where = self._simpleBounce(cv)
+            if where != CENTER: # and hasattr(self, "onbounce"):
+                self.bubble("onbounce", {"where":where})
+        if self.wrap and self._simpleWrap(cv): return True
         self.kinematics()
         if self._pen:
             c, w, pos = self._pen
@@ -700,7 +696,9 @@ class Image(Graphic):
             self._avgColor = pygame.transform.average_color(self._srf.original)
         return self._avgColor
 
-    def dumpCache(self): self._srf.dumpCache()
+    def dumpCache(self):
+        self._srf.dumpCache()
+        return self
 
     @staticmethod
     def fromBytes(data): return PixelData(data).img
@@ -737,10 +735,17 @@ class Image(Graphic):
         "Create a new image by flipping an existing instance"
         return Image(_pyflip(self.image, mode & HORIZONTAL, mode & VERTICAL))
 
-    def crop(self, *args):
+    def crop(self, *args, bg=True):
         "Create a new Image instance by cropping an existing image"
-        srf = self.image
-        return Image(srf.subsurface(pygame.Rect(*args)) if args else crop(srf)) 
+        srf = self._srf.original
+        return Image(srf.subsurface(pygame.Rect(*args)) if args else crop(srf, bg)) 
+
+    def replace(self, oldColor=True, newColor=(255,255,255,0), dist=0.0001):
+        "Copy the image and replace a (range of) colors"
+        srf = self._srf.original.copy()
+        if oldColor is True: oldColor = srf.get_at((0, 0))
+        pygame.PixelArray(srf).replace(oldColor, rgba(newColor), dist)
+        return Image(srf)
 
     @property
     def image(self):
@@ -757,11 +762,11 @@ class Image(Graphic):
         return self
 
     @property
-    def png(self): return PixelData.export(self.image)
+    def png(self): return export(self.image).read()
 
     @property
-    def jpg(self): return PixelData.export(self.image, "a.jpg")
-        
+    def jpg(self): return export(self.image, "a.jpg").read()
+
     def copy(self): return Image(self.image.copy())
 
 
@@ -1020,7 +1025,7 @@ class Canvas(Graphic):
                 else: grect = g.draw(srf)
                 g.rect = grect
                 if br: self.dirtyRegions.append(grect)
-                if g.ondraw: ondrawList.append(g) # g.ondraw()
+                if g.ondraw: ondrawList.append(g)
 
         # Draw border
         if mode & 1 and self.weight:
@@ -1121,7 +1126,6 @@ class Sketch(Canvas):
     _fixedAspect = True
     dirtyRegions = []
     resizeTrigger = False
-#     beforeResize = None
 
     def __init__(self, size=(512,288)):
         super().__init__(size, "white")
@@ -1232,7 +1236,6 @@ class Sketch(Canvas):
             mode = self._pygameMode(mode)
             self._mode = mode
         self.image = _pd.set_mode(size, mode)
-#         if self.beforeResize: self.beforeResize(initSize)
         super().resize(self.size)
         self._size = self.size
         if self.dirtyRegions is not None:
@@ -1295,9 +1298,14 @@ class Sketch(Canvas):
                 else: _pd.update(br)
                 self._capture()
                 for gr in self.ondrawList:
-                    try: gr.ondraw()
-                    except: logError()
-                if self.ondraw: self.ondraw()
+                    try: gr.ondraw(customEv(target=gr, handler="ondraw"))
+                    except:
+                        try:
+                            print("{}.ondraw rejects event argument".format(type(gr).__name__), file=sys.stderr)
+                            logError()
+                            gr.ondraw()
+                        except: logError()
+                if self.ondraw: self.ondraw(customEv(target=self, handler="ondraw"))
                 self._evHandle()
             except: logError()
 

@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2023 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -239,7 +239,7 @@ class TextInput(Text):
         d = self.data
         return (font.size(d[:i])[0] + font.size(d[:i+1])[0]) // 2
 
-    def onmousedown(self, ev): # onclick in v2.1
+    def onmousedown(self, ev):
         drag = ev.handler == "ondrag" 
         if drag or ev.button in self.allowButton:
             self._startCursor()
@@ -307,7 +307,7 @@ class TextInput(Text):
                 else: self.pos = sigma(self.pos, vec2d(pix, a))
         return self
 
-    ondraw = scroll
+    def ondraw(self, ev=None): return self.scroll()
 
 
 class TextInputCanvas(Canvas):

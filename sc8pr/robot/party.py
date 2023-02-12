@@ -1,4 +1,4 @@
-# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2023 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -66,7 +66,7 @@ class Party(BrainSketch):
                 r.pos = r.randPos(self)
         self.cd = Collisions(self)
 
-    def ondraw(self):
+    def ondraw(self, ev=None):
         robot = self[-1]
         if robot in physics(self):
             robot.greet = sorted(t.name for t in self.cd.involving(robot))[0]
@@ -100,12 +100,12 @@ class PartyRobot(Robot):
         "Schedule motor randomization"
         self.restart = self.uptime + uniform(3, 7)
 
-    def oncollide(self):
+    def oncollide(self, ev=None):
         self.randStart()
         self.collision = False
         self.motors = 0
 
-    def onbounce(self, u): self.oncollide()
+    onbounce = oncollide
 
     def brain(self):
         "Robot control function"

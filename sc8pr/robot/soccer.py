@@ -1,4 +1,4 @@
-# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2023 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -115,12 +115,12 @@ class SoccerBall(Sprite):
         super().__init__(img)
         self.config(height=30, mass=1, drag=0.00025, bounce=BOTH)
 
-    def oncollide(self): self.spin = uniform(-2, 2)
+    def oncollide(self, ev=None): self.spin = uniform(-2, 2)
 
-    def onbounce(self, wall):
+    def onbounce(self, ev=None):
         v, a = polar2d(*self.vel)
         self.vel = vec2d(v, a + uniform(-5, 5))
-        self.oncollide()
+        self.oncollide(ev)
 
     def collideRobot(self, pos):
         sk = self.sketch
@@ -130,9 +130,9 @@ class SoccerBall(Sprite):
                 return True
         return False
 
-    def ondraw(self):
+    def ondraw(self, ev=None):
         sk = self.sketch
-        Sprite.ondraw(self)
+        Sprite.ondraw(self, ev)
 
         # Check whether a goal has been scored
         player = self.goal(sk)
@@ -220,8 +220,8 @@ class SoccerGame(Sketch):
         self["Yellow"] = yellow.config(pos=(1.5 * x, y), width=y/4, angle=90)
         self["Red"] = red.config(pos=(0.5 * x, y), width=y/4, angle=270)
 
-    ondraw = physics
-    
+    def ondraw(self, ev=None): return physics(self)
+
     def goal(self, player):
         "Change the scoreboard"
         score = self.score[player]

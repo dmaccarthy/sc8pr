@@ -51,11 +51,13 @@ class Knob(CostumeImage):
     
     def __init__(self, size, colors=None):
         if colors is None: colors = self.colors
-        try: imgs = [Image(size, c) for c in colors]
+        try:
+            if type(colors) is pygame.Color: raise
+            imgs = [Image(size, c) for c in colors]
         except: imgs = [Image(size, colors)]
         super().__init__(imgs)
 
-    def ondraw(self):
+    def ondraw(self, ev=None):
         hov = self is self.sketch.evMgr.hover
         self.costumeNumber = 1 if hov else 0 # or self.canvas.focussed
 

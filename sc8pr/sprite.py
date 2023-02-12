@@ -1,4 +1,4 @@
-# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2023 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -24,7 +24,7 @@ from sc8pr import BaseSprite, Image, Graphic
 class CostumeImage(Graphic):
     costumeTime = 0
     _costumeNumber = 0
-    onreset = None
+#     onreset = None
 
     def __init__(self, image, cols=1, rows=1, flip=0, padding=0):
         # Clone costumes images from existing list
@@ -75,7 +75,7 @@ class CostumeImage(Graphic):
         img.rect = self.rect
         return img.contains(pos)
 
-    def updateCostume(self):
+    def updateCostume(self, ev=None):
         "Change sprite costume"
         n = self.costumeTime
         if n < 0:
@@ -84,8 +84,8 @@ class CostumeImage(Graphic):
         else: dn = 1
         if n and self.sketch.frameCount % n == 0:
             self.costumeNumber = self._costumeNumber + dn
-            if self._costumeNumber == 0 and self.onreset: 
-                self.onreset()
+            if self._costumeNumber == 0:
+                self.bubble("onreset", ev if ev else {})
 
     ondraw = updateCostume
 
@@ -93,9 +93,9 @@ class CostumeImage(Graphic):
 class Sprite(CostumeImage, BaseSprite):
     "Sprite animation with one or more costumes"
 
-    def ondraw(self):
-        BaseSprite.ondraw(self)
-        self.updateCostume()
+    def ondraw(self, ev=None):
+        BaseSprite.ondraw(self, ev)
+        self.updateCostume(ev)
 
 
 def collide_rect_mask(left, right):

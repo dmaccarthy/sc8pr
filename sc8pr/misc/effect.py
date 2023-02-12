@@ -1,4 +1,4 @@
-# Copyright 2015-2021 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2023 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -18,10 +18,13 @@
 
 from random import uniform, random
 from math import sqrt, tan, pi, sin, cos, hypot
-from sys import stderr
 import pygame
 from pygame.pixelarray import PixelArray
 from sc8pr.util import rgba, style
+try:
+    from pygame.surfarray import pixels_alpha
+except:
+    pixels_alpha = None
 
 pi2 = 2 * pi
 
@@ -68,9 +71,12 @@ class Remove(Effect):
     def apply(self, img, n=0):
         if n <= 0:
             if self._complete:
-                self._gr.bind(ondraw=lambda gr:gr.remove())
+                self._gr.bind(ondraw=self.finish)
             else: self._gr.effects = None
         return img
+
+    @staticmethod
+    def finish(gr, ev=None): gr.remove()
 
 
 class ReplaceColor(Effect):
@@ -294,7 +300,6 @@ class Dissolve(Effect):
     "Replace pixels randomly by a specified or random color"
 
     def __init__(self, colors=(0,0,0,0), keepTransparent=True, alpha=True):
-#        if not colors: self.colors = alpha
         t = type(colors)
         if t is int:
             self.colors = [rgba(alpha) for i in range(colors)]
@@ -310,13 +315,20 @@ class Dissolve(Effect):
         "Apply pixel-by-pixel effect"
         if n >= 1: return img
         srf = self.srfSize(img)
-        self.alphaMask = srf.map_rgb((0,0,0,255))
-        pxa = PixelArray(srf)
-        x = 0
-        for pxCol in pxa:
-            for y in range(len(pxCol)):
-                pxCol[y] = self.pixel(n, x, y, pxCol[y])
-            x += 1
+        if pixels_alpha: # Use numpy/pixels_alpha
+            sa = pixels_alpha(srf)
+            h = len(sa[0])
+            for c in sa:
+                for r in range(h):
+                    if random() > n: c[r] = 0
+        else: # No numpy!
+            self.alphaMask = srf.map_rgb((0,0,0,255))
+            pxa = PixelArray(srf)
+            x = 0
+            for pxCol in pxa:
+                for y in range(len(pxCol)):
+                    pxCol[y] = self.pixel(n, x, y, pxCol[y])
+                x += 1
         return srf
 
     def pixel(self, n, x, y, c):
@@ -371,24 +383,3 @@ class Pixelate(Effect):
                         c = pygame.transform.average_color(subsrf)
                         subsrf.fill(c)
         return srf
-
-
-try:
-    from pygame.surfarray import pixels_alpha
-    
-    class FastDissolve(Effect):
-        """Dissolve to transparency only; uses pygame.surfarray for speed but requires numpy"""
-    
-        def apply(self, img, n):
-            if n >= 1: return img
-            srf = self.srfSize(img)
-            sa = pixels_alpha(srf)
-            h = len(sa[0])
-            for c in sa:
-                for r in range(h):
-                    if random() > n: c[r] = 0
-            return srf
-
-except:
-    FastDissolve = Dissolve
-    print("FastDissolve effect is unavailable; substituting Dissolve", file=stderr)

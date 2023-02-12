@@ -1,4 +1,4 @@
-# Copyright 2015-2021 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2023 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -17,11 +17,11 @@
 
 "Convert matplotlib figures to sc8pr.Image or PNG data"
 
-import pygame, io, sys
+import pygame, io, matplotlib as mp, matplotlib.figure as mf
 from sc8pr import Image
 
 def fonts(math="stix", sans=None, serif=None, mono=None):
-    p = sys.modules["matplotlib"].rcParams
+    p = mp.rcParams
     if math: p["mathtext.fontset"] = math
     if sans: p["font.sans-serif"] = sans
     if sans: p["font.serif"] = serif
@@ -38,6 +38,6 @@ def figure(fig, image=True, **kwargs):
 
 def text(text, color="black", fontsize=12, image=True, **kwargs):
     "Use matplotlib to render text/math as a sc8pr.Image or PNG data"
-    fig = sys.modules["matplotlib.figure"].Figure(figsize=(0.01, 0.01))
+    fig = mf.Figure(figsize=(0.01, 0.01))
     fig.text(0, 0, text, fontsize=float(fontsize), color=color)
     return figure(fig, image, **kwargs)

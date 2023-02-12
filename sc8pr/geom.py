@@ -118,26 +118,14 @@ def transform_gen(pts, shift1=None, scale1=1, matrix=(1,0,0,1), scale2=1, shift2
         y += cy
         yield m0 * x + m1 * y + sx, m2 * x + m3 * y + sy
 
-def transform2d_new(pt, shift1=None, scale1=1, matrix=(1,0,0,1), scale2=1, shift2=None):
+def transform2d(pt, shift1=None, scale1=1, matrix=(1,0,0,1), scale2=1, shift2=None):
     "Perform a transformation on a single point"
     return next(transform_gen((pt,), shift1, scale1, matrix, scale2, shift2))
 
-def transform2dGen(pts, mx=None, shift=(0,0), preShift=None, rotate=0, scale=1, rev=False):
-    if mx is None: mx = rotate
-    s2 = 1
-    if rev: scale, s2 = s2, scale
-    return transform_gen(pts, preShift, scale, mx, s2, shift)
-
-def transform2d(pt, **kwargs):
-    "Perform a linear transformation and shift on a single point"
-    return next(transform2dGen((pt,), **kwargs))
-
 def rotatedSize(w, h, angle):
     pts = (w,h), (w,-h), (-w,h), (-w,-h)
-    pts = list(transform2dGen(pts, rotate=angle))
-    w = max(abs(pt[0]) for pt in pts)
-    h = max(abs(pt[1]) for pt in pts)
-    return w, h
+    pts = list(transform_gen(pts, matrix=angle))
+    return tuple(max(abs(pt[i]) for pt in pts) for i in (0, 1))
 
 def circle_intersect(c1, r1, c2, r2):
     "Find the intersection(s) of two circles as list of points"

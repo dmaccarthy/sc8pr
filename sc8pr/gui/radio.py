@@ -1,4 +1,4 @@
-# Copyright 2015-2020 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2023 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -72,7 +72,5 @@ class Radio(Options):
             change = t.selected
             for cb in self.boxes:
                 cb.selected = t is cb
-            if change:
-#                setattr(ev, "target", self)
-                self.bubble("onchange", ev)
+            if change: self.bubble("onchange", ev)
     

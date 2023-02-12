@@ -1,4 +1,4 @@
-# Copyright 2015-2021 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2023 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -32,7 +32,7 @@ def _indx(obj, i):
 
 class Video(Sprite):
     "A class for storing and retrieving sequences of compressed images"
-    _autoSave = False
+#     _autoSave = False
     _paused = False
     frameTimes = None
 
@@ -91,9 +91,9 @@ class Video(Sprite):
             img = PixelData(img, True)
         self._costumes.append(img)
         if not hasattr(self, "_size"): self._size = img.size
-        if self._autoSave:
-            n = len(self)
-            if n > self._autoSave: self.autoSave(True, n)
+#         if self._autoSave:
+#             n = len(self)
+#             if n > self._autoSave: self.autoSave(True, n)
         return self
 
     def __add__(self, other):
@@ -148,21 +148,21 @@ class Video(Sprite):
         end = _indx(self, end)
         vid = self.clip(start, end).effect(effect, out)
         self.splice(start, len(vid), vid)
-        return self        
-
-    def autoSave(self, fn=True, size=None):
-        "Turn auto save on/off, or perform an auto save"
-        if fn is True:
-            if size is None: size = len(self)
-            if size:
-                self.save(self._savefile, append=self._append)
-                self.purge()._append += size
-        elif fn is False: self._autoSave = False
-        else:
-            self._autoSave = size if size else 4096
-            self._savefile = fn
-            self._append = 0
         return self
+
+#     def autoSave(self, fn=True, size=None):
+#         "Turn auto save on/off, or perform an auto save"
+#         if fn is True:
+#             if size is None: size = len(self)
+#             if size:
+#                 self.save(self._savefile, append=self._append)
+#                 self.purge()._append += size
+#         elif fn is False: self._autoSave = False
+#         else:
+#             self._autoSave = size if size else 4096
+#             self._savefile = fn
+#             self._append = 0
+#         return self
 
     def frame(self, n):
         "Return a frame as a PixelData instance"

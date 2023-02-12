@@ -1,4 +1,4 @@
-# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2023 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -58,7 +58,7 @@ class ParkingLot(BrainSketch):
         self += Robot(c).bind(brain=br()).config(xy=pos(1.46), angle=choice(a), **attr)
         self += Robot(c).bind(brain=br()).config(xy=pos(-1.46), angle=choice(a), **attr)
 
-    ondraw = physics
+    def ondraw(self, ev=None): return physics(self)
 
     @staticmethod
     def idle(r):

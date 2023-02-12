@@ -21,18 +21,17 @@ Additional features for encoding and decoding media using additional packages
 """
 
 
-import os, struct, pygame
+import os, struct, pygame, numpy, imageio, PIL.Image, PIL.ImageGrab
 from sc8pr import PixelData, Image, BaseSprite
 from sc8pr.misc.video import Video
 from sc8pr.misc.s8v import S8Vfile
-from sys import modules
 
 
 class Grabber:
     "A class for performing screen captures using PIL.ImageGrab.grab"
 
     def __init__(self, rect=None):
-        self.grab = modules["PIL.ImageGrab"].grab
+        self.grab = PIL.ImageGrab.grab
         if rect and not isinstance(rect, pygame.Rect):
             if len(rect) == 2: rect = (0, 0), rect
             rect = pygame.Rect(rect)
@@ -68,7 +67,7 @@ class FFReader(_FF):
     "Read images directly from a media file using imageio/FFmpeg"
 
     def __init__(self, src, **kwargs):
-        self._io = modules["imageio"].get_reader(src, **kwargs)
+        self._io = imageio.get_reader(src, **kwargs)
         self._iter = iter(self._io)
         self.meta = self._io.get_meta_data()
         size = kwargs.get("size")
@@ -84,8 +83,6 @@ class FFReader(_FF):
         try:
             while True: yield next(self)
         except StopIteration: pass
-#         for f in self._io:
-#             yield PixelData((bytes(f), self._info))
 
     def read(self, n=None, compress=None):
         "Return a Video instance from the next n frames"
@@ -136,17 +133,9 @@ class FFReader(_FF):
 class FFWriter(_FF):
     "Write graphics directly to media file using imageio/FFmpeg"
 
-    @staticmethod
-    def _createFrameData():
-        pil = modules.get("PIL.Image")
-        np = modules["numpy"]
-        if pil: return lambda img: np.array(img.pil)
-        else: return lambda img: np.swapaxes(pygame.surfarray.array3d(img.srf), 0, 1)
-
     def __init__(self, src, fps=30):
-        self._fd = FFWriter._createFrameData()
         self._size = None
-        self._io = modules["imageio"].get_writer(src, fps=fps)
+        self._io = imageio.get_writer(src, fps=fps)
 
     def write(self, srf):
         "Write one frame (surface) to the video file, resizing if necessary"
@@ -162,12 +151,12 @@ class FFWriter(_FF):
 
     def writePixelData(self, pix):
         "Write a PixelData instance: DOES NOT VERIFY SIZE"
-        self._io.append_data(self._fd(pix))
+        self._io.append_data(numpy.array(pix.pil))
         return self
 
     def writePIL(self, pil):
         "Write a PIL image: DOES NOT VERIFY SIZE"
-        self._io.append_data(modules["numpy"].array(pil))
+        self._io.append_data(numpy.array(pil))
         return self
 
     capture = write
@@ -184,7 +173,7 @@ class FFWriter(_FF):
         with FFWriter(dest, 30 if fps is None else fps) as ffw:
             if isVid:
                 for f in vid.scaleFrames().frames():
-                    ffw._io.append_data(ffw._fd(f))
+                    ffw._io.append_data(numpy.array(f.pil))
             else:
                 with S8Vfile(vid) as s8v:
                     size = None
@@ -192,12 +181,11 @@ class FFWriter(_FF):
                         if size is None: size = f.size
                         if f.size != size:
                             f = PixelData(f.img.config(size=size), True)
-                        ffw._io.append_data(ffw._fd(f))
+                        ffw._io.append_data(numpy.array(f.pil))
 
 
 class Movie(Image):
     "Graphics subclass for playing movies by reading frames as needed"
-    onreset = None
     
     def __init__(self, src, interval=None, **kwargs):
         self._s8v = src.split(".")[-1].lower() == "s8v"
@@ -247,9 +235,9 @@ class Movie(Image):
                 ffr.close()
                 self.reader = None
                 self.paused = True
-                if self.onreset: self.onreset()
+                self.bubble("onreset")
 
-    def ondraw(self):
+    def ondraw(self, ev=None):
         "Update movie after each sketch drawing cylce"
         if self.reader and not self.paused:
             n = self.sketch.frameCount
@@ -263,6 +251,6 @@ class Movie(Image):
 
 class MovieSprite(Movie, BaseSprite):
 
-    def ondraw(self):
-        Movie.ondraw(self)
-        BaseSprite.ondraw(self)
+    def ondraw(self, ev=None):
+        Movie.ondraw(self, ev)
+        BaseSprite.ondraw(self, ev)

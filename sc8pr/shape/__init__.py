@@ -322,7 +322,7 @@ class Polygon(Shape):
         return tuple((min(x[i] for x in pts), max(x[i] for x in pts)) for i in (0,1))
 
     def _metrics(self):
-        
+    
         # Metrics in canvas coordinates
         if not self.canvas: self.canvas = Canvas((10, 10))
         cv = self.canvas
@@ -473,21 +473,19 @@ SIMPLE = 2
 class Arrow(Polygon):
     "Arrow shaped polygon"
 
-#     def __init__(self, length, width=0.1, head=0.1, flatness=2, anchor=TIP, pts=None):
     def __init__(self, **kwargs):
         anchor = kwargs.get("anchor", TIP)
         tail = kwargs.get("tail", None)
         tip = kwargs.get("tip", None)
         if tail is None:
             if tip is None: tail = (0, 0)
-            else: # Added in 2.2.1
+            else:
                 length, a = kwargs["length"], 0
                 tail = (tip[0] - length, tip[1])                
         if tip is None:
             length, a = kwargs["length"], 0
             tip = (tail[0] + length, tail[1])
         else:
-#             tip = kwargs["tip"]
             length, a = polar2d(*delta(tip, tail))
         T = kwargs.get("width", 1/14)
         H = kwargs.get("head", 2/7)
@@ -525,8 +523,7 @@ class Arrow(Polygon):
         return (v[0] + u[0]) / 2, (v[1] + u[1]) / 2
 
     @staticmethod
-    def _vert(L, T=None, H=None, A=35, shape=0):
-        # www.desmos.com/calculator/kr61ws62tm
+    def _vert(L, T=None, H=None, A=35, shape=0): # www.desmos.com/calculator/kr61ws62tm
         if T is None: T = L / 14
         if H is None: H = 4 * T
         A *= pi / 180
@@ -548,15 +545,11 @@ class Arrow(Polygon):
         return pts
 
 
-class CircleSprite(Circle, BaseSprite): pass
-class PolygonSprite(Polygon, BaseSprite): pass
-class ArrowSprite(Arrow, BaseSprite): pass
-
-
 class Ellipse(_Ellipse):
+    _angle = 0
     _preserve = "xy", "axes"
 
-    def __init__(self, size): self.axes = size
+    def __init__(self, axes): self.axes = axes
 
     @property
     def axes(self): return self._cssize
@@ -565,6 +558,14 @@ class Ellipse(_Ellipse):
     def axes(self, size):
         self._cssize = (size, size) if type(size) in (int, float) else size
         self._srf = None
+
+    @property
+    def angle(self): return self._angle
+
+    @angle.setter
+    def angle(self, a):
+        self._srf = None
+        self._angle = a
 
     def resize(self, size):
         w, h = self.size
@@ -619,7 +620,7 @@ class Ellipse(_Ellipse):
     def containsPoint(self, xy):
         a = -1 if self.clockwise else 1
         w, h = self._cssize
-        x, y = transform2d(xy, preShift=neg(self.xy), rotate=a*self.angle)
+        x, y = transform2d(xy, shift1=neg(self.xy), matrix=a*self.angle)
         return (x / w) ** 2 + (y / h) ** 2 <= 0.25
 
 
@@ -635,3 +636,10 @@ class Arc(Ellipse):
             arc = [a*x * DEG for x in self.arc]
             if a == -1: pygame.draw.arc(srf, s, r, arc[1], arc[0], w)
             else: pygame.draw.arc(srf, s, r, arc[0], arc[1], w)
+
+
+class CircleSprite(Circle, BaseSprite): pass
+class EllipseSprite(Ellipse, BaseSprite): pass
+class ArcSprite(Arc, BaseSprite): pass
+class PolygonSprite(Polygon, BaseSprite): pass
+class ArrowSprite(Arrow, BaseSprite): pass

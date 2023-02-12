@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-import sys, pygame
+import io, sys, pygame
 from random import randint
 from traceback import format_exc
 from zipfile import ZipFile
@@ -26,7 +26,10 @@ from sc8pr.geom import sigma, delta
 scale = pygame.transform.smoothscale
 
 def nothing(*args): pass
-  
+
+def customEv(**kwargs):
+    return pygame.event.Event(pygame.USEREVENT, **kwargs)
+
 def modKeys():
     key = pygame.key.get_pressed()
     m = 0
@@ -194,6 +197,13 @@ def dragDrop(gr, ev):
     gr.config(pos=pos, hoverable=True)
     if drop: gr.bubble("ondrop", ev)
 
+def export(srf, fn="a.png"):
+    "Write a surface to a different format"
+    b = io.BytesIO(b"")
+    pygame.image.save(srf, b, fn)
+    b.seek(0)
+    return b
+
 def fileExt(fn, ext):
     "Force file extension"
     ext = [e.lower() for e in ([ext] if type(ext) is str else ext)]
@@ -226,8 +236,8 @@ def _h_crop(pxa, c):
     while j > i and _allPixels(pxa[j], c): j -= 1
     return i, j, n
 
-def crop(srf, bg=True, replace=None):
-    "Crop surface to content"
+def crop(srf, bg=True):
+    "Find a subsurface that crops the image to its content"
     pxa = pygame.PixelArray(srf)
     if bg is True: bg = pxa[0][0]
     elif type(bg) is not int: bg = srf.map_rgb(pygame.Color(bg))
@@ -241,7 +251,6 @@ def crop(srf, bg=True, replace=None):
     if i or j < n - 1:
         h = srf.get_size()[0]
         srf = srf.subsurface([0, i, h, j - i + 1])
-    if replace: pygame.PixelArray(srf).replace(bg, pygame.Color(*replace))
     return srf
 
 

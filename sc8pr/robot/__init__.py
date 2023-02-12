@@ -1,4 +1,4 @@
-# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2023 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -151,7 +151,7 @@ class Robot(Sprite):
     @property
     def power(self): return sum(abs(m) for m in self._motors) / 2
 
-    def onbounce(self, wall):
+    def onbounce(self, ev):
         "Adjust motion upon collision with wall"
         w, h = self.sketch.size
         x, y = self.pos
@@ -167,9 +167,9 @@ class Robot(Sprite):
         self.vel = vx, vy
         self.collision = True
 
-    def oncollide(self): self.collision = True
+    def oncollide(self, ev=None): self.collision = True
 
-    def ondraw(self):
+    def ondraw(self, ev=None):
         "Update robot sprite each frame"
 
         if not self.active: raise InactiveError()
@@ -203,7 +203,7 @@ class Robot(Sprite):
         self.costumeTime = 0 if p == 0 else round(36 / (1 + 5 * p))
 
         # Update position and angle...
-        super().ondraw()
+        super().ondraw(ev)
 
         # Update sensors if requested...
         if self._updateSensors:
