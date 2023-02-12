@@ -13,7 +13,7 @@ An educational programming package for [Python 3](https://www.python.org). Inspi
 * curve plotting
 * robotics simulator
 
-For more information, please see the [tutorial and reference](http://dmaccarthy.github.io/sc8pr/).
+For more information, please see the [tutorial and reference](https://dmaccarthy.github.io/sc8pr/).
 
 # Installation
 
@@ -30,3 +30,5 @@ pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
 Alternatively, you can run **sc8pr** from the source code without installing it. Just unzip the [**sc8pr** release](https://github.com/dmaccarthy/sc8pr/archive/refs/tags/v2.2.2.zip) and move the **sc8pr** package into your PYTHONPATH. Ensure that **pygame 2** is installed!
 
 See the documentation for more [detailed instructions](https://dmaccarthy.github.io/sc8pr/?inst).
+
+You can also preview the forthcoming [sc8pr 3 documentation](https://dmaccarthy.github.io/sc8pr3/)
