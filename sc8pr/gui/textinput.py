@@ -243,7 +243,7 @@ class TextInput(Text):
         drag = ev.handler == "ondrag" 
         if drag or ev.button in self.allowButton:
             self._startCursor()
-            x = self.relXY(ev.pos)[0] - self.padding
+            x = self.relPos(ev.pos)[0] - self.padding
             n = len(self.data)
             i = 0
             while i < n and x > self._widthTo(i): i += 1

@@ -1,4 +1,4 @@
-# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2023 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -124,7 +124,7 @@ class Slider(Canvas):
         "Determine a numerical value from the event coordinates"
         dim = tall(*self.size)
         wh = self.knob.size[dim] #+ 2
-        x = self._round((self.relXY(ev.pos)[dim] - wh / 2) / max(1, self.size[dim] - wh))
+        x = self._round((self.relPos(ev.pos)[dim] - wh / 2) / max(1, self.size[dim] - wh))
         if self._flip: x = 1 - x
         return self._calc(x)
 

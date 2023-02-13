@@ -322,7 +322,7 @@ class Graphic:
         offset = cv.rect.topleft if cv else (0,0)
         return pygame.Rect(self.blitPosition(offset, blitSize), blitSize) ## !!!
 
-    def relXY(self, pos):
+    def relPos(self, pos):
         "Calculate coordinates relative to the graphic object"
         if self.angle:
             x, y = transform2d(pos, shift1=neg(self.rect.center), matrix=-self.angle, shift2=self.center)
@@ -334,7 +334,7 @@ class Graphic:
         "Check if the graphic contains the coordinates"
         if self.angle:
             r = pygame.Rect((0,0), self.size)
-            pos = self.relXY(pos)
+            pos = self.relPos(pos)
         else: r = self.rect
         return bool(r.collidepoint(pos))
 
