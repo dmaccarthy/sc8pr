@@ -16,11 +16,11 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 3, 0, "dev0"
+version = 3, 0, "dev"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import PIL.Image  # Omit from sc8pr-core
-import sys, struct, zlib, io
+import sys, struct, zlib #, io
 from math import hypot, sqrt
 import pygame
 import pygame.display as _pd
@@ -90,7 +90,7 @@ class PixelData:
                 img = img.convert(m)
             self._data = img.tobytes()
         if m in rgb: self.mode = m
-        else: raise NotImplementedError("Only RGB and RGBA modes are supported")
+        else: raise NotImplementedError("Only RGB (24-bit) and RGBA (32-bit) modes are supported")
         self.codec = codec
         if compress: self.compress()
         elif self.compressed: self.decompress()
@@ -174,9 +174,23 @@ class Graphic:
     angle = 0
     hoverable = True
     focusable = False
-    ondraw = None
+#     ondraw = None
     effects = None
     radiusFactor = 0.25
+
+    _ondraw_warn = True
+
+    def _ondraw_flex(self, ev=None):
+        "Allow ondraw handler to decline event argument (v2.2 compatability)"
+        try:
+            try: return self.ondraw(ev if ev else customEv(target=self, handler="ondraw"))
+            except TypeError:
+                if self._ondraw_warn:
+                    logError()
+                    print("sc8pr will re-try without 'ev' argument", file=sys.stderr)
+                    Graphic._ondraw_warn = False
+                return self.ondraw()
+        except: logError()
 
     @property
     def name(self):
@@ -1025,7 +1039,7 @@ class Canvas(Graphic):
                 else: grect = g.draw(srf)
                 g.rect = grect
                 if br: self.dirtyRegions.append(grect)
-                if g.ondraw: ondrawList.append(g)
+                if hasattr(g, "ondraw"): ondrawList.append(g)
 
         # Draw border
         if mode & 1 and self.weight:
@@ -1258,7 +1272,7 @@ class Sketch(Canvas):
         pygame.key.set_repeat(400, 80)
         _pd.set_caption(caption)
         try:
-            try: icon = Image(icon) # pygame.image.load
+            try: icon = Image(icon)
             except: icon = Image.fromBytes(sc8prData("alien"))
             _pd.set_icon(icon.config(width=64).image)
         except: logError()
@@ -1268,14 +1282,13 @@ class Sketch(Canvas):
         self._mode = mode
         self.image = _pd.set_mode(self._size, mode)
         self.key = None
-        self.mouse = pygame.event.Event(pygame.USEREVENT,
-            code=None, pos=(0,0), description="Sketch startup")
+        self.mouse = customEv(code=None, pos=(0,0), description="Sketch startup")
 
         # Run setup
         try:
-            if hasattr(self, "_defer_coords"):
-                self.setCoords(*self._defer_coords)
-                del self._defer_coords
+#             if hasattr(self, "_defer_coords"):
+#                 self.setCoords(*self._defer_coords)
+#                 del self._defer_coords
             if hasattr(self, "setup"): self.setup()
             else:
                 main = sys.modules["__main__"]
@@ -1297,14 +1310,8 @@ class Sketch(Canvas):
                 if flip: _pd.flip()
                 else: _pd.update(br)
                 self._capture()
-                for gr in self.ondrawList:
-                    try: gr.ondraw(customEv(target=gr, handler="ondraw"))
-                    except:
-                        try:
-                            print("{}.ondraw rejects event argument".format(type(gr).__name__), file=sys.stderr)
-                            gr.ondraw()
-                        except: logError()
-                if self.ondraw: self.ondraw(customEv(target=self, handler="ondraw"))
+                for gr in self.ondrawList: gr._ondraw_flex()
+                if hasattr(self, "ondraw"): self._ondraw_flex()
                 self._evHandle()
             except: logError()
 
