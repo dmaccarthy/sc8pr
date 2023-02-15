@@ -24,7 +24,7 @@ import pygame
 from pygame.constants import K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE
 from sc8pr import Image, Sketch
 from sc8pr.sprite import Sprite
-from sc8pr.util import sc8prData, logError, rgba, noise, divAlpha
+from sc8pr.util import logError, rgba, noise, divAlpha
 from sc8pr.geom import vec2d, delta, DEG, dist, positiveAngle, angleDifference,\
     subtend
 from sc8pr.shape import Line, Polygon
@@ -80,7 +80,7 @@ class Robot(Sprite):
     proximity = None
 
     def __init__(self, colors=None):
-        img = Image.fromBytes(sc8prData("robot"))
+        img = Image.fromSc8pr("robot")
         if colors:  # Replace body and nose colors
             px = pygame.PixelArray(img.image)
             body0, nose0, body, nose = rgba("red", "blue", *colors)
@@ -91,8 +91,7 @@ class Robot(Sprite):
                 nose0 = _tempColor(px, nose0, *colors)
             if nose != nose0: px.replace(nose0, nose)
             if body != body0: px.replace(body0, body)
-        img = img.tiles(2)
-        super().__init__(img)
+        super().__init__(img.tiles(2))
 
     @property
     def uptime(self): return time() - self._startTime

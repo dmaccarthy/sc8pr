@@ -18,7 +18,7 @@
 
 from sc8pr import Canvas, Image, CENTER
 from sc8pr.text import Text
-from sc8pr.util import rgba, sc8prData
+from sc8pr.util import rgba
 
 OPTIONS = "#e0e0e0", "#b0b0ff", "#8080ff", "#8080ff", "grey"
 
@@ -53,14 +53,14 @@ class Button(Canvas):
     def _checkTiles():
         "Images for creating check boxes"
         if Button._check is None:
-            Button._check = Image.fromBytes(sc8prData("checkbox"))
+            Button._check = Image.fromSc8pr("checkbox")
         return Button._check.tiles(5)
 
     @staticmethod
     def _radioTiles():
         "Images for creating radio check boxes"
         if Button._radio is None:
-            Button._radio = Image.fromBytes(sc8prData("radio"))
+            Button._radio = Image.fromSc8pr("radio")
         return Button._radio.tiles(5)
 
     @staticmethod
@@ -138,7 +138,7 @@ class Button(Canvas):
     @staticmethod
     def _yesNoImg(n):
         if Button._yesNo is None:
-            Button._yesNo = Image.fromBytes(sc8prData("yesNo")).tiles(2)
+            Button._yesNo = Image.fromSc8pr("yesNo").tiles(2)
         return Button._yesNo[0 if n else 1]
 
     def draw(self, srf=None, mode=3):

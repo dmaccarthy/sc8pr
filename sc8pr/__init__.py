@@ -717,6 +717,9 @@ class Image(Graphic):
     @staticmethod
     def fromBytes(data): return PixelData(data).img
 
+    @staticmethod
+    def fromSc8pr(key): return PixelData(sc8prData(key)).img
+
     def tiles(self, cols=1, rows=1, flip=0, padding=0):
         "Create a list of images from a spritesheet"
         srf = self.image
@@ -1273,7 +1276,7 @@ class Sketch(Canvas):
         _pd.set_caption(caption)
         try:
             try: icon = Image(icon)
-            except: icon = Image.fromBytes(sc8prData("alien"))
+            except: icon = Image.fromSc8pr("alien")
             _pd.set_icon(icon.config(width=64).image)
         except: logError()
         w, h = self._size

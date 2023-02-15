@@ -21,7 +21,6 @@ from sc8pr.sprite import Sprite, physics
 from sc8pr.geom import vec2d, polar2d, dist
 from sc8pr.text import Text, Font
 from sc8pr.robot import Robot
-from sc8pr.util import sc8prData
 from sc8pr.gui.radio import Radio
 from sc8pr.gui.button import Button
 from random import uniform, randint, choice
@@ -110,7 +109,7 @@ class Dialog(Canvas):
 class SoccerBall(Sprite):
 
     def __init__(self):
-        img = Image.fromBytes(sc8prData("ball"))
+        img = Image.fromSc8pr("ball")
         SoccerBall.ballImage = img
         super().__init__(img)
         self.config(height=30, mass=1, drag=0.00025, bounce=BOTH)
