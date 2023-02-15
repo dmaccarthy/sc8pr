@@ -779,6 +779,9 @@ class Image(Graphic):
         return self
 
     @property
+    def pix(self): return PixelData(self.image)
+
+    @property
     def png(self): return export(self.image).read()
 
     @property
