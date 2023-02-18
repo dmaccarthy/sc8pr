@@ -17,9 +17,14 @@ For more information, please see the [tutorial and reference](https://dmaccarthy
 
 # Installation
 
-Latest release (2.2):
+Latest stable release (2.2):
 ```
 pip3 install sc8pr
+```
+
+Alpha release (3.0):
+```
+pip3 install sc8pr==3.0a0
 ```
 
 Development version (3.0.dev):
