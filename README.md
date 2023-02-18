@@ -24,7 +24,7 @@ pip3 install sc8pr
 
 Alpha release (3.0):
 ```
-pip3 install sc8pr==3.0a0
+pip3 install sc8pr==3.0a1
 ```
 
 Development version (3.0.dev):
