@@ -16,11 +16,11 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 3, 0, "a2"
+version = 3, 0, "a3"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import PIL.Image  # Omit from sc8pr-core
-import sys, struct, zlib #, io
+import sys, struct, zlib
 from math import hypot, sqrt
 import pygame
 import pygame.display as _pd
