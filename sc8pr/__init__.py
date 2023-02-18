@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 3, 0, "a1"
+version = 3, 0, "dev2"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import PIL.Image  # Omit from sc8pr-core
@@ -54,6 +54,9 @@ RECT = 1
 # pygame 1.9 <--> 2.0 compatibility
 SIZECHANGED = getattr(pygame, "WINDOWSIZECHANGED", None)
 WINEXPOSED = getattr(pygame, "WINDOWEXPOSED", None)
+
+pygame.init()
+pygame.key.set_repeat(400, 80)
 
 
 class PixelData:
@@ -1134,6 +1137,7 @@ class Sketch(Canvas):
     _fixedAspect = True
     dirtyRegions = []
     resizeTrigger = False
+    _sys_cursor = pygame.mouse.get_cursor()
 
     def __init__(self, size=(512,288)):
         super().__init__(size, "white")
@@ -1186,7 +1190,7 @@ class Sketch(Canvas):
 
     @cursor.setter
     def cursor(self, c):
-        if c is True: c = pygame.cursors.arrow
+        if c is True: c = Sketch._sys_cursor #pygame.cursors.arrow
         elif c is False: c = (8,8), (5,4), 8*(0,), 8*(0,)
         pygame.mouse.set_cursor(*c)
 
@@ -1261,9 +1265,8 @@ class Sketch(Canvas):
         "Initialize pygame and run the main drawing / event handling loop"
 
         # Initialize
-        pygame.init()
+        if not pygame.get_init(): pygame.init()
         self._clock = pygame.time.Clock()
-        pygame.key.set_repeat(400, 80)
         _pd.set_caption(caption)
         try:
             try: icon = Image(icon)
