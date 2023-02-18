@@ -1,4 +1,4 @@
-# Copyright 2015-2021 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2023 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -53,14 +53,14 @@ class Button(Canvas):
     def _checkTiles():
         "Images for creating check boxes"
         if Button._check is None:
-            Button._check = Image.fromSc8pr("checkbox")
+            Button._check = Image.fromZip("checkbox")
         return Button._check.tiles(5)
 
     @staticmethod
     def _radioTiles():
         "Images for creating radio check boxes"
         if Button._radio is None:
-            Button._radio = Image.fromSc8pr("radio")
+            Button._radio = Image.fromZip("radio")
         return Button._radio.tiles(5)
 
     @staticmethod
@@ -138,7 +138,7 @@ class Button(Canvas):
     @staticmethod
     def _yesNoImg(n):
         if Button._yesNo is None:
-            Button._yesNo = Image.fromSc8pr("yesNo").tiles(2)
+            Button._yesNo = Image.fromZip("yesNo").tiles(2)
         return Button._yesNo[0 if n else 1]
 
     def draw(self, srf=None, mode=3):

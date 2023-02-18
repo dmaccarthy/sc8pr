@@ -109,7 +109,7 @@ class Dialog(Canvas):
 class SoccerBall(Sprite):
 
     def __init__(self):
-        img = Image.fromSc8pr("ball")
+        img = Image.fromZip("ball")
         SoccerBall.ballImage = img
         super().__init__(img)
         self.config(height=30, mass=1, drag=0.00025, bounce=BOTH)

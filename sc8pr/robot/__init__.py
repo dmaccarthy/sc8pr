@@ -80,7 +80,7 @@ class Robot(Sprite):
     proximity = None
 
     def __init__(self, colors=None):
-        img = Image.fromSc8pr("robot")
+        img = Image.fromZip("robot")
         if colors:  # Replace body and nose colors
             px = pygame.PixelArray(img.image)
             body0, nose0, body, nose = rgba("red", "blue", *colors)

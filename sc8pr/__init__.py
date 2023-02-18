@@ -28,7 +28,7 @@ from pygame.transform import flip as _pyflip
 from sc8pr._event import EventManager
 from sc8pr._cs import CoordSys
 from sc8pr.geom import transform2d, positiveAngle, delta, sigma, vmult, neg
-from sc8pr.util import CachedSurface, style, logError, sc8prData, tile, rgba, drawBorder, crop, export, customEv
+from sc8pr.util import CachedSurface, style, logError, sc8prData, resolvePath, tile, rgba, drawBorder, crop, export, customEv
 
 # Anchor point constants
 TOPLEFT = 0
@@ -153,7 +153,9 @@ class PixelData:
 # Omit pil and _frombytes from sc8pr-core
 
     @property
-    def pil(self): return self._image(self._frombytes)
+    def pil(self):
+        return self._image(self._frombytes)
+#         raise NotImplementedError("sc8pr-core disables features that depend on Pillow")
 
     @staticmethod
     def _frombytes(d, s, m): return PIL.Image.frombytes(m, s, d)
@@ -174,23 +176,8 @@ class Graphic:
     angle = 0
     hoverable = True
     focusable = False
-#     ondraw = None
     effects = None
     radiusFactor = 0.25
-
-    _ondraw_warn = True
-
-    def _ondraw_flex(self, ev=None):
-        "Allow ondraw handler to decline event argument (v2.2 compatability)"
-        try:
-            try: return self.ondraw(ev if ev else customEv(target=self, handler="ondraw"))
-            except TypeError:
-                if self._ondraw_warn:
-                    logError()
-                    print("sc8pr will re-try without 'ev' argument", file=sys.stderr)
-                    Graphic._ondraw_warn = False
-                return self.ondraw()
-        except: logError()
 
     @property
     def name(self):
@@ -560,7 +547,6 @@ class BaseSprite(Graphic):
     # Edge behaviours
     wrap = REMOVE
     bounce = bounceType = 0
-#     onbounce = None
 
     # Kinematics
     spin = 0
@@ -718,7 +704,9 @@ class Image(Graphic):
     def fromBytes(data): return PixelData(data).img
 
     @staticmethod
-    def fromSc8pr(key): return PixelData(sc8prData(key)).img
+    def fromZip(key, archive=None):
+        if archive is None: archive = resolvePath("sc8pr.data")
+        return PixelData(sc8prData(key, archive=archive)).img
 
     def tiles(self, cols=1, rows=1, flip=0, padding=0):
         "Create a list of images from a spritesheet"
@@ -1241,7 +1229,7 @@ class Sketch(Canvas):
 
     def _pygameMode(self, n): return pygame.RESIZABLE if n is True else int(n)
 
-    def resize(self, size, mode=None): # Rewritten (non-recursive!) for v2.2.a3 !!!
+    def resize(self, size, mode=None):
         "Resize the sketch, maintaining aspect ratio if required"
         initSize = self._size
         ms = self.minSize
@@ -1279,7 +1267,7 @@ class Sketch(Canvas):
         _pd.set_caption(caption)
         try:
             try: icon = Image(icon)
-            except: icon = Image.fromSc8pr("alien")
+            except: icon = Image.fromZip("alien")
             _pd.set_icon(icon.config(width=64).image)
         except: logError()
         w, h = self._size
@@ -1292,9 +1280,6 @@ class Sketch(Canvas):
 
         # Run setup
         try:
-#             if hasattr(self, "_defer_coords"):
-#                 self.setCoords(*self._defer_coords)
-#                 del self._defer_coords
             if hasattr(self, "setup"): self.setup()
             else:
                 main = sys.modules["__main__"]
@@ -1316,8 +1301,10 @@ class Sketch(Canvas):
                 if flip: _pd.flip()
                 else: _pd.update(br)
                 self._capture()
-                for gr in self.ondrawList: gr._ondraw_flex()
-                if hasattr(self, "ondraw"): self._ondraw_flex()
+                for gr in self.ondrawList:
+                    gr.ondraw(customEv(target=gr, handler="ondraw"))
+                if hasattr(self, "ondraw"):
+                    self.ondraw(customEv(target=self, handler="ondraw"))
                 self._evHandle()
             except: logError()
 
