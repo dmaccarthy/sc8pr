@@ -24,7 +24,6 @@ from sc8pr import BaseSprite, Image, Graphic
 class CostumeImage(Graphic):
     costumeTime = 0
     _costumeNumber = 0
-#     onreset = None
 
     def __init__(self, image, cols=1, rows=1, flip=0, padding=0):
         # Clone costumes images from existing list
@@ -75,7 +74,7 @@ class CostumeImage(Graphic):
         img.rect = self.rect
         return img.contains(pos)
 
-    def updateCostume(self, ev=None):
+    def updateCostume(self, ev={}):
         "Change sprite costume"
         n = self.costumeTime
         if n < 0:
@@ -83,9 +82,11 @@ class CostumeImage(Graphic):
             n = -n
         else: dn = 1
         if n and self.sketch.frameCount % n == 0:
-            self.costumeNumber = self._costumeNumber + dn
+            x = self._costumeNumber + dn
+            self.costumeNumber = x
             if self._costumeNumber == 0:
-                self.bubble("onreset", ev if ev else {})
+                setattr(ev, "costumeNumber", x)
+                self.bubble("onreset", ev)
 
     ondraw = updateCostume
 

@@ -148,6 +148,10 @@ class PixelData:
     def img(self): return Image(self.srf)
 
     @property
+    def rgba(self):
+        return Image(self.srf if self.mode == "RGBA" else self.srf.convert_alpha())
+
+    @property
     def png(self): return export(self.srf).read()
 
     @property
@@ -1098,7 +1102,8 @@ class Canvas(Graphic):
         for gr in self:
             yield gr
             if isinstance(gr, Canvas):
-                for i in gr.everything(): yield i
+                yield from gr.everything()
+#                 for i in gr.everything(): yield i
 
     def find(self, criteria, recursive=False):
         "Yield all Graphics that meet the criteria"
