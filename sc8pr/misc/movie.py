@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from sc8pr.misc.video import Video, FFReader
+from sc8pr.misc.video import Video, FFReader, BaseSprite, Sprite
 
 
 class Movie(Video):
@@ -77,3 +77,7 @@ class Movie(Video):
             b -= a
         except: b = 0
         return b
+
+
+class MovieSprite(Movie, BaseSprite):
+    ondraw = Sprite.ondraw

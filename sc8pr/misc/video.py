@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
-from sc8pr import PixelData, Image
-from sc8pr.sprite import Sprite
+from sc8pr import PixelData, Image, BaseSprite
+from sc8pr.sprite import CostumeImage, Sprite
 from zipfile import ZipFile, ZIP_DEFLATED
 from json import dumps, loads
 try: from sc8pr.misc.media import FFReader, FFWriter
@@ -25,8 +25,6 @@ except: pass
 
 class VidZip:
     "A class for storing video frames in a ZIP archive"
-
-#     interval = 1
 
     @property
     def meta(self): return self._meta
@@ -134,7 +132,7 @@ class VidZip:
                 zf.writestr("meta.json", dumps(meta))
 
 
-class Video(Sprite):
+class Video(CostumeImage):
     "Sprites associated with a ZIP archive video"
     _clip = None
 
@@ -187,3 +185,7 @@ class Video(Sprite):
 
     def costumeSequence(self, seq, n=None):
         raise NotImplementedError("Video class does not support costume sequences")
+
+
+class VideoSprite(Video, BaseSprite):
+    ondraw = Sprite.ondraw
