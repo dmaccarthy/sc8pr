@@ -168,7 +168,7 @@ class Robot(Sprite):
 
     def oncollide(self, ev=None): self.collision = True
 
-    def ondraw(self, ev=None):
+    def update(self, ev=None):
         "Update robot sprite each frame"
 
         if not self.active: raise InactiveError()
@@ -202,7 +202,7 @@ class Robot(Sprite):
         self.costumeTime = 0 if p == 0 else round(36 / (1 + 5 * p))
 
         # Update position and angle...
-        super().ondraw(ev)
+        super().update(ev)
 
         # Update sensors if requested...
         if self._updateSensors:
@@ -280,7 +280,7 @@ class Robot(Sprite):
 
     def _drawLEDs(self):
         "Draw LEDs on the robot to indicate color sensor data"
-        for costume in self._costumes:
+        for costume in self.costumeList:
             srfs = costume._srf
             orig = srfs.original
             r0 = orig.get_width() / 2

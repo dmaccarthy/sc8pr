@@ -78,6 +78,20 @@ class Movie(Video):
         except: b = 0
         return b
 
+    _ni_err = NotImplementedError("Movie class does not support costume sequences")
+
+    @property
+    def costumeSequence(self): return None
+
+#     @costumeSequence.setter
+#     def costumeSequence(self, n): raise self._ni_err
+
+    @property
+    def costumeList(self): return None
+
+#     @costumeSequence.setter
+#     def costumeList(self, n): raise self._ni_err
+
 
 class MovieSprite(Movie, BaseSprite):
-    ondraw = Sprite.ondraw
+    update = Sprite.update

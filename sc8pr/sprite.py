@@ -19,11 +19,12 @@
 from math import hypot
 from pygame.sprite import collide_mask, collide_rect, collide_circle
 from sc8pr import BaseSprite, Image, Graphic
+from sc8pr.util import customEv
 
 
 class CostumeImage(Graphic):
-    costumeTime = 0
-    _costumeNumber = 0
+    _seq = None
+    _costumeNumber = costumeTime = 0
 
     def __init__(self, image, cols=1, rows=1, flip=0, padding=0):
         # Clone costumes images from existing list
@@ -34,31 +35,38 @@ class CostumeImage(Graphic):
         else: tiles = Image(image).tiles(cols, rows, flip, padding)
 
         # Initialize
-        self._costumes = self.costumeList = tiles
+        self._costumeList = tiles
         self._size = tiles[0].size
 
-    def __len__(self): return len(self._costumes)
-    def __getitem__(self, i): return self._costumes[i]
+    def _index(self, i=None):
+        "Get the index in the ORIGINAL costumeList from the index in the CURRENT sequence"
+        if i is None: i = self._costumeNumber
+        return self._seq[i] if self._seq else i
+    
+    def __len__(self): return len(self._seq if self._seq else self._costumeList)
+    def __getitem__(self, i): return self._costumeList[self._index(i)]
 
     @property
     def costumeNumber(self): return self._costumeNumber
  
     @costumeNumber.setter
-    def costumeNumber(self, n):
-        self._costumeNumber = n % len(self._costumes)
+    def costumeNumber(self, n): self._costumeNumber = n % len(self)
 
     def costume(self):
         "Return an Image instance of the current costume"
-        n = self.costumeNumber
-        return self._costumes[n].config(size=self.size, angle=self.angle)
+        return self._costumeList[self._index()].config(size=self.size, angle=self.angle)
 
-    def costumeSequence(self, seq, n=None):
+    @property
+    def costumeList(self): return self._costumeList
+
+    @property
+    def costumeSequence(self): return self._seq
+
+    @costumeSequence.setter
+    def costumeSequence(self, seq):
         "Select and order the costumes to animate"
-        self._costumes = list(self.costumeList[i] for i in seq)
-        if n is None and self._costumeNumber >= len(self._costumes):
-            n = 0
-        if n is not None: self.costumeNumber = n
-        return self
+        self._seq = tuple(seq)
+        if self._costumeNumber >= len(self): n = 0
 
     @property
     def avgColor(self): return self.costume().avgColor
@@ -74,29 +82,33 @@ class CostumeImage(Graphic):
         img.rect = self.rect
         return img.contains(pos)
 
-    def updateCostume(self, ev={}):
+    def updateCostume(self):
         "Change sprite costume"
         n = self.costumeTime
         if n < 0:
             dn = -1
             n = -n
         else: dn = 1
-        if n and self.sketch.frameCount % n == 0:
+        f = self.sketch.frameCount
+        if n and f and f % n == 0:
             x = self._costumeNumber + dn
             self.costumeNumber = x
             if self._costumeNumber == 0:
-                setattr(ev, "costumeNumber", x)
+                ev = customEv(target=self, handler="onreset", costumeNumber=x)
                 self.bubble("onreset", ev)
 
-    ondraw = updateCostume
+    def update(self, ev):
+        self.updateCostume()
+        if hasattr(self, "ondraw"): self.ondraw(ev)
 
 
 class Sprite(CostumeImage, BaseSprite):
     "Sprite animation with one or more costumes"
 
-    def ondraw(self, ev=None):
-        BaseSprite.ondraw(self, ev)
-        self.updateCostume(ev)
+    def update(self, ev=None):
+        self.motion()
+        self.updateCostume()
+        if hasattr(self, "ondraw"): self.ondraw(ev)
 
 
 def collide_rect_mask(left, right):

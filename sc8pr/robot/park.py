@@ -58,7 +58,7 @@ class ParkingLot(BrainSketch):
         self += Robot(c).bind(brain=br()).config(xy=pos(1.46), angle=choice(a), **attr)
         self += Robot(c).bind(brain=br()).config(xy=pos(-1.46), angle=choice(a), **attr)
 
-    def ondraw(self, ev=None): return physics(self)
+    def update(self, ev=None): return physics(self)
 
     @staticmethod
     def idle(r):

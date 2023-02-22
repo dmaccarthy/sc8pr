@@ -131,7 +131,6 @@ class SoccerBall(Sprite):
 
     def ondraw(self, ev=None):
         sk = self.sketch
-        Sprite.ondraw(self, ev)
 
         # Check whether a goal has been scored
         player = self.goal(sk)
@@ -219,7 +218,7 @@ class SoccerGame(Sketch):
         self["Yellow"] = yellow.config(pos=(1.5 * x, y), width=y/4, angle=90)
         self["Red"] = red.config(pos=(0.5 * x, y), width=y/4, angle=270)
 
-    def ondraw(self, ev=None): return physics(self)
+    def update(self, ev=None): return physics(self)
 
     def goal(self, player):
         "Change the scoreboard"

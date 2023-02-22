@@ -134,38 +134,20 @@ class VidZip:
 
 class Video(CostumeImage):
     "Sprites associated with a ZIP archive video"
-    _clip = None
 
     def __init__(self, zfile, alpha=False, **kwargs):
         self._vid = VidZip(zfile, **kwargs)  # Needs to be CLOSED!!
         self._costume = self._vid[0].rgba if alpha else self._vid[0].img
         self._size = self._costume.size
 
-    @property
-    def clip(self):
-        return (0, len(self._vid)) if self._clip is None else self._clip
-
-    @clip.setter
-    def clip(self, c=None):
-        if c is None: self._clip = None
-        else:
-            n = len(self._vid)
-            a, b = c
-            if a is None: a = 0
-            if b is None: b = n
-            a, b = (x+n if x < 0 else x for x in (a, b))
-            a, b = max(0, min(a, b)), min(max(a, b), n)
-            if a < b: self._clip = a, b
-            else:raise ValueError("invalid clip range")
-
     def __len__(self):
-        a, b = self.clip
-        return b - a
+        s = self._seq
+        return len(s if s else self._vid)
 
     def close(self): self._vid._zf.close()
 
     @property
-    def vzip(self): return self._vid
+    def costumeList(self): return self._vid
 
     @property
     def fps(self): return self._vid._meta.get("fps", 30)
@@ -175,17 +157,14 @@ class Video(CostumeImage):
  
     @costumeNumber.setter
     def costumeNumber(self, n):
-        a, b = self.clip
-        self._costumeNumber = n = n % (b - a)
-        self._costume = self._vid[a + n].rgba
+        s = self._seq
+        self._costumeNumber = n = n % len(s if s else self._vid)
+        self._costume = self._vid[s[n] if s else n].rgba
 
     def costume(self):
         "Return an Image instance of the current costume"
         return self._costume.config(size=self._size, angle=self.angle)
 
-    def costumeSequence(self, seq, n=None):
-        raise NotImplementedError("Video class does not support costume sequences")
-
 
 class VideoSprite(Video, BaseSprite):
-    ondraw = Sprite.ondraw
+    update = Sprite.update

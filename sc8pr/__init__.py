@@ -186,6 +186,9 @@ class Graphic:
     effects = None
     radiusFactor = 0.25
 
+    def update(self, ev):
+        if hasattr(self, "ondraw"): self.ondraw(ev)
+
     @property
     def name(self):
         "The key used when adding the instance to a canvas"
@@ -667,7 +670,7 @@ class BaseSprite(Graphic):
             self.vel = d * vx, d * vy
             self.spin *= 1 - s 
 
-    def ondraw(self, ev=None):
+    def motion(self): #, ev=None): # renamed from ondraw
         "Update sprite properties after drawing each frame"
         cv = self.canvas
         if self.bounce:
@@ -680,6 +683,10 @@ class BaseSprite(Graphic):
             c, w, pos = self._pen
             if pos: cv._paint(pos, self.pos, c, w)
             self._pen = c, w, self.pos
+
+    def update(self, ev):
+        self.motion()
+        if hasattr(self, "ondraw"): self.ondraw(ev)
 
     def toward(self, pos, mag=None):
         "Return a vector directed toward the specified position"
@@ -1029,7 +1036,6 @@ class Canvas(Graphic):
         if mode & 2:
             br = isSketch and self.dirtyRegions is not None
             if br: self.dirtyRegions = []
-            ondrawList = self.sketch.ondrawList
             for g in list(self):
                 srf.set_clip(self.clipRect)
                 if not hasattr(g, "image") and g.effects:
@@ -1040,7 +1046,6 @@ class Canvas(Graphic):
                 else: grect = g.draw(srf)
                 g.rect = grect
                 if br: self.dirtyRegions.append(grect)
-                if hasattr(g, "ondraw"): ondrawList.append(g)
 
         # Draw border
         if mode & 1 and self.weight:
@@ -1103,7 +1108,6 @@ class Canvas(Graphic):
             yield gr
             if isinstance(gr, Canvas):
                 yield from gr.everything()
-#                 for i in gr.everything(): yield i
 
     def find(self, criteria, recursive=False):
         "Yield all Graphics that meet the criteria"
@@ -1300,7 +1304,6 @@ class Sketch(Canvas):
                 self.frameCount += 1
                 br = self.dirtyRegions
                 flip = br is None
-                self.ondrawList = []
                 self.draw()
                 if not flip:
                     br += self.dirtyRegions
@@ -1309,10 +1312,9 @@ class Sketch(Canvas):
                 if flip: _pd.flip()
                 else: _pd.update(br)
                 self._capture()
-                for gr in self.ondrawList:
-                    gr.ondraw(customEv(target=gr, handler="ondraw"))
-                if hasattr(self, "ondraw"):
-                    self.ondraw(customEv(target=self, handler="ondraw"))
+                for gr in list(self.everything()):
+                    gr.update(customEv(target=gr, handler="ondraw"))
+                self.update(customEv(target=self, handler="ondraw"))
                 self._evHandle()
             except: logError()
 

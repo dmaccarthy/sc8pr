@@ -38,8 +38,8 @@ class Robot(_Robot):
         self._gyro_data = []
         self._gyro_sample = t if t is None else round(self.sketch.frameRate * t)
 
-    def ondraw(self, ev=None):
-        _Robot.ondraw(self, ev)
+    def update(self, ev=None):
+        _Robot.update(self, ev)
         if self._gyro_sample: self.get_gyro_data()
 
     def get_gyro_data(self):
