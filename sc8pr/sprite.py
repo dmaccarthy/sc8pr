@@ -24,6 +24,7 @@ from sc8pr.util import customEv
 
 class CostumeImage(Graphic):
     _seq = None
+    cycle = True
     _costumeNumber = costumeTime = 0
 
     def __init__(self, image, cols=1, rows=1, flip=0, padding=0):
@@ -82,7 +83,7 @@ class CostumeImage(Graphic):
         img.rect = self.rect
         return img.contains(pos)
 
-    def updateCostume(self):
+    def updateCostume(self, ev):
         "Change sprite costume"
         n = self.costumeTime
         if n < 0:
@@ -91,23 +92,30 @@ class CostumeImage(Graphic):
         else: dn = 1
         f = self.sketch.frameCount
         if n and f and f % n == 0:
-            x = self._costumeNumber + dn
-            self.costumeNumber = x
-            if self._costumeNumber == 0:
-                ev = customEv(target=self, handler="onreset", costumeNumber=x)
-                self.bubble("onreset", ev)
+            cn = self._costumeNumber
+            x = cn + dn
+            if x in (len(self), -1):
+                if self.cycle: s = 2
+                else:
+                    x = cn
+                    s = -1
+                    self.costumeTime = 0
+            else: s = 1
+            if x != cn: self.costumeNumber = x
+        else: s = 0
+        setattr(ev, "status", s)
 
     def update(self, ev):
-        self.updateCostume()
+        self.updateCostume(ev)
         if hasattr(self, "ondraw"): self.ondraw(ev)
 
 
 class Sprite(CostumeImage, BaseSprite):
     "Sprite animation with one or more costumes"
 
-    def update(self, ev=None):
+    def update(self, ev):
         self.motion()
-        self.updateCostume()
+        self.updateCostume(ev)
         if hasattr(self, "ondraw"): self.ondraw(ev)
 
 

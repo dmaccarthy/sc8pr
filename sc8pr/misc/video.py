@@ -108,6 +108,16 @@ class VidZip:
                 else: ffw.writePixelData(pix)
         return self
 
+    def clip(self, zfile, mode="x", start=0, frames=None):
+        m = self.meta
+        with VidZip(zfile, mode) as zo:
+            clip = self[start:start+frames] if frames else self[start:]
+            for f in clip: zo += f
+            zo.meta.update(m)
+            try: del zo.meta["duration"]
+            except: pass
+        return self
+
     @staticmethod
     def decode(mfile, zfile, size=None, start=0, frames=None, interval=1, replace=False, compression=ZIP_DEFLATED):
         "Decode frames from a movie to a zip file containing PixelData binaries"

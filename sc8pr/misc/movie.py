@@ -21,6 +21,9 @@ from sc8pr.misc.video import Video, FFReader, BaseSprite, Sprite
 
 class Movie(Video):
 
+    @property
+    def cycle(self): return False
+
     def __init__(self, src, skip=0, frames=None, alpha=False, **kwargs):
         self._alpha = alpha
         self._skip = skip
@@ -29,7 +32,7 @@ class Movie(Video):
         self._size = kwargs.get("size", None)
         self.restart()
 
-    def restart(self):
+    def restart(self, ev=None):
         try: self._vid.close()
         except: pass
         self._vid = self._reader().skip(self._skip)
@@ -51,11 +54,11 @@ class Movie(Video):
             if n == self._frames: raise StopIteration()
             self._costume = self._read(self._vid)
         except StopIteration:
+            self._costumeNumber -= 1
             if self._frames is None or n < self._frames:
                 self._frames = n
-            self.restart()
 
-    def close(self): self.reader.close()
+    def close(self): self._vid.close()
 
     @property
     def clip(self):

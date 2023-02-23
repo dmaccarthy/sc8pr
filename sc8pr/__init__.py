@@ -450,7 +450,7 @@ class Graphic:
         "Pass an event to a different handler"
         if not isinstance(ev, pygame.event.EventType):
             ev = pygame.event.Event(pygame.USEREVENT, **ev)
-        self.sketch.evMgr.handle(self, eventName, ev)
+        return self.sketch.evMgr.handle(self, eventName, ev)
 
     @property
     def timeFactor(self):

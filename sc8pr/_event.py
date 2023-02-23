@@ -113,7 +113,7 @@ class EventManager:
         handle = current is not None
 #         if self.debug:
 #             print("Handling  :" if handle else "No handler:", pygame.event.event_name(ev.type) if self.debug == 1 else ev)
-        if handle: getattr(current, eventName)(ev)
+        if handle: return getattr(current, eventName)(ev)
 
     def _dragRelease(self, ev):
         "Handle RELEASE events for graphic being dragged"
