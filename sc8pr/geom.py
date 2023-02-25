@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from math import hypot, pi, sin, cos, asin, atan2, floor, sqrt
+from math import hypot, pi, sin, cos, asin, atan2, sqrt
 
 DEG = pi / 180
 
@@ -26,17 +26,15 @@ except:
         for x in iterable: start *= x
         return start
 
-def positiveAngle(a):
-    "Return an angle between 0 and 360"
-    return a - 360 * floor(a / 360)
+def positiveAngle(a): return a % 360
 
 def smallAngle(a):
-    "Return an angle between -180 and 180"
-    return positiveAngle(a + 180) - 180
+    "Return an angle in degrees between -180 and 180"
+    return (a + 180) % 360 - 180
 
 def angleDifference(a2, a1=0):
-    "Difference between 2 directions; [-180,180)"
-    return positiveAngle(a2 - a1 + 180) - 180
+    "Difference between 2 directions in degrees; [-180,180)"
+    return (a2 - a1 + 180) % 360 - 180
 
 def dist(p1, p2):
     "Distance between two points"

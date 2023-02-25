@@ -25,8 +25,7 @@ from pygame.constants import K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE
 from sc8pr import Image, Sketch
 from sc8pr.sprite import Sprite
 from sc8pr.util import logError, rgba, noise, divAlpha
-from sc8pr.geom import vec2d, delta, DEG, dist, positiveAngle, angleDifference,\
-    subtend
+from sc8pr.geom import vec2d, delta, DEG, dist, angleDifference, subtend # , positiveAngle
 from sc8pr.shape import Line, Polygon
 
 
@@ -98,11 +97,13 @@ class Robot(Sprite):
 
     @property
     def gyro(self):
-        return positiveAngle(self.angle - self._gyro)
+        return (self.angle - self._gyro) % 360
+#         return positiveAngle(self.angle - self._gyro)
 
     @gyro.setter
     def gyro(self, g):
-        self._gyro = positiveAngle(g - self.angle)
+        self._gyro = (g - self.angle) % 360
+#         self._gyro = positiveAngle(g - self.angle)
 
     @property
     def stopped(self):
