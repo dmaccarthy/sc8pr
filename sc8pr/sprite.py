@@ -90,7 +90,8 @@ class CostumeImage(Graphic):
             dn = -1
             n = -n
         else: dn = 1
-        f = self.sketch.frameCount
+        try: f = self.sketch.frameCount
+        except: f = None
         if n and f and f % n == 0:
             cn = self._costumeNumber
             x = cn + dn

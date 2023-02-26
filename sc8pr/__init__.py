@@ -19,7 +19,7 @@
 version = 3, 0, "a3"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
-import PIL.Image  # Omit from sc8pr-core
+# import PIL.Image  # Omit from sc8pr-core
 import sys, struct, zlib
 from math import hypot, sqrt
 import pygame
@@ -157,15 +157,11 @@ class PixelData:
     @property
     def jpg(self): return export(self.srf, "a.jpg").read()
 
-# Omit pil and _frombytes from sc8pr-core
-
     @property
     def pil(self):
-        return self._image(self._frombytes)
-#         raise NotImplementedError("sc8pr-core disables features that depend on Pillow")
-
-    @staticmethod
-    def _frombytes(d, s, m): return PIL.Image.frombytes(m, s, d)
+        try: return sys.modules["sc8prx"]._pil(self)
+        except KeyError as err:
+            raise KeyError("import 'sc8prx.pil' to enable Pillow image format") from err
 
 
 class Graphic:

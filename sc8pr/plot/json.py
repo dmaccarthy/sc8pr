@@ -1,4 +1,4 @@
-# Copyright 2015-2022 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2023 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -23,7 +23,7 @@ from sc8pr.shape import Circle, Ellipse, Line, Arrow, Polygon
 from sc8pr.plot import plot, gridlines
 from sc8pr.text import Font
 from sc8pr.util import ondrag
-import sc8pr.plot.mpl as mpl
+# import sc8pr.plot.mpl as mpl
 
 
 def canvas(data):
@@ -53,7 +53,7 @@ def canvas(data):
         elif item == "line": item = Line(*args)
         elif item == "poly": item = Polygon(args)
         elif item == "arrow": item = Arrow(**args)
-        elif item == "mpl": item = mpl.text(args[0], **args[1])
+#         elif item == "mpl": item = mpl.text(args[0], **args[1])
         else: key = None
         if key: cv[key] = item.config(**cfg)
         elif item == "plot":

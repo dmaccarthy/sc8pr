@@ -19,8 +19,6 @@ from sc8pr import PixelData, Image, BaseSprite
 from sc8pr.sprite import CostumeImage, Sprite
 from zipfile import ZipFile, ZIP_DEFLATED
 from json import dumps, loads
-try: from sc8pr.misc.media import FFReader, FFWriter
-except: pass
 
 
 class VidZip:
@@ -87,26 +85,16 @@ class VidZip:
     def capture(self, *args, repeat=1):
         "Write images to the zipfile"
         for img in args:
-            if not isinstance(img, PixelData): img = PixelData(img)
+            if not isinstance(img, PixelData):
+                img = PixelData(img)
             img = bytes(img)
-            if self._append is None or img != self._append: # allow or 
+            if self._append is None or img != self._append: 
                 self._append = img
                 self._zf.writestr(str(self._nframes), img)
             self._nframes += repeat
         return self
 
     __iadd__ = capture          
-
-    def encode(self, mfile, fps=None, size=None, start=0, frames=None, **kwargs):
-        "Encode the images using FFmpeg"
-        if fps is None: fps = self._meta.get("fps", 30)
-        with FFWriter(mfile, fps, **kwargs) as ffw:
-            seq = self[start:start + frames] if frames else self[start:] if start else self
-            for pix in seq:
-                if size and pix.size != size:
-                    ffw.write(pix.img.config(size=size).image)
-                else: ffw.writePixelData(pix)
-        return self
 
     def clip(self, zfile, mode="x", start=0, frames=None):
         m = self.meta
@@ -117,29 +105,6 @@ class VidZip:
             try: del zo.meta["duration"]
             except: pass
         return self
-
-    @staticmethod
-    def decode(mfile, zfile, size=None, start=0, frames=None, interval=1, replace=False, compression=ZIP_DEFLATED):
-        "Decode frames from a movie to a zip file containing PixelData binaries"
-        i = 0
-        prev = None
-        with ZipFile(zfile, "w" if replace else "x", compression) as zf:
-            kwargs = {"size": size} if size else {}
-            with FFReader(mfile, **kwargs) as ffr:
-                meta = ffr.meta
-                if meta.get("fps") and interval > 1: meta["fps"] /= interval
-                if start: ffr.read(start)
-                try:
-                    while True:
-                        for j in range(interval-1): next(ffr._iter)
-                        data = bytes(next(ffr))
-                        if data != prev: zf.writestr(str(i), data)
-                        prev = data
-                        i += 1
-                        if i == frames: break
-                except: pass
-                meta["nframes"] = i
-                zf.writestr("meta.json", dumps(meta))
 
 
 class Video(CostumeImage):
