@@ -24,6 +24,8 @@ from json import dumps, loads
 class VidZip:
     "A class for storing video frames in a ZIP archive"
 
+    capture_RGB = True
+
     @property
     def meta(self): return self._meta
 
@@ -87,6 +89,8 @@ class VidZip:
         for img in args:
             if not isinstance(img, PixelData):
                 img = PixelData(img)
+            if self.capture_RGB and img.mode == "RGBA":
+                img = PixelData(img.srf.convert(24))
             img = bytes(img)
             if self._append is None or img != self._append: 
                 self._append = img

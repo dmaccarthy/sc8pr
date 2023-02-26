@@ -19,8 +19,7 @@
 version = 3, 0, "a3"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
-# import PIL.Image  # Omit from sc8pr-core
-import sys, struct, zlib
+import sys, struct
 from math import hypot, sqrt
 import pygame
 import pygame.display as _pd
@@ -60,24 +59,22 @@ pygame.key.set_repeat(400, 80)
 
 
 class PixelData:
-    "A class for storing, compressing, and converting raw pixel data"
+    "A class for storing and converting raw pixel data"
 
     def __str__(self):
         name = type(self).__name__
         kb = len(self._data) / 1024
         return "<{0} {1} {3}x{4} [{2:.1f} kb]>".format(name, self.mode, kb, *self.size)
 
-    def __init__(self, img, compress=False, codec=zlib):
+    def __init__(self, img):
         rgb = "RGBA", "RGB"
-        self.compressed = False
         if type(img) is bytes: img = img[:-12], img[-12:]
         elif type(img) is PixelData: img = img.raw()
         elif isinstance(img, Graphic):
             try: img = img.image
             except: img = img.snapshot()
         if type(img) is tuple:
-            m, w, h, c = self._unpack(img[1])
-            self.compressed = c
+            m, w, h = self._unpack(img[1])
             self._data = img[0]
             self.size = w, h
         elif isinstance(img, pygame.Surface):
@@ -94,34 +91,17 @@ class PixelData:
             self._data = img.tobytes()
         if m in rgb: self.mode = m
         else: raise NotImplementedError("Only RGB (24-bit) and RGBA (32-bit) modes are supported")
-        self.codec = codec
-        if compress: self.compress()
-        elif self.compressed: self.decompress()
-
-    def compress(self):
-        if not self.compressed:
-            self._data = self.codec.compress(self._data)
-            self.compressed = True
-        return self
-
-    def decompress(self):
-        if self.compressed:
-            self._data = self.codec.decompress(self._data)
-            self.compressed = False
-        return self
 
     def _pack(self):
         m = self.mode
         m = 0 if m == "RGB" else 1
-        if self.compressed: m += 2
         return struct.pack("!3I", m, *self.size)
 
     @staticmethod
     def _unpack(p):
         m, w, h = struct.unpack("!3I", p)
-        c = bool(m & 2)
         m = "RGBA" if (m & 1) else "RGB" 
-        return m, w, h, c
+        return m, w, h
 
     def raw(self): return self._data, self._pack()
     
@@ -138,11 +118,10 @@ class PixelData:
     def _image(self, fn):
         "Convert raw data to an image using the function provided"
         data = self._data
-        if self.compressed: data = self.codec.decompress(data)
         return fn(data, self.size, self.mode)
 
     @property
-    def srf(self): return self._image(pygame.image.fromstring)
+    def srf(self): return pygame.image.fromstring(self._data, self.size, self.mode)
 
     @property
     def img(self): return Image(self.srf)
@@ -1319,8 +1298,7 @@ class Sketch(Canvas):
         c = self.capture
         if c is not None:
             i = getattr(c, "interval", 1)
-            if self.frameCount % i == 0:
-                c.capture(self)
+            if self.frameCount % i == 0: c.capture(self)
 
     def _evHandle(self):
         "Handle events in the pygame event queue"
