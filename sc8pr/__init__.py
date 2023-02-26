@@ -157,12 +157,6 @@ class PixelData:
     @property
     def jpg(self): return export(self.srf, "a.jpg").read()
 
-    @property
-    def pil(self):
-        try: return sys.modules["sc8prx"]._pil(self)
-        except KeyError as err:
-            raise KeyError("import 'sc8prx.pil' to enable Pillow image format") from err
-
 
 class Graphic:
     """Base class for graphics objects. Subclasses may provide a 'draw' method
