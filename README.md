@@ -24,8 +24,8 @@ pip3 install sc8pr
 
 Alpha release (3.0.a3):
 ```
-pip3 install https://github.com/dmaccarthy/sc8pr/archive/refs/tags/v3.0.a3.zip
-pip3 install https://github.com/dmaccarthy/sc8prx/archive/refs/tags/v3.0.a3.zip
+pip3 install https://github.com/dmaccarthy/sc8pr/archive/v3.0.a3.zip
+pip3 install https://github.com/dmaccarthy/sc8prx/archive/v3.0.a3.zip
 ```
 
 Development version (3.0.dev):
