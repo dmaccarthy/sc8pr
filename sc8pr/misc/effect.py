@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from random import uniform, random, gauss
+from random import uniform, random
 from math import sqrt, tan, pi, sin, cos, hypot
 import pygame
 from pygame.pixelarray import PixelArray
@@ -207,10 +207,15 @@ class MathEffect(Effect):
         self.above = noise > 0
         self.noise = abs(noise)
 
+    def scaled_eq(self, x, t):
+        "The equation describing the effect in scaled (0,1) coordinates"
+        n = self.noise
+        return t * (1 + n) - n * uniform(0, 1)
+
     def eqn(self, x, n, size):
-        dh = self.noise
-        if not self.above: n = 1 - n
-        return size[1] * ((1 + dh) * n - uniform(0, dh)), self.above
+        "The equation describing the effect in pixel coordinates"
+        w, h = size       
+        return self.scaled_eq(x/(w-1), n if self.above else (1-n)) * (h-1), self.above
 
     def apply(self, img, n=0):
         "Modify image based on equation provided"
@@ -235,6 +240,38 @@ class MathEffect(Effect):
         return srf
 
 
+class WaterWaves(MathEffect):
+    "Rising water effect with waves"
+
+    def __init__(self, *args, speed=0.60, fill=(0,0,0,0), above=False):
+        # speed is total displacement over transition as fraction of width
+        # arg = (amplitude, wavelength, shift) as fraction of width/height
+        # (0.03, -0.2, 0.1)... A is 3% of height, wavelength  is 20% of width, shift is 10% of width
+        if not args: args = 6, 0.10, 0.15      # 6 waves, total A around 10%, wavelength around 15%
+        if type(args[0]) in (float, int):
+            N, A, wl = args
+            args = [(A/N*uniform(0.5, 1.5), wl*uniform(0.5, 1.5) * (-1 if i%2 else 1)) for i in range(N)]
+        self.args = args = [list(a) for a in args]
+        for a in args: a[1] = pi2 / a[1]
+        self.sumA = sum(a[0] for a in args)
+        self.fill = rgba(fill)
+        self.above = above
+        self.speed = speed
+
+    def scaled_eq(self, x, t):
+        p = self.args
+        s = self.speed
+        f = lambda a: a[0] * sin(abs(a[1]) * ((x + (-s if a[1] < 0 else s) * t) - (a[2] if len(a) > 2 else 0)))
+        y = sum(f(p[i]) for i in range(len(p)))
+        A = self.sumA
+        return t * (1 + 2 * A) + y - A
+
+    def copy(self, n=-1):
+        "Return the 'reversed' or copied wave"
+        args = [[a[0], n*pi2/a[1]] + list(a[2:]) for a in self.args]
+        return WaterWaves(*args, speed=self.speed, fill=self.fill, above=self.above)
+
+
 class WipeSlope(MathEffect):
     "Wipe diagonally from any corner"
 
@@ -243,30 +280,44 @@ class WipeSlope(MathEffect):
         self.above = above
         self.fill = rgba(fill)
 
-    def eqn(self, x, n, size):
-        w, h = size
+    def scaled_eq(self, x, n):
         k = self.slope
-        if type(k) is bool:
-            k = h / w * (1 if k else -1)
-        if not self.above: n = 1 - n
-        dy = k * w
-        if k < 0: b = n * (h - dy)
-        else: b = n * (h + dy) - dy
-        return k * x + b, self.above
+        if type(k) is bool: k = 1 if k else -1
+        b = (n * (1 - k)) if k < 0 else (n * (1 + k) - k)
+        return k * x + b
+
+
+class ClockHand(MathEffect):
+    above = True
+
+    def __init__(self, clockwise=True, fill=(0,0,0,0)):
+        self.fill = rgba(fill)
+        self.cw = clockwise
+
+    def eqn(self, x, n, size):
+        if n <= 0: return 0
+        h = size[1]
+        y = h / 2
+        x -= size[0] / 2
+        if not self.cw: x = -x
+        if x < 0:
+            return 0 if n <= 0.5 else (y + x * tan((n - 0.75) * pi2), False)
+        else:
+            return h if n >= 0.5 else (y + x * tan((n - 0.25) * pi2))
 
 
 class PaintDrops(MathEffect):
 
     def __init__(self, drops=64, fill=(0,0,0,0)):
         self.fill = rgba(fill)
-        self.side = drops > 0
+        self.above = drops > 0
         self.drops = [self.makeDrop() for i in range(abs(drops))]
         n = sum([d[0] for d in self.drops])
         for d in self.drops: d[0] /= n
 
     def eqn(self, x, n, size):
         "Calculate paint boundary"
-        if not self.side: n = 1 - n
+        if not self.above: n = 1 - n
         w, h = size
         y = 0
         xc = 0
@@ -280,7 +331,7 @@ class PaintDrops(MathEffect):
                 Y = (h + R) * self.posn(n, *d[1:]) + dy - R
                 if Y > y: y = Y
             xc += r
-        return y, self.side
+        return y, self.above
 
     def posn(self, n, t1, t2):
         "Calculate drop position"
@@ -294,40 +345,6 @@ class PaintDrops(MathEffect):
         t1 = uniform(0, 0.8)
         t2 = uniform(t1 + 0.1, 1)
         return [uniform(0.1, 1), min(t1, t2), max(t1, t2)]
-
-
-class Water(MathEffect):
-    "Rising water effect with waves"
-
-    def __init__(self, *args, speed=60, fill=(0,0,0,0), above=False):
-        # speed is total displacement over transition as % of width
-        # arg = (A as % of height, k=2*pi/wavelength as % of width, phase as % of width)
-        # (3, -2*pi/20, 10)... A is 3% of height, wavelength  is 20% of width, phase is 10% of width
-        # 6, 1.5, 2*pi/5... 6 waves with random A of about 1.5% and wavelength of 5%
-        if not args: args = 5, 2, pi2/20
-        if type(args[0]) in (float, int):
-            N, A, k = args
-            args = [(A*uniform(0.5, 1.5), gauss(k, k/3) * (-1 if i%2 else 1)) for i in range(N)]
-        self.args = args
-        self.sumA = sum(a[0] for a in args)
-        self.fill = rgba(fill)
-        self.above = above
-        self.speed = speed
-
-    def eqn(self, x, n, size):
-        w, h = size
-        s = self.speed * w / 100
-        p = self.args
-        if not self.above: n = 1 - n
-        f = lambda a: a[0] * sin(abs(a[1]) * (100 / w * (x + (-s if a[1] < 0 else s) * n) - (a[2] if len(a) > 2 else 0)))
-        y = h * sum(f(p[i]) for i in range(len(p))) / 100
-        dh = 0.01 * self.sumA * h
-        return n * (h + 2 * dh) + y - dh, self.above
-
-    @property
-    def rev_args(self):
-        "Return a list of wave arguments (A, k, p) with all wavenumbers multiplied by -1"
-        return [[a[0], -a[1]] + list(a[2:]) for a in self.args]
 
 
 class Dissolve(Effect):
@@ -373,24 +390,6 @@ class Dissolve(Effect):
         if type(c) is bool: return rgba(c)
         self.n = (self.n + 1) % len(self.colors)
         return c[self.n]
-
-
-class ClockHand(MathEffect):
-
-    def __init__(self, clockwise=True, fill=(0,0,0,0)):
-        self.fill = rgba(fill)
-        self.cw = clockwise
-
-    def eqn(self, x, n, size):
-        if n <= 0: return 0
-        h = size[1]
-        y = h / 2
-        x -= size[0] / 2
-        if not self.cw: x = -x
-        if x < 0:
-            return 0 if n <= 0.5 else (y + x * tan((n - 0.75) * pi2), False)
-        else:
-            return h if n >= 0.5 else (y + x * tan((n - 0.25) * pi2))
 
 
 class Pixelate(Effect):
