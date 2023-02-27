@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from random import uniform, random
+from random import uniform, random, gauss
 from math import sqrt, tan, pi, sin, cos, hypot
 import pygame
 from pygame.pixelarray import PixelArray
@@ -294,6 +294,40 @@ class PaintDrops(MathEffect):
         t1 = uniform(0, 0.8)
         t2 = uniform(t1 + 0.1, 1)
         return [uniform(0.1, 1), min(t1, t2), max(t1, t2)]
+
+
+class Water(MathEffect):
+    "Rising water effect with waves"
+
+    def __init__(self, *args, speed=60, fill=(0,0,0,0), above=False):
+        # speed is total displacement over transition as % of width
+        # arg = (A as % of height, k=2*pi/wavelength as % of width, phase as % of width)
+        # (3, -2*pi/20, 10)... A is 3% of height, wavelength  is 20% of width, phase is 10% of width
+        # 6, 1.5, 2*pi/5... 6 waves with random A of about 1.5% and wavelength of 5%
+        if not args: args = 5, 2, pi2/20
+        if type(args[0]) in (float, int):
+            N, A, k = args
+            args = [(A*uniform(0.5, 1.5), gauss(k, k/3) * (-1 if i%2 else 1)) for i in range(N)]
+        self.args = args
+        self.sumA = sum(a[0] for a in args)
+        self.fill = rgba(fill)
+        self.above = above
+        self.speed = speed
+
+    def eqn(self, x, n, size):
+        w, h = size
+        s = self.speed * w / 100
+        p = self.args
+        if not self.above: n = 1 - n
+        f = lambda a: a[0] * sin(abs(a[1]) * (100 / w * (x + (-s if a[1] < 0 else s) * n) - (a[2] if len(a) > 2 else 0)))
+        y = h * sum(f(p[i]) for i in range(len(p))) / 100
+        dh = 0.01 * self.sumA * h
+        return n * (h + 2 * dh) + y - dh, self.above
+
+    @property
+    def rev_args(self):
+        "Return a list of wave arguments (A, k, p) with all wavenumbers multiplied by -1"
+        return [[a[0], -a[1]] + list(a[2:]) for a in self.args]
 
 
 class Dissolve(Effect):
