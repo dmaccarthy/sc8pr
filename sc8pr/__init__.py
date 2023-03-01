@@ -1110,7 +1110,7 @@ class Canvas(Graphic):
 
 class Sketch(Canvas):
     minSize = 32
-    capture = None
+#     capture = None
     realTime = False
     frameRate = 60
     _fixedAspect = True
@@ -1281,7 +1281,7 @@ class Sketch(Canvas):
                 self._clock.tick(self.frameRate)
                 if flip: _pd.flip()
                 else: _pd.update(br)
-                self._capture()
+#                 self._capture()
                 for gr in list(self.everything()):
                     gr.update(customEv(target=gr, handler="ondraw"))
                 self.update(customEv(target=self, handler="ondraw"))
@@ -1293,12 +1293,12 @@ class Sketch(Canvas):
         if mod: mod.Font.dumpCache()
         return self
 
-    def _capture(self):
-        "Call screen capture method when recording"
-        c = self.capture
-        if c is not None:
-            i = getattr(c, "interval", 1)
-            if self.frameCount % i == 0: c.capture(self)
+#     def _capture(self):
+#         "Call screen capture method when recording"
+#         c = self.capture
+#         if c is not None:
+#             i = getattr(c, "interval", 1)
+#             if self.frameCount % i == 0: c.capture(self)
 
     def _evHandle(self):
         "Handle events in the pygame event queue"

@@ -84,7 +84,7 @@ class VidZip:
             self._readPix = PixelData(self._zf.read(str(i)))
         return self._readPix
 
-    def capture(self, *args, repeat=1):
+    def write(self, *args, repeat=1):
         "Write images to the zipfile"
         for img in args:
             if not isinstance(img, PixelData):
@@ -98,7 +98,7 @@ class VidZip:
             self._nframes += repeat
         return self
 
-    __iadd__ = capture          
+    __iadd__ = write #capture          
 
     def clip(self, zfile, mode="x", start=0, frames=None):
         m = self.meta
