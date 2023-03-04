@@ -123,7 +123,7 @@ def surface(srf):
     if isinstance(srf, pygame.Surface): return srf
     if hasattr(srf, "image"): return srf.image
     if hasattr(srf, "snapshot"): return srf.snapshot().original
-    try: return PixelData(srf).srf
+    try: return Image.fromBytes(srf, False)
     except: raise ValueError("object cannot be converted to a Surface")
 
 def style(srf, bg=None, border=(0,0,0), weight=0, padding=0, borderradius=None):

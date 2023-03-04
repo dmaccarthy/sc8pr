@@ -9,11 +9,11 @@
 #
 # "sc8pr" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
+# along with "sc8pr". If not, see <http://www.gnu.org/licenses/>.
 
 
 version = 3, 0, "a4"
@@ -27,7 +27,7 @@ from pygame.transform import flip as _pyflip
 from sc8pr._event import EventManager
 from sc8pr._cs import CoordSys
 from sc8pr.geom import transform2d, delta, sigma, vmult, neg # , positiveAngle
-from sc8pr.util import CachedSurface, style, logError, sc8prData, resolvePath, tile, rgba, drawBorder, crop, export, customEv
+from sc8pr.util import CachedSurface, style, logError, sc8prData, resolvePath, tile, rgba, hasAlpha, drawBorder, crop, export, customEv
 
 # Anchor point constants
 TOPLEFT = 0
@@ -50,91 +50,13 @@ REMOVE = 12
 CIRCLE = 0
 RECT = 1
 
-# pygame 1.9 <--> 2.0 compatibility
+# pygame 1.9 <--> 2.x compatibility
 SIZECHANGED = getattr(pygame, "WINDOWSIZECHANGED", None)
 WINEXPOSED = getattr(pygame, "WINDOWEXPOSED", None)
+EVENT_TYPE = pygame.event.EventType  # Could become deprecated?
 
 pygame.init()
 pygame.key.set_repeat(400, 80)
-
-
-class PixelData:
-    "A class for storing and converting raw pixel data"
-
-    def __str__(self):
-        name = type(self).__name__
-        kb = len(self._data) / 1024
-        return "<{0} {1} {3}x{4} [{2:.1f} kb]>".format(name, self.mode, kb, *self.size)
-
-    def __init__(self, img):
-        rgb = "RGBA", "RGB"
-        if type(img) is bytes: img = img[:-12], img[-12:]
-        elif type(img) is PixelData: img = img.raw()
-        elif isinstance(img, Graphic):
-            try: img = img.image
-            except: img = img.snapshot()
-        if type(img) is tuple:
-            m, w, h = self._unpack(img[1])
-            self._data = img[0]
-            self.size = w, h
-        elif isinstance(img, pygame.Surface):
-            self.size = img.get_size()
-            bits = img.get_bitsize()
-            m = "RGB" if bits == 24 else "RGBA" if bits == 32 else None
-            self._data = pygame.image.tostring(img, m)
-        else: # Pillow image
-            self.size = img.size
-            m = img.mode
-            if m not in rgb:
-                m = rgb[0]
-                img = img.convert(m)
-            self._data = img.tobytes()
-        if m in rgb: self.mode = m
-        else: raise NotImplementedError("Only RGB (24-bit) and RGBA (32-bit) modes are supported")
-
-    def _pack(self):
-        m = self.mode
-        m = 0 if m == "RGB" else 1
-        return struct.pack("!3I", m, *self.size)
-
-    @staticmethod
-    def _unpack(p):
-        m, w, h = struct.unpack("!3I", p)
-        m = "RGBA" if (m & 1) else "RGB" 
-        return m, w, h
-
-    def raw(self): return self._data, self._pack()
-    
-    def __eq__(self, other): return self.raw() == other.raw()
-
-    def writeTo(self, f):
-        for b in self.raw(): f.write(b)
-        return self
-
-    def __bytes__(self):
-        b = self.raw()
-        return b[0] + b[1]
-
-    def _image(self, fn):
-        "Convert raw data to an image using the function provided"
-        data = self._data
-        return fn(data, self.size, self.mode)
-
-    @property
-    def srf(self): return pygame.image.fromstring(self._data, self.size, self.mode)
-
-    @property
-    def img(self): return Image(self.srf)
-
-    @property
-    def rgba(self):
-        return Image(self.srf if self.mode == "RGBA" else self.srf.convert_alpha())
-
-    @property
-    def png(self): return export(self.srf).read()
-
-    @property
-    def jpg(self): return export(self.srf, "a.jpg").read()
 
 
 class Graphic:
@@ -223,8 +145,8 @@ class Graphic:
 
     @property
     def aspectRatio(self):
-        size = self.size
-        return size[0] / size[1]
+        w, h = self.size
+        return w / h
 
     @size.setter
     def size(self, size): self.resize(size)
@@ -278,7 +200,7 @@ class Graphic:
         x += offset[0]
         y += offset[1]
         a = self.anchor
-        if a: # (blitSize[*] - 1) makes robot jiggly
+        if a:
             x -= blitSize[0] * (a & 3) // 2
             y -= blitSize[1] * (a & 12) // 8
         return x, y
@@ -312,7 +234,6 @@ class Graphic:
                 setattr(self, a, (x * fx, y * fy))
             except: pass
 
-
 # Canvas interaction
 
     def _setCanvas(self, cv, key):
@@ -321,6 +242,10 @@ class Graphic:
             if key in cv and cv[key] is not self:
                 raise KeyError("Key '{}' is already in use".format(key))
             self._name = key
+        if cv.sketch is not None:
+            r = getattr(self, "removeFrame", None)
+            if r is not None and r < cv.sketch.frameCount:
+                raise ValueError("Can't add graphic with expired removeFrame value")
         self.canvas = cv
         cv._items.append(self)
 
@@ -345,12 +270,12 @@ class Graphic:
         except: pass
         return self
 
-    def toggle(self, name=None):
-        cv = self.canvas
-        if cv is not None:
-            if self in cv: self.remove()
-            else: self.setCanvas(cv, name)
-        return self
+#     def toggle(self, name=None):
+#         cv = self.canvas
+#         if cv is not None:
+#             if self in cv: self.remove()
+#             else: self.setCanvas(cv, name)
+#         return self
 
     @property
     def layer(self):
@@ -417,7 +342,7 @@ class Graphic:
 
     def bubble(self, eventName, ev={}):
         "Pass an event to a different handler"
-        if not isinstance(ev, pygame.event.EventType):
+        if not isinstance(ev, EVENT_TYPE):
             ev = pygame.event.Event(pygame.USEREVENT, **ev)
         return self.sketch.evMgr.handle(self, eventName, ev)
 
@@ -441,7 +366,10 @@ class Graphic:
         srf = self.image
         if self.effects:
             srf = srf.copy()
-            for e in self.effects: srf = e.transition(srf, self.sketch.frameCount)
+            f = self.sketch.frameCount
+            for e in self.effects:
+                if f >= e._t_min and f <= e._t_max:
+                    srf = e.transition(srf, f)
         return srf
 
     def snapshot(self, **kwargs):
@@ -479,7 +407,7 @@ class Renderable(Graphic):
     def refresh(self):
         if self.stale: self.image
 
-    def remove(self, deleteRect=False): # !!!
+    def remove(self, deleteRect=False):
         super().remove(deleteRect)
         self.stale = True
         return self
@@ -514,7 +442,7 @@ class Renderable(Graphic):
         return self._srf.get_size()
 
     def resize(self, size):
-        self._size = size # ???
+        self._size = size
         self.stale = True
 
     @size.setter
@@ -547,15 +475,13 @@ class BaseSprite(Graphic):
         if p: p = (rgba(p[0]),) + p[1:]
         self._pen = p
 
-    def penReset(self):
+    def penReset(self, ev=None):
         p = self._pen
         if p: self._pen = p[:2] + (None,)
 
     def resize(self, size):
         self._size = size
         self.penReset()
-
-    def onwrap(self, ev=None): self.penReset()
 
     def _simpleBounce(self, cv):
         "Bounce sprite from the edge of its canvas"
@@ -617,7 +543,7 @@ class BaseSprite(Graphic):
                     self.remove()
                     return
             self.pos = x, y
-            if where != CENTER: # and hasattr(self, "onwrap"):
+            if where != CENTER:
                 self.bubble("onwrap", {"where":where})
 
     def kinematics(self):
@@ -631,7 +557,6 @@ class BaseSprite(Graphic):
             self.vel = vx + dvx, vy + dvy
         else: self.pos = x + vx * t, y + vy * t
         if self.spin: self.angle = (self.angle + self.spin * t) % 360
-#         self.angle = positiveAngle(self.angle + self.spin * t)
         d = self.drag 
         if d:
             if type(d) in (int, float): s = d
@@ -640,12 +565,12 @@ class BaseSprite(Graphic):
             self.vel = d * vx, d * vy
             self.spin *= 1 - s 
 
-    def motion(self): #, ev=None): # renamed from ondraw
+    def motion(self):
         "Update sprite properties after drawing each frame"
         cv = self.canvas
         if self.bounce:
             where = self._simpleBounce(cv)
-            if where != CENTER: # and hasattr(self, "onbounce"):
+            if where != CENTER:
                 self.bubble("onbounce", {"where":where})
         if self.wrap and self._simpleWrap(cv): return True
         self.kinematics()
@@ -668,6 +593,15 @@ class Image(Graphic):
     "A class representing scaled and rotated images"
 
     def __init__(self, data=(2,2), bg=None):
+        try: # Convert PIL.Image.Image to bytes
+            if type(data).__module__ == "PIL.Image":
+                if data.mode not in ("RGB", "RGBA"): data.convert("RGBA")
+                data = data.tobytes(), (data.size, data.mode) #struct.pack("!3I", m, *data.size)
+        except: pass
+        try: # Convert bytes to Image
+            if type(data) is bytes or type(data[0]) is bytes:
+                data = Image.fromBytes(data, False)
+        except: pass
         self._srf = CachedSurface(data, bg)
         self._size = self._srf.get_size()
 
@@ -684,13 +618,50 @@ class Image(Graphic):
         self._srf.dumpCache()
         return self
 
+    def bytesTuple(self, info=True):
+        "Return the image as (bytes, ((w, h), mode)) where mode is 'RGB' or 'RGBA'"
+        srf = self.image
+        b = srf.get_bitsize()
+        if b not in (24, 32): raise ValueError("bit size must be 24 or 32")
+        mode = "RGB" if b == 24 else "RGBA"
+        data = pygame.image.tostring(srf, mode)
+        return (data, (srf.get_size(), mode)) if info else data
+
+    def __bytes__(self):
+        "Append the image mode and size info as a 12-byte struct to the raw image data"
+        data, info = self.bytesTuple()
+        mode = ("RGB", "RGBA").index(info[1])
+        return data + struct.pack("!3I", mode, *info[0])
+
     @staticmethod
-    def fromBytes(data): return PixelData(data).img
+    def fromBytes(data, img=True):
+        if type(data) is bytes: data, info = data[:-12], data[-12:]
+        else: data, info = data
+        if type(info) is bytes:
+            mode, w, h = struct.unpack("!3I", info)
+#             if mode & 2: data = zlib.decompress(data)
+            info = (w, h), "RGB" + ("", "A")[mode & 1]
+        srf = pygame.image.fromstring(data, *info)
+        return Image(srf) if img else srf
 
     @staticmethod
     def fromZip(key, archive=None):
         if archive is None: archive = resolvePath("sc8pr.data")
-        return PixelData(sc8prData(key, archive=archive)).img
+        return Image.fromBytes(sc8prData(key, archive=archive))
+
+    def convert(self, alpha=False):
+        "Convert images to specified bit size"
+        if alpha is not None and self.original.get_bitsize() != (32 if alpha else 24):
+            srf = self.image
+            img = Image(srf.convert_alpha() if alpha else srf.convert(24))
+        else: img = self
+        return img
+
+    @property
+    def rgba(self):
+        "Return a new Image of the original surface, ensuring it is RGBA"
+        srf = self.original
+        return Image(srf if hasAlpha(srf) else srf.convert_alpha())
 
     def tiles(self, cols=1, rows=1, flip=0, padding=0):
         "Create a list of images from a spritesheet"
@@ -729,7 +700,7 @@ class Image(Graphic):
         srf = self._srf.original
         return Image(srf.subsurface(pygame.Rect(*args)) if args else crop(srf, bg)) 
 
-    def replace(self, oldColor=True, newColor=(255,255,255,0), dist=0.0001):
+    def replace(self, oldColor=True, newColor=(255,255,255,0), dist=0.02):
         "Copy the image and replace a (range of) colors"
         srf = self._srf.original.copy()
         if oldColor is True: oldColor = srf.get_at((0, 0))
@@ -749,9 +720,6 @@ class Image(Graphic):
     def save(self, fn):           
         pygame.image.save(self._srf.original, fn)
         return self
-
-    @property
-    def pix(self): return PixelData(self.image)
 
     @property
     def png(self): return export(self.image).read()
@@ -1257,6 +1225,8 @@ class Sketch(Canvas):
         mode = self._pygameMode(mode)
         self._mode = mode
         self.image = _pd.set_mode(self._size, mode)
+        if self.image.get_bitsize() not in (24, 32):
+            print("Warning: Display may not be RGB/RGBA", file=sys.stderr)
         self.key = None
         self.mouse = customEv(code=None, pos=(0,0), description="Sketch startup")
 
@@ -1284,6 +1254,8 @@ class Sketch(Canvas):
 #                 self._capture()
                 for gr in list(self.everything()):
                     gr.update(customEv(target=gr, handler="ondraw"))
+                    r = getattr(gr, "removeFrame", None)
+                    if r and self.frameCount >= r: gr.remove()
                 self.update(customEv(target=self, handler="ondraw"))
                 self._evHandle()
             except: logError()
