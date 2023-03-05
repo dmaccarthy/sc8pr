@@ -10,6 +10,7 @@ TWO_PI = 2 * pi
 
 class MathEffect(Effect):
     amplitude = middle = 0
+    invert = False
     scaled = True
     above = True
     _fill = rgba("#00000000")
@@ -27,13 +28,16 @@ class MathEffect(Effect):
         "Modify image based on equation provided"
         srf = surface(img)
         if n <= 0 or n >= 1: return self.nofx(srf, n)
+        if self.invert: srf = pygame.transform.rotate(srf, 90)
         w, h = size = srf.get_size()
         if self.amplitude is None: y0 = 0
         else:
             h_adj = (1 if self.scaled else h) + 2 * self.amplitude
             y0 = 0 if self.rising is None else (n if self.rising else (1 - n)) * h_adj - self.amplitude - self.middle
-        x = 0
+
+        # Fill using PixelArray
         pxa = PixelArray(srf)
+        x = 0
         for pxCol in pxa:
             y = self.func(x / (w - 1) if self.scaled else x, n, size)
             if type(y) is tuple:
@@ -49,7 +53,24 @@ class MathEffect(Effect):
                 if y > h: y = h
                 pxCol[:y] = self.fill
             x += 1
-        return srf
+        
+#         # Fill using subsurface
+#         for x in range(w):
+#             y = self.func(x / (w - 1) if self.scaled else x, n, size)
+#             if type(y) is tuple:
+#                 y, above = y
+#             else: above = self.above
+#             y += y0
+#             y = h - 1 - round((h - 1) * y if self.scaled else y)
+#             if above:
+#                 if y < h - 1:
+#                     if y < 0: y = 0
+#                     srf.subsurface(x, y, 1, h-y).fill(self.fill)
+#             elif y > 0:
+#                 if y > h: y = h
+#                 srf.subsurface(x, 0, 1, y).fill(self.fill)
+
+        return pygame.transform.rotate(srf, -90) if self.invert else srf
 
 
 class Noise(MathEffect):

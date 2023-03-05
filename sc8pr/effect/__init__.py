@@ -1,4 +1,4 @@
-from math import sin, cos, pi, hypot
+from math import sin, cos, pi, hypot, ceil
 from random import uniform, random
 import pygame
 from pygame.pixelarray import PixelArray
@@ -102,13 +102,14 @@ class Squash(Effect):
 class Assemble(Effect):
     "(Dis)assemble into many small rectangles"
 
-    def __init__(self, grid=(16, 9), angles=(0, 360)):
+    def __init__(self, grid=(16, 9), angles=(0, 360), **kwargs):
         self._dir = d = []
         for i in range(grid[0] * grid[1]):
             r = uniform(1, 1.5)
             a = uniform(*angles) / 180 * pi           
             d.append([r*cos(a), r*sin(a), uniform(0, 540)])
         self._grid = grid
+        self.config(**kwargs)
 
     def apply(self, img, n=0):
         img = surface(img)
@@ -136,7 +137,9 @@ class Assemble(Effect):
 class Dissolve(Effect):
     "Replace pixels randomly by a specified or random color"
 
-    def __init__(self, colors=(0,0,0,0), keepTransparent=True, alpha=True):
+    keepTransparent = True
+
+    def __init__(self, colors=(0,0,0,0), alpha=True, **kwargs):
         t = type(colors)
         if t is int:
             self.colors = [rgba(alpha) for i in range(colors)]
@@ -146,12 +149,16 @@ class Dissolve(Effect):
                 colors = colors,
             self.colors = [rgba(i) for i in colors]
         self.n = -1
-        self.keep = keepTransparent
+        self.config(**kwargs)
 
     def apply(self, img, n):
         "Apply pixel-by-pixel effect"
-        if n >= 1: return img
         srf = surface(img)
+        if n <= 0 or n >= 1: return self.nofx(srf, n)
+        self._apply(srf, n)
+        return srf
+
+    def _apply(self, srf, n):
         if pixels_alpha: # Use numpy/pixels_alpha
             sa = pixels_alpha(srf)
             h = len(sa[0])
@@ -166,11 +173,10 @@ class Dissolve(Effect):
                 for y in range(len(pxCol)):
                     pxCol[y] = self.pixel(n, x, y, pxCol[y])
                 x += 1
-        return srf
 
     def pixel(self, n, x, y, c):
         "Calculate pixel color"
-        if random() <= n or (self.keep and c & self.alphaMask == 0):
+        if random() <= n or (self.keepTransparent and c & self.alphaMask == 0):
             return c
         c = self.colors
         if type(c) is bool: return rgba(c)
@@ -240,3 +246,41 @@ class Bar(Effect):
         if tr: img.subsurface(tr).fill(self._fill)
         if bar: img.subsurface(bar).fill(self._color)
         return img
+
+
+class Checkerboard(Effect):
+    grid = 8, 8
+    mode = "Y+Y+"
+
+    def apply(self,img, n):
+        srf = surface(img)
+        if n <= 0 or n >= 1: return self.nofx(srf, n)
+        w, h = srf.get_size()
+        mode = self.mode
+        srect = pygame.Rect(0, 0, w, h)
+        gx, gy = self.grid
+        sw = ceil(w / gx)
+        sh = ceil(h / gy)
+        late = n > 0.5
+        sd = ceil((1 - 2 * (1 - n if late else n)) * (sh if late else sw) + 1)
+        for c in range(gx):
+            for r in range(gy):
+                odd = (r + c) % 2
+                y = r * sh
+                x = c * sw
+                if odd:
+                    if n >= 0.5: rect = None
+                    else:
+                        if mode[1] == "+":
+                            if mode[0] == "X": x += sw - sd
+                            else: y += sh - sd
+                        rect = (x, y, sw, sd) if mode[0] == "Y" else (x, y, sd, sh)
+                else:
+                    if n <= 0.5: rect = (x, y, sw, sh)
+                    else:
+                        if mode[3] == "+":
+                            if mode[2] == "X": x += sd
+                            else: y += sd
+                        rect = (x, y, sw, sh - sd) if mode[2] == "Y" else (x, y, sw - sd, sh)
+                if rect: srf.subsurface(srect.clip(rect)).fill(self._fill)
+        return srf

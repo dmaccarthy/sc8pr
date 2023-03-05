@@ -26,8 +26,9 @@ class Stamp(Effect):
 
 class Pupil(Stamp):
 
-    def __init__(self, center=(0.5, 0.5)):
+    def __init__(self, center=(0.5, 0.5), **kwargs):
         self.center = center
+        self.config(**kwargs)
     
     def get_stamp(self, t, size):
         w, h = size
