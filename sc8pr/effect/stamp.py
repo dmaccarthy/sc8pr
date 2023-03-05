@@ -1,8 +1,9 @@
 import pygame
-from pygame.draw import circle
-from math import hypot, ceil
+from pygame.draw import circle, polygon
+from math import hypot, ceil, pi, cos, sin
 from sc8pr.util import surface, rgba
 from sc8pr.effect import Effect
+from sc8pr.shape import Polygon
 
 class Stamp(Effect):
     _fill = rgba("white")
@@ -25,11 +26,14 @@ class Stamp(Effect):
 
 
 class Pupil(Stamp):
+    sides = None
 
     def __init__(self, center=(0.5, 0.5), **kwargs):
         self.center = center
         self.config(**kwargs)
-    
+
+    def angle(self, t): return 90 - 180 / self.sides
+
     def get_stamp(self, t, size):
         w, h = size
         x, y = self.center
@@ -37,5 +41,11 @@ class Pupil(Stamp):
         y = (h-1) * (1-y)
         r = 1 + ceil(t * hypot(max(x, w-x), max(y, h-y)))
         srf = self.new_surface(size)
-        circle(srf, self._fill, (x, y), r)
+        if self.sides is None: circle(srf, self._fill, (x, y), r)
+        else:
+            a = 2 * pi / self.sides
+            r /= cos(a/2)
+            pts = [(r*cos(i*a), r*sin(i*a)) for i in range(self.sides)]
+            poly = Polygon(pts, (0,0)).config(angle=self.angle(t)).config(pos=(x, y))
+            polygon(srf, self._fill, poly.vertices)
         return srf

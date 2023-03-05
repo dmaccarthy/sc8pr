@@ -301,8 +301,9 @@ class Polygon(Shape):
     def setPoints(self, pts, anchor=None):
         self.vertices = pts
         self.anchor = anchor
+        return self
 
-    __init__ = setPoints
+    def __init__(self, pts, anchor=None): self.setPoints(pts, anchor)
 
     @property
     def vertices(self): return self._vertices
