@@ -53,22 +53,6 @@ class MathEffect(Effect):
                 if y > h: y = h
                 pxCol[:y] = self.fill
             x += 1
-        
-#         # Fill using subsurface
-#         for x in range(w):
-#             y = self.func(x / (w - 1) if self.scaled else x, n, size)
-#             if type(y) is tuple:
-#                 y, above = y
-#             else: above = self.above
-#             y += y0
-#             y = h - 1 - round((h - 1) * y if self.scaled else y)
-#             if above:
-#                 if y < h - 1:
-#                     if y < 0: y = 0
-#                     srf.subsurface(x, y, 1, h-y).fill(self.fill)
-#             elif y > 0:
-#                 if y > h: y = h
-#                 srf.subsurface(x, 0, 1, y).fill(self.fill)
 
         return pygame.transform.rotate(srf, -90) if self.invert else srf
 
@@ -189,13 +173,10 @@ class PaintDrops(MathEffect):
 
 
 class ClockHand(MathEffect):
+    clockwise = True
 
     @property
     def rising(self): return None
-
-    def __init__(self, clockwise=True, **kwargs):
-        self.clockwise = clockwise
-        self.config(**kwargs)
 
     def apply(self, img, n=0):
         try: self.m = tan(TWO_PI * (0.25 - n))

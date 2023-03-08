@@ -118,12 +118,19 @@ def setAlpha(srf, a):
     srf.fill((255,255,255,a), special_flags=pygame.BLEND_RGBA_MIN)
     return srf
 
+# def pixel_format(srf):
+#     "Determine if surface is RGB, RGBA, RGB32 or unknown"
+#     fmt = dict(RGB = (False, 24), RGBA = (True, 32), RGB32 = (False, 32))
+#     for k, v in fmt.items():
+#         if (hasAlpha(srf), srf.get_bitsize()) == v: return k
+#     return None
+
 def surface(srf):
     "Convert something else to a Surface"
     if isinstance(srf, pygame.Surface): return srf
     if hasattr(srf, "image"): return srf.image
     if hasattr(srf, "snapshot"): return srf.snapshot().original
-    try: return Image.fromBytes(srf, False)
+    try: return Image.frombytes(srf, False)
     except: raise ValueError("object cannot be converted to a Surface")
 
 def style(srf, bg=None, border=(0,0,0), weight=0, padding=0, borderradius=None):

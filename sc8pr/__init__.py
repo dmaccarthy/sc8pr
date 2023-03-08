@@ -593,14 +593,14 @@ class Image(Graphic):
     "A class representing scaled and rotated images"
 
     def __init__(self, data=(2,2), bg=None):
-        try: # Convert PIL.Image.Image to bytes
-            if type(data).__module__ == "PIL.Image":
-                if data.mode not in ("RGB", "RGBA"): data.convert("RGBA")
-                data = data.tobytes(), (data.size, data.mode) #struct.pack("!3I", m, *data.size)
-        except: pass
+#         try: # Create from PIL.Image.Image
+#             if type(data).__module__ == "PIL.Image":
+#                 if data.mode not in ("RGB", "RGBA"): data.convert("RGBA")
+#                 data = pygame.image.fromstring(data.tobytes(), data.size, data.mode)
+#         except: pass
         try: # Convert bytes to Image
             if type(data) is bytes or type(data[0]) is bytes:
-                data = Image.fromBytes(data, False)
+                data = Image.frombytes(data, False)
         except: pass
         self._srf = CachedSurface(data, bg)
         self._size = self._srf.get_size()
@@ -618,7 +618,7 @@ class Image(Graphic):
         self._srf.dumpCache()
         return self
 
-    def bytesTuple(self, info=True):
+    def tobytes(self, info=False):
         "Return the image as (bytes, ((w, h), mode)) where mode is 'RGB' or 'RGBA'"
         srf = self.image
         b = srf.get_bitsize()
@@ -629,17 +629,16 @@ class Image(Graphic):
 
     def __bytes__(self):
         "Append the image mode and size info as a 12-byte struct to the raw image data"
-        data, info = self.bytesTuple()
+        data, info = self.tobytes(True)
         mode = ("RGB", "RGBA").index(info[1])
         return data + struct.pack("!3I", mode, *info[0])
 
     @staticmethod
-    def fromBytes(data, img=True):
+    def frombytes(data, img=True):
         if type(data) is bytes: data, info = data[:-12], data[-12:]
         else: data, info = data
         if type(info) is bytes:
             mode, w, h = struct.unpack("!3I", info)
-#             if mode & 2: data = zlib.decompress(data)
             info = (w, h), "RGB" + ("", "A")[mode & 1]
         srf = pygame.image.fromstring(data, *info)
         return Image(srf) if img else srf
@@ -647,7 +646,7 @@ class Image(Graphic):
     @staticmethod
     def fromZip(key, archive=None):
         if archive is None: archive = resolvePath("sc8pr.data")
-        return Image.fromBytes(sc8prData(key, archive=archive))
+        return Image.frombytes(sc8prData(key, archive=archive))
 
     def convert(self, alpha=False):
         "Convert images to specified bit size"
@@ -1127,7 +1126,8 @@ class Sketch(Canvas):
         if self._fixedAspect and hasattr(bg, "aspectRatio"):
             self._fixedAspect = bg.aspectRatio
             size = self.size
-            self.resize(self._aspectSize(size, size))
+            size = self._aspectSize(size, size)
+            if size != self._size: self.resize(size)
         if self.dirtyRegions is not None:
             self.dirtyRegions = [pygame.Rect((0,0), self._size)]
 
@@ -1189,6 +1189,7 @@ class Sketch(Canvas):
             size = round(f * size[0]), round(f * size[1])
         else:
             size = max(ms, round(size[0])), max(ms, round(size[1]))
+        if size == initSize: return # Prevent unnecessay resize!
         if mode is None: mode = self._mode
         else:
             mode = self._pygameMode(mode)
@@ -1247,9 +1248,12 @@ class Sketch(Canvas):
                 if not flip:
                     br += self.dirtyRegions
                     flip = self._largeArea()
-                self._clock.tick(self.frameRate)
+
+                # _clock.tick was here in v2... better to update display first?
                 if flip: _pd.flip()
                 else: _pd.update(br)
+                self._clock.tick(self.frameRate)
+
                 for gr in list(self.everything()):
                     gr.update(customEv(target=gr, handler="ondraw"))
                     r = getattr(gr, "removeFrame", None)

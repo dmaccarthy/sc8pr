@@ -1,13 +1,14 @@
 from math import sin, cos, pi, hypot, ceil
-from random import uniform, random
+from random import uniform, random, randint
 import pygame
-from pygame.pixelarray import PixelArray
 from sc8pr.util import rgba, surface, hasAlpha
 
 try:
-    from pygame.surfarray import pixels_alpha
+#     raise ValueError()
+    from pygame.surfarray import pixels_alpha, pixels3d
 except:
-    pixels_alpha = None
+    pixels3d = None
+    from pygame.pixelarray import PixelArray
 
 
 class Effect:
@@ -28,6 +29,8 @@ class Effect:
 
     @fill.setter
     def fill(self, c): self._fill = rgba(c)
+
+    def __init__(self, **kwargs): self.config(**kwargs)
 
     def time(self, t0, t1):
         "Set the 'transparent' and 'opaque' time limits of the transition"
@@ -137,51 +140,52 @@ class Assemble(Effect):
 class Dissolve(Effect):
     "Replace pixels randomly by a specified or random color"
 
-    keepTransparent = True
+    _fill = False
 
-    def __init__(self, colors=(0,0,0,0), alpha=True, **kwargs):
-        t = type(colors)
-        if t is int:
-            self.colors = [rgba(alpha) for i in range(colors)]
-        elif t is bool: self.colors = colors
-        else:
-            if t in (str, pygame.Color) or type(colors[0]) is int:
-                colors = colors,
-            self.colors = [rgba(i) for i in colors]
-        self.n = -1
-        self.config(**kwargs)
+    @property
+    def fill(self): return self._fill
+
+    @fill.setter
+    def fill(self, c):
+        self._fill = c if type(c) is bool else rgba(c)
 
     def apply(self, img, n):
         "Apply pixel-by-pixel effect"
         srf = surface(img)
         if n <= 0 or n >= 1: return self.nofx(srf, n)
-        self._apply(srf, n)
+        if pixels3d:
+            if self._fill is False: self.sa_dissolve_tr(srf, n)
+            else: self.sa_dissolve(srf, n, self.fill)
+        else: self.pa_dissolve(srf, n, self._fill)
         return srf
 
-    def _apply(self, srf, n):
-        if pixels_alpha: # Use numpy/pixels_alpha
-            sa = pixels_alpha(srf)
-            h = len(sa[0])
-            for c in sa:
-                for r in range(h):
-                    if random() > n: c[r] = 0
-        else: # No numpy!
-            self.alphaMask = srf.map_rgb((0,0,0,255))
-            pxa = PixelArray(srf)
-            x = 0
-            for pxCol in pxa:
-                for y in range(len(pxCol)):
-                    pxCol[y] = self.pixel(n, x, y, pxCol[y])
-                x += 1
+    @staticmethod
+    def sa_dissolve(srf, n, c):
+        "Use surfarray to dissolve to a specific or random color"
+        if c is not True: c = c[:3]
+        for col, cola in zip(pixels3d(srf), pixels_alpha(srf)):
+            for r in range(len(cola)):
+                if cola[r] and random() > n:
+                    col[r] = [randint(0, 255) for i in range(3)] if c is True else c
 
-    def pixel(self, n, x, y, c):
-        "Calculate pixel color"
-        if random() <= n or (self.keepTransparent and c & self.alphaMask == 0):
-            return c
-        c = self.colors
-        if type(c) is bool: return rgba(c)
-        self.n = (self.n + 1) % len(self.colors)
-        return c[self.n]
+    @staticmethod
+    def sa_dissolve_tr(srf, n):
+        "Use surfarray to dissolve to transparent"
+        for col in pixels_alpha(srf):
+            for r in range(len(col)):
+                if random() > n: col[r] = 0
+
+    @staticmethod
+    def pa_dissolve(srf, n, c):
+        "Use PixelArray (slower) to dissolve"
+        mask = srf.map_rgb((0,0,0,255))
+        pxa = PixelArray(srf)
+        x = 0
+        for pxCol in pxa:
+            for y in range(len(pxCol)):
+                if random() > n and mask & pxCol[y]:
+                    pxCol[y] = pygame.Color([randint(0, 255) for i in range(3)]) if c is True else c
+            x += 1
 
 
 class Pixelate(Effect):
@@ -215,8 +219,6 @@ class Bar(Effect):
     reverse = False
     width = 0.08
     _color = rgba("blue")
-
-    def __init__(self, **kwargs): self.config(**kwargs)
 
     @property
     def color(self): return self._color
@@ -252,7 +254,7 @@ class Checkerboard(Effect):
     grid = 8, 8
     mode = "Y+Y+"
 
-    def apply(self,img, n):
+    def apply(self, img, n):
         srf = surface(img)
         if n <= 0 or n >= 1: return self.nofx(srf, n)
         w, h = srf.get_size()

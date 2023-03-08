@@ -21,8 +21,6 @@ from sc8pr.sprite import CostumeImage, Sprite
 from zipfile import ZipFile, ZIP_DEFLATED
 from json import dumps, loads
 
-RGB = 24
-RGBA = 32
 _open_list = []
 
 
@@ -37,7 +35,7 @@ class Video(ZipFile, CostumeImage):
         self._open(zfile, **kwargs)
         try:
             self._size = tuple(self.meta["size"])
-            self._info = self._size, "RGBA" if self.meta["bits"] == 32 else "RGB"
+            self._info = self._size, self.meta["mode"]
             self._costume = self[0]
         except:
             self._costume = self._size = None
@@ -134,22 +132,30 @@ class Video(ZipFile, CostumeImage):
         if i is None: raise IndexError("out of range")
         if i != self._readN:
             self._readN = 1
-            img = Image.fromBytes((self.read(str(i)), self._info)).convert(self.read_alpha)
+            img = Image.frombytes((self.read(str(i)), self._info)).convert(self.read_alpha)
             self._readImg = img
         return self._readImg
 
     def write(self, *args, repeat=1):
         "Write images to the ZipFile"
-        alpha = self.write_alpha
-        for img in args:
-            img = surface(img)
+        for srf in args:
+            srf = surface(srf)
             if self._nframes == 0:
-                self.meta["size"] = img.get_size()
-                self.meta["bits"] = img.get_bitsize() if alpha is None else 32 if alpha else 24
-            size = self.meta["size"]
-            if img.get_size() != size:
-                img = scale(img, size)
-            data = Image(img).convert(alpha).bytesTuple(False)
+                alpha = self.write_alpha
+                self.meta["size"] = size = srf.get_size()
+                bits = srf.get_bitsize() if alpha is None else (32 if alpha else 24)
+                mode = "RGBA" if bits == 32 else "RGB"
+                self.meta["mode"] = mode
+                self._info = size, mode
+            else:
+                size = self.meta["size"]
+                mode = self.meta["mode"]
+            bits = srf.get_bitsize()
+            if srf.get_size() != size:
+                srf = scale(srf, size)
+            if mode == "RGB" and bits != 24: srf = srf.convert(24)
+            elif mode == "RGBA" and bits != 32: srf = srf.convert_alpha()
+            data = Image(srf).tobytes()
             if self._append is None or data != self._append: 
                 self._append = data
                 self.writestr(str(self._nframes), data)
