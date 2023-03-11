@@ -26,7 +26,7 @@ class MathEffect(Effect):
 
     def apply(self, img, n=0):
         "Modify image based on equation provided"
-        srf = surface(img)
+        srf = surface(img, True)
         if n <= 0 or n >= 1: return self.nofx(srf, n)
         if self.invert: srf = pygame.transform.rotate(srf, 90)
         w, h = size = srf.get_size()

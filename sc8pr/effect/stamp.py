@@ -20,7 +20,7 @@ class Stamp(Effect):
         return srf
 
     def apply(self, img, n=0):
-        img = surface(img)
+        img = surface(img, True)
         if n <= 0 or n >= 1: return self.nofx(img, n)
         return self.apply_stamp(img, n)
 

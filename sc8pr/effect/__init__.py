@@ -4,7 +4,6 @@ import pygame
 from sc8pr.util import rgba, surface, hasAlpha
 
 try:
-#     raise ValueError()
     from pygame.surfarray import pixels_alpha, pixels3d
 except:
     pixels3d = None
@@ -51,12 +50,10 @@ class Effect:
         return t
 
     def config(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+        for k, v in kwargs.items(): setattr(self, k, v)
         return self
 
     def nofx(self, srf, n):
-        ""
         if n <= 0:
             srf = pygame.Surface(srf.get_size()).convert_alpha()
             srf.fill(4*(0,))
@@ -68,7 +65,7 @@ class Tint(Effect):
 
     def apply(self, img, n=0):
         if n <= 0 or n >= 1: return self.nofx(img, n)
-        img = surface(img)
+        img = surface(img, True)
         color = [round(c + (255 - c) * n) for c in self._fill]
         img.fill(color, None, pygame.BLEND_RGBA_MULT)
         return img
@@ -87,7 +84,7 @@ class Squash(Effect):
 
     def apply(self, img, n):
         if n <= 0 or n >= 1: return self.nofx(img, n)
-        img = surface(img)
+        img = surface(img, True)
         w0, h0 = img.get_size()
         s = lambda i: n if self.scale[i] else 1
         w, h = [s(0) * w0, s(1) * h0]
@@ -111,13 +108,13 @@ class Assemble(Effect):
             r = uniform(1, 1.5)
             a = uniform(*angles) / 180 * pi           
             d.append([r*cos(a), r*sin(a), uniform(0, 540)])
-        self._grid = grid
+        self.grid = grid
         self.config(**kwargs)
 
     def apply(self, img, n=0):
-        img = surface(img)
+        img = surface(img, True)
         if n <= 0 or n >= 1: return self.nofx(img, n)
-        gx, gy = self._grid
+        gx, gy = self.grid
         size = img.get_size()
         w, h = size[0] // gx, size[1] // gy
         n = (1 - n) ** 1.5
@@ -151,7 +148,7 @@ class Dissolve(Effect):
 
     def apply(self, img, n):
         "Apply pixel-by-pixel effect"
-        srf = surface(img)
+        srf = surface(img, True)
         if n <= 0 or n >= 1: return self.nofx(srf, n)
         if pixels3d:
             if self._fill is False: self.sa_dissolve_tr(srf, n)
@@ -190,11 +187,9 @@ class Dissolve(Effect):
 
 class Pixelate(Effect):
 
-    def __init__(self, size=64, linear=True):
-        if linear: # Better for smaller squares?
-            self._calc = lambda x: max(1, round((1 - x) * size))
-        else:      # Better for larger squares?
-            self._calc = lambda x: round(size ** (1 - x))
+    def __init__(self, size=64, **kwargs):
+        self._calc = lambda x: max(1, round((1 - x) * size))
+        self.config(**kwargs)
 
     def apply(self, img, n=0):
         srf = surface(img)
@@ -228,7 +223,7 @@ class Bar(Effect):
 
     def apply(self, img, n):
         if n <= 0 or n >= 1: return self.nofx(img, n)
-        img = surface(img)
+        img = surface(img, True)
         w, h = img.get_size()
 
         # Find bar position
@@ -252,13 +247,13 @@ class Bar(Effect):
 
 class Checkerboard(Effect):
     grid = 8, 8
-    mode = "Y+Y+"
+    mode = "+Y+Y"
 
     def apply(self, img, n):
-        srf = surface(img)
+        srf = surface(img, True)
         if n <= 0 or n >= 1: return self.nofx(srf, n)
         w, h = srf.get_size()
-        mode = self.mode
+        mode = self.mode.upper()
         srect = pygame.Rect(0, 0, w, h)
         gx, gy = self.grid
         sw = ceil(w / gx)
@@ -273,16 +268,16 @@ class Checkerboard(Effect):
                 if odd:
                     if n >= 0.5: rect = None
                     else:
-                        if mode[1] == "+":
-                            if mode[0] == "X": x += sw - sd
+                        if mode[0] == "+":
+                            if mode[1] == "X": x += sw - sd
                             else: y += sh - sd
-                        rect = (x, y, sw, sd) if mode[0] == "Y" else (x, y, sd, sh)
+                        rect = (x, y, sw, sd) if mode[1] == "Y" else (x, y, sd, sh)
                 else:
                     if n <= 0.5: rect = (x, y, sw, sh)
                     else:
-                        if mode[3] == "+":
-                            if mode[2] == "X": x += sd
+                        if mode[2] == "+":
+                            if mode[3] == "X": x += sd
                             else: y += sd
-                        rect = (x, y, sw, sh - sd) if mode[2] == "Y" else (x, y, sw - sd, sh)
+                        rect = (x, y, sw, sh - sd) if mode[3] == "Y" else (x, y, sw - sd, sh)
                 if rect: srf.subsurface(srect.clip(rect)).fill(self._fill)
         return srf
