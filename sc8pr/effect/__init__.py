@@ -211,7 +211,7 @@ class Pixelate(Effect):
 
 
 class Bar(Effect):
-    reverse = False
+    invert = reverse = False
     width = 0.08
     _color = rgba("blue")
 
@@ -225,6 +225,8 @@ class Bar(Effect):
         if n <= 0 or n >= 1: return self.nofx(img, n)
         img = surface(img, True)
         w, h = img.get_size()
+        full = pygame.Rect(0, 0, w, h)
+        if self.invert: w, h = h, w
 
         # Find bar position
         x1 = n * (1 + self.width)
@@ -235,9 +237,12 @@ class Bar(Effect):
         # Make rectangles for bar and transparent
         xmax = max(x0, x1)
         xmin= min(x0, x1)
-        full = pygame.Rect(0, 0, w, h)
-        bar = full.clip(xmin, 0, xmax - xmin, h)
-        tr = full.clip(0, 0, xmin, h) if self.reverse else full.clip(xmax, 0, w - xmax, h)
+        if self.invert:
+            bar = full.clip(0, xmin, h, xmax - xmin)
+            tr = full.clip(0, 0, h, xmin) if self.reverse else full.clip(0, xmax, h, w - xmax)
+        else:
+            bar = full.clip(xmin, 0, xmax - xmin, h)
+            tr = full.clip(0, 0, xmin, h) if self.reverse else full.clip(xmax, 0, w - xmax, h)
 
         # Fill transparent region and bar
         if tr: img.subsurface(tr).fill(self._fill)

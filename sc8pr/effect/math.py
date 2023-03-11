@@ -11,18 +11,18 @@ TWO_PI = 2 * pi
 class MathEffect(Effect):
     amplitude = middle = 0
     invert = False
-    scaled = True
+    _scaled = True
     above = True
     _fill = rgba("#00000000")
 
     @property
-    def rising(self): return not self.above
+    def _rising(self): return not self.above
 
-    def limits(self, a, b):
-        a, b = min(a,b), max(a, b)
-        self.amplitude = (b - a) / 2
-        self.middle = (a + b) / 2
-        return self
+#     def _limits(self, a, b):
+#         a, b = min(a,b), max(a, b)
+#         self.amplitude = (b - a) / 2
+#         self.middle = (a + b) / 2
+#         return self
 
     def apply(self, img, n=0):
         "Modify image based on equation provided"
@@ -32,19 +32,19 @@ class MathEffect(Effect):
         w, h = size = srf.get_size()
         if self.amplitude is None: y0 = 0
         else:
-            h_adj = (1 if self.scaled else h) + 2 * self.amplitude
-            y0 = 0 if self.rising is None else (n if self.rising else (1 - n)) * h_adj - self.amplitude - self.middle
+            h_adj = (1 if self._scaled else h) + 2 * self.amplitude
+            y0 = 0 if self._rising is None else (n if self._rising else (1 - n)) * h_adj - self.amplitude - self.middle
 
         # Fill using PixelArray
         pxa = PixelArray(srf)
         x = 0
         for pxCol in pxa:
-            y = self.func(x / (w - 1) if self.scaled else x, n, size)
+            y = self.func(x / (w - 1) if self._scaled else x, n, size)
             if type(y) is tuple:
                 y, above = y
             else: above = self.above
             y += y0
-            y = h - 1 - round((h - 1) * y if self.scaled else y)
+            y = h - 1 - round((h - 1) * y if self._scaled else y)
             if above:
                 if y < h - 1:
                     if y < 0: y = 0
@@ -84,7 +84,7 @@ class Wedge(MathEffect):
 class Wipe(MathEffect):
 
     @property
-    def rising(self): return None if type(self.slope) is bool else not self.above
+    def _rising(self): return None if type(self.slope) is bool else not self.above
 
     def __init__(self, slope=True, **kwargs):
         self.slope = slope
@@ -128,12 +128,12 @@ class Waves(MathEffect):
 
 
 class PaintDrops(MathEffect):
-    scaled = reverse = False
+    _scaled = reverse = False
     amplitude = middle = None
     maxDrop = 6
 
     @property
-    def rising(self): return None
+    def _rising(self): return None
 
     def __init__(self, drops=48, **kwargs):
         self.config(**kwargs)
@@ -176,7 +176,7 @@ class ClockHand(MathEffect):
     clockwise = True
 
     @property
-    def rising(self): return None
+    def _rising(self): return None
 
     def apply(self, img, n=0):
         try: self.m = tan(TWO_PI * (0.25 - n))
