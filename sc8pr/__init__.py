@@ -16,7 +16,7 @@
 # along with "sc8pr". If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 3, 0, "a4"
+version = 3, 0, "a5"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import sys, struct
@@ -27,7 +27,7 @@ from pygame.transform import flip as _pyflip
 from sc8pr._event import EventManager
 from sc8pr._cs import CoordSys
 from sc8pr.geom import transform2d, delta, sigma, vmult, neg # , positiveAngle
-from sc8pr.util import CachedSurface, style, logError, sc8prData, resolvePath, tile, rgba, hasAlpha, drawBorder, crop, export, customEv
+from sc8pr.util import CachedSurface, style, logError, sc8prData, resolvePath, tile, rgba, hasAlpha, surface, drawBorder, crop, export, customEv
 
 # Anchor point constants
 TOPLEFT = 0
@@ -65,6 +65,7 @@ class Graphic:
     of the surface passed as an argument. Alternatively, the subclass may
     provide a 'image' property which gives a surface that Graphic.draw can use."""
     autoPositionOnResize = True
+    removeFrame = None
     _avgColor = None
     _preserve = "xy", "size"
     scrollable = True
@@ -243,7 +244,7 @@ class Graphic:
                 raise KeyError("Key '{}' is already in use".format(key))
             self._name = key
         if cv.sketch is not None:
-            r = getattr(self, "removeFrame", None)
+            r = self.removeFrame
             if r is not None and r < cv.sketch.frameCount:
                 raise ValueError("Can't add graphic with expired removeFrame value")
         self.canvas = cv
@@ -367,9 +368,13 @@ class Graphic:
         if self.effects:
             srf = srf.copy()
             f = self.sketch.frameCount
+            rmv = []
             for e in self.effects:
-                if f >= e._t_min and f <= e._t_max:
-                    srf = e.transition(srf, f)
+                if f > e._t_max and e.remove: rmv.append(e)
+#                 if f <= e._t_max and f >= e._t_min:
+                else: srf = e.transition(srf, f)
+            if rmv:
+                for e in rmv: self.effects.remove(e)
         return srf
 
     def snapshot(self, **kwargs):
@@ -593,11 +598,6 @@ class Image(Graphic):
     "A class representing scaled and rotated images"
 
     def __init__(self, data=(2,2), bg=None):
-#         try: # Create from PIL.Image.Image
-#             if type(data).__module__ == "PIL.Image":
-#                 if data.mode not in ("RGB", "RGBA"): data.convert("RGBA")
-#                 data = pygame.image.fromstring(data.tobytes(), data.size, data.mode)
-#         except: pass
         try: # Convert bytes to Image
             if type(data) is bytes or type(data[0]) is bytes:
                 data = Image.frombytes(data, False)
@@ -650,17 +650,23 @@ class Image(Graphic):
 
     def convert(self, alpha=False):
         "Convert images to specified bit size"
-        if alpha is not None and self.original.get_bitsize() != (32 if alpha else 24):
-            srf = self.image
-            img = Image(srf.convert_alpha() if alpha else srf.convert(24))
-        else: img = self
-        return img
+        img = self.image
+        srf = surface(img, alpha)
+        return self if srf is img else Image(srf)
+#         if alpha is not None and self.original.get_bitsize() != (32 if alpha else 24):
+#             srf = self.image
+#             img = Image(srf.convert_alpha() if alpha else srf.convert(24))
+#         else: img = self
+#         return img
 
     @property
-    def rgba(self):
-        "Return a new Image of the original surface, ensuring it is RGBA"
-        srf = self.original
-        return Image(srf if hasAlpha(srf) else srf.convert_alpha())
+    def rgb(self): return self.convert(False)
+
+    @property
+    def rgba(self): return self.convert(True)
+#        "Return a new Image of the original surface, ensuring it is RGBA"
+#         srf = self.original
+#         return Image(srf if hasAlpha(srf) else srf.convert_alpha())
 
     def tiles(self, cols=1, rows=1, flip=0, padding=0):
         "Create a list of images from a spritesheet"
@@ -1256,7 +1262,7 @@ class Sketch(Canvas):
 
                 for gr in list(self.everything()):
                     gr.update(customEv(target=gr, handler="ondraw"))
-                    r = getattr(gr, "removeFrame", None)
+                    r = gr.removeFrame
                     if r and self.frameCount >= r: gr.remove()
                 self.update(customEv(target=self, handler="ondraw"))
                 self._evHandle()

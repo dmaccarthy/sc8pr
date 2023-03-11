@@ -153,8 +153,9 @@ class Video(ZipFile, CostumeImage):
             bits = srf.get_bitsize()
             if srf.get_size() != size:
                 srf = scale(srf, size)
-            if mode == "RGB" and bits != 24: srf = srf.convert(24)
-            elif mode == "RGBA" and bits != 32: srf = srf.convert_alpha()
+#             if mode == "RGB" and bits != 24: srf = srf.convert(24)
+#             elif mode == "RGBA" and bits != 32: srf = srf.convert_alpha()
+            srf = surface(srf, mode)
             data = Image(srf).tobytes()
             if self._append is None or data != self._append: 
                 self._append = data

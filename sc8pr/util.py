@@ -56,7 +56,6 @@ def _rgba(*args):
         t = type(c)
         if t is bool: # Random color
             c = [randint(0,255) for i in range(4 if c else 3)]
-##        yield pygame.Color(c) if t is str else pygame.Color(*c)
         yield _pgc(c)
 
 def rgba(*args):
@@ -118,20 +117,25 @@ def setAlpha(srf, a):
     srf.fill((255,255,255,a), special_flags=pygame.BLEND_RGBA_MIN)
     return srf
 
-# def pixel_format(srf):
-#     "Determine if surface is RGB, RGBA, RGB32 or unknown"
-#     fmt = dict(RGB = (False, 24), RGBA = (True, 32), RGB32 = (False, 32))
-#     for k, v in fmt.items():
-#         if (hasAlpha(srf), srf.get_bitsize()) == v: return k
-#     return None
+_srf_rgba = pygame.Surface((2, 2), pygame.SRCALPHA, 32)
+_srf_rgb = pygame.Surface((2, 2), depth=24)
+_srf_val_err = ValueError("object cannot be converted to a Surface")
 
-def surface(srf):
+def surface(srf, alpha=None):
     "Convert something else to a Surface"
-    if isinstance(srf, pygame.Surface): return srf
-    if hasattr(srf, "image"): return srf.image
-    if hasattr(srf, "snapshot"): return srf.snapshot().original
-    try: return Image.frombytes(srf, False)
-    except: raise ValueError("object cannot be converted to a Surface")
+    if not isinstance(srf, pygame.Surface):
+        if hasattr(srf, "image"): srf = srf.image
+        elif hasattr(srf, "snapshot"): srf = srf.snapshot().original
+        elif type(srf).__module__ == "PIL.Image":
+            try: srf = pygame.image.fromstring(srf.tobytes(), srf.size, srf.mode)
+            except: raise _srf_val_err
+        else:
+            try: srf = Image.frombytes(srf, False)
+            except: raise _srf_val_err
+    a = hasAlpha(srf), srf.get_bitsize()
+    if alpha is True and a != (True, 32): srf = srf.convert_alpha(_srf_rgba)
+    elif alpha is False and a != (False, 24): srf = srf.convert(_srf_rgb)
+    return srf
 
 def style(srf, bg=None, border=(0,0,0), weight=0, padding=0, borderradius=None):
     "Create a new surface with padding, background color, and/or border"
@@ -278,8 +282,8 @@ class CachedSurface:
         if t is str:
             srf = pygame.image.load(srf)
             if bg: srf = style(srf, bg)
-            elif srf.get_bitsize() < 32:
-                srf = srf.convert_alpha()
+# !!!            elif srf.get_bitsize() < 32: srf = srf.convert_alpha()
+            else: srf = surface(srf, True)
         elif t in (list, tuple):
             srf = pygame.Surface(srf, pygame.SRCALPHA)
             if bg is not None:
