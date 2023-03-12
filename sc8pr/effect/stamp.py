@@ -7,6 +7,7 @@ from sc8pr.shape import Polygon
 
 class Stamp(Effect):
     _fill = rgba("white")
+    special_flags = pygame.BLEND_RGBA_MIN
 
     @staticmethod
     def new_surface(size):
@@ -14,25 +15,17 @@ class Stamp(Effect):
         srf.fill(4*(0,))
         return srf
 
-    def apply_stamp(self, img, n):
-        srf = surface(self.get_stamp(n, img.get_size()))
-        srf.blit(img, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
-        return srf
-
     def apply(self, img, n=0):
         img = surface(img, True)
         if n <= 0 or n >= 1: return self.nofx(img, n)
-        return self.apply_stamp(img, n)
+        srf = surface(self.get_stamp(n, img.get_size()))
+        srf.blit(img, (0, 0), special_flags=self.special_flags)
+        return srf
 
 
 class Pupil(Stamp):
     sides = None
-
-    def __init__(self, center=(0.5, 0.5), **kwargs):
-        self.center = center
-        self.config(**kwargs)
-
-    def angle(self, t): return 90 - 180 / self.sides
+    center = 0.5, 0.5
 
     def get_stamp(self, t, size):
         w, h = size
@@ -43,9 +36,10 @@ class Pupil(Stamp):
         srf = self.new_surface(size)
         if self.sides is None: circle(srf, self._fill, (x, y), r)
         else:
+            angle = 90 - 180 / self.sides
             a = 2 * pi / self.sides
             r /= cos(a/2)
             pts = [(r*cos(i*a), r*sin(i*a)) for i in range(self.sides)]
-            poly = Polygon(pts, (0,0)).config(angle=self.angle(t)).config(pos=(x, y))
+            poly = Polygon(pts, (0,0)).config(angle=angle).config(pos=(x, y))
             polygon(srf, self._fill, poly.vertices)
         return srf

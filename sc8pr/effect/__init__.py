@@ -16,11 +16,13 @@ class Effect:
     _fill = rgba("#ffffff00")
 
     @staticmethod
-    def shift(img, dt):
+    def shift(img, dt, reverse=False):
         "Shift effect timing"
         for e in img.effects:
             e._t0 += dt
             e._t1 += dt
+            if reverse:
+                e._t0, e._t1 = e._t1, e._t0
         return img
 
     @property
@@ -252,37 +254,30 @@ class Bar(Effect):
 
 class Checkerboard(Effect):
     grid = 8, 8
-    mode = "+Y+Y"
+    vel = 0, 1, 0, 1
 
     def apply(self, img, n):
         srf = surface(img, True)
         if n <= 0 or n >= 1: return self.nofx(srf, n)
         w, h = srf.get_size()
-        mode = self.mode.upper()
         srect = pygame.Rect(0, 0, w, h)
         gx, gy = self.grid
         sw = ceil(w / gx)
         sh = ceil(h / gy)
-        late = n > 0.5
-        sd = ceil((1 - 2 * (1 - n if late else n)) * (sh if late else sw) + 1)
-        for c in range(gx):
-            for r in range(gy):
-                odd = (r + c) % 2
-                y = r * sh
-                x = c * sw
-                if odd:
-                    if n >= 0.5: rect = None
-                    else:
-                        if mode[0] == "+":
-                            if mode[1] == "X": x += sw - sd
-                            else: y += sh - sd
-                        rect = (x, y, sw, sd) if mode[1] == "Y" else (x, y, sd, sh)
-                else:
-                    if n <= 0.5: rect = (x, y, sw, sh)
-                    else:
-                        if mode[2] == "+":
-                            if mode[3] == "X": x += sd
-                            else: y += sd
-                        rect = (x, y, sw, sh - sd) if mode[3] == "Y" else (x, y, sw - sd, sh)
-                if rect: srf.subsurface(srect.clip(rect)).fill(self._fill)
+        rects = [[pygame.Rect(c*sw, r*sh, sw, sh).clip(srect) for c in range(gx)] for r in range(gy)]
+        m = self.vel
+        for r in range(gy):
+            for c in range(gx):
+                rect = rects[c][r]
+                if (r + c) % 2:  # Odd squares
+                    if n > 0.5:
+                        dx = 2 * (n - 0.5) * sw * m[2]
+                        dy = 2 * (n - 0.5) * sh * m[3]
+                        rect = rect.clip(rect.move(dx, dy))
+                    srf.subsurface(rect).fill(self._fill)
+                elif n < 0.5:    # Even squares
+                    dx = 2 * n * sw * m[0]
+                    dy = 2 * n * sh * m[1]
+                    rect = rect.clip(rect.move(dx, dy))
+                    srf.subsurface(rect).fill(self._fill)
         return srf
