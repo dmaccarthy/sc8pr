@@ -16,7 +16,7 @@
 # along with "sc8pr". If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 3, 0, "a5"
+version = 3, 0, "b0"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import sys, struct
@@ -209,7 +209,7 @@ class Graphic:
     def calcBlitRect(self, blitSize):
         cv = self.canvas
         offset = cv.rect.topleft if cv else (0,0)
-        return pygame.Rect(self.blitPosition(offset, blitSize), blitSize) ## !!!
+        return pygame.Rect(self.blitPosition(offset, blitSize), blitSize)
 
     def relPos(self, pos):
         "Calculate coordinates relative to the graphic object"
@@ -653,20 +653,12 @@ class Image(Graphic):
         img = self.image
         srf = surface(img, alpha)
         return self if srf is img else Image(srf)
-#         if alpha is not None and self.original.get_bitsize() != (32 if alpha else 24):
-#             srf = self.image
-#             img = Image(srf.convert_alpha() if alpha else srf.convert(24))
-#         else: img = self
-#         return img
 
     @property
     def rgb(self): return self.convert(False)
 
     @property
     def rgba(self): return self.convert(True)
-#        "Return a new Image of the original surface, ensuring it is RGBA"
-#         srf = self.original
-#         return Image(srf if hasAlpha(srf) else srf.convert_alpha())
 
     def tiles(self, cols=1, rows=1, flip=0, padding=0):
         "Create a list of images from a spritesheet"

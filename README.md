@@ -22,10 +22,9 @@ Latest stable release (2.2):
 pip3 install sc8pr
 ```
 
-Alpha release (3.0.a3):
+Beta release (3.0.b0): Please note that **sc8prx** includes “extras” that have dependencies other than **pygame**. Use **sc8pr** if you just want the core features with no extra dependencies.
 ```
-pip3 install https://github.com/dmaccarthy/sc8pr/archive/v3.0.a3.zip
-pip3 install https://github.com/dmaccarthy/sc8prx/archive/v3.0.a3.zip
+pip3 install sc8prx==3.0b0
 ```
 
 Development version (3.0.dev):
