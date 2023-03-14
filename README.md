@@ -27,13 +27,7 @@ Beta release (3.0.b0): Please note that **sc8prx** includes “extras” that ha
 pip3 install sc8prx==3.0b0
 ```
 
-Development version (3.0.dev):
-```
-pip3 install https://github.com/dmaccarthy/sc8pr/archive/master.zip
-pip3 install https://github.com/dmaccarthy/sc8prx/archive/master.zip
-```
-
-Alternatively, you can run **sc8pr** from the source code without installing it. Just unzip the [**sc8pr** release](https://github.com/dmaccarthy/sc8pr/archive/refs/tags/v2.2.2.zip) and move the **sc8pr** package into your PYTHONPATH. Ensure that **pygame 2** is installed!
+Alternatively, you can download **sc8pr** from GitHub and run it from the source code. Ensure that **pygame 2** is installed!
 
 See the documentation for more [detailed instructions](https://dmaccarthy.github.io/sc8pr/?inst).
 
