@@ -45,9 +45,11 @@ class RobotThread(Thread):
             print('{} is running in thread {}.'.format(*args), file=stderr)
         try:
             while r._startup: r.sleep()
-            r._startTime = time()
+#             r._startTime = time()
+            r._uptime = 0
             r.brain()
             if hasattr(r, "shutdown"): r.shutdown()
+            r._uptime = None
         except: logError()
         if self.log:
             print('{} is shutting down in thread {}.'.format(*args), file=stderr)
@@ -91,19 +93,19 @@ class Robot(Sprite):
             if nose != nose0: px.replace(nose0, nose)
             if body != body0: px.replace(body0, body)
         super().__init__(img.tiles(2))
+        self._uptime = None
 
     @property
-    def uptime(self): return time() - self._startTime
+    def uptime(self): return self._uptime
+#         return time() - self._startTime
 
     @property
     def gyro(self):
         return (self.angle - self._gyro) % 360
-#         return positiveAngle(self.angle - self._gyro)
 
     @gyro.setter
     def gyro(self, g):
         self._gyro = (g - self.angle) % 360
-#         self._gyro = positiveAngle(g - self.angle)
 
     @property
     def stopped(self):
@@ -136,8 +138,12 @@ class Robot(Sprite):
     def sleep(self, t=None):
         "Sleep for the specified time"
         if not self.active: raise InactiveError()
-        if t: sleep(t)
-        else: sleep(1 / self.sketch.frameRate)
+        fTime = 1 / self.sketch.frameRate
+        if t:
+            t1 = self._uptime + t
+            while t1 - self.uptime > fTime:
+                sleep(t)
+        else: sleep(fTime)
 
     @property
     def motors(self): return self._motors
@@ -174,8 +180,12 @@ class Robot(Sprite):
 
         if not self.active: raise InactiveError()
 
-        # Target wheel speed...
+        # Update timer
         sk = self.sketch
+        if self._uptime is not None:
+            self._uptime += 1 / sk.frameRate        
+
+        # Target wheel speed...
         v = self.maxSpeed * sk.width
         v1, v2 = self._motors
         v1 *= v
