@@ -52,6 +52,16 @@ class TextInput(Text):
         self.cursorStatus = False
         self.prompt = prompt
 
+    reformat = str
+
+    def _pw(self, t): return len(t) * self._pw_char
+
+    def hide(self, char="*"):
+        if char: self._pw_char = char[0]
+        try: self.bind(reformat=(self._pw if char else None))
+        except: pass
+        return self.config(stale=True)
+
     @property
     def highlight(self):
         if self._highlight: return self._highlight
@@ -93,7 +103,7 @@ class TextInput(Text):
             text = self.prompt
         else:
             color = self.color
-            text = self.data
+            text = self.reformat(self.data)
         try: srf = font.render(text, True, color)
         except:
             text = "[Unable to render!]"
@@ -236,7 +246,7 @@ class TextInput(Text):
 
     def _widthTo(self, i):
         font = Font.get(self.font, self.fontSize, self.fontStyle)
-        d = self.data
+        d = self.reformat(self.data)
         return (font.size(d[:i])[0] + font.size(d[:i+1])[0]) // 2
 
     def onmousedown(self, ev):
