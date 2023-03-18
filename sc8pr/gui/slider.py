@@ -57,7 +57,7 @@ class Knob(CostumeImage):
         except: imgs = [Image(size, colors)]
         super().__init__(imgs)
 
-    def ondraw(self, ev=None):
+    def update(self, ev=None):
         hov = self is self.sketch.evMgr.hover
         self.costumeNumber = 1 if hov else 0 # or self.canvas.focussed
 

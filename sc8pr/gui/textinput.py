@@ -298,7 +298,7 @@ class TextInput(Text):
             else: pix = 0
         return pix, True
 
-    def scroll(self, pix=None, rel=True):
+    def _scroll(self, pix=None, rel=True):
         # Calculate scroll when not specified
         a = self.angle
         if pix is None: pix = self.focussed and a in (0, 90)
@@ -317,7 +317,9 @@ class TextInput(Text):
                 else: self.pos = sigma(self.pos, vec2d(pix, a))
         return self
 
-    def ondraw(self, ev=None): return self.scroll()
+    def update(self, ev):
+        self._scroll()
+        if hasattr(self, "ondraw"): self.ondraw(ev)
 
 
 class TextInputCanvas(Canvas):
