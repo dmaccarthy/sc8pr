@@ -17,7 +17,12 @@ For more information, please see the [tutorial and reference](https://dmaccarthy
 
 # Installation
 
-Latest stable release (3.0):
+Latest stable release (3.0) including extras with additional dependencies:
+```
+pip3 install sc8prx
+```
+
+Latest stable release (3.0), core features that depende only on **pygame**:
 ```
 pip3 install sc8pr
 ```
