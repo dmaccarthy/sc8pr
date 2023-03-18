@@ -40,6 +40,7 @@ class Effect:
             e._t1 += dt
             if reverse:
                 e._t0, e._t1 = e._t1, e._t0
+            e._maxmin()
         return img
 
     @property
@@ -54,9 +55,14 @@ class Effect:
         "Set the 'transparent' and 'opaque' time limits of the transition"
         self._t0 = t0
         self._t1 = t1
-        self._t_max = max(t0, t1)
-        self._t_min = min(t0, t1)
+        self._maxmin()
+#         self._t_max = max(t0, t1)
+#         self._t_min = min(t0, t1)
         return self
+
+    def _maxmin(self):
+        self._t_max = max(self._t0, self._t1)
+        self._t_min = min(self._t0, self._t1)
 
     def transition(self, srf, f):
         t0 = self._t0
