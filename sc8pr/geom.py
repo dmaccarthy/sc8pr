@@ -139,3 +139,12 @@ def circle_intersect(c1, r1, c2, r2):
         y = sqrt(r_sq - x*x)
         return [(x0 - y * uy, y0 + y * ux), (x0 + y * uy, y0 - y * ux)]
     else: return [(x0, y0)]
+
+def polynomial(x, *args):
+    "Evaluate a polynomial at x for coefficients described by args"
+    y = 0.0
+    n = 0
+    for a in args:
+        y += a * x ** n
+        n += 1
+    return y
