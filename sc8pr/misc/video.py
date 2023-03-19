@@ -139,23 +139,19 @@ class Video(ZipFile, CostumeImage):
     def write(self, *args, repeat=1):
         "Write images to the ZipFile"
         for srf in args:
-            srf = surface(srf)
+            alpha = self.write_alpha
+            srf = surface(srf, alpha)
             if self._nframes == 0:
-                alpha = self.write_alpha
                 self.meta["size"] = size = srf.get_size()
-                bits = srf.get_bitsize() if alpha is None else (32 if alpha else 24)
+                bits = srf.get_bitsize() # if alpha is None else (32 if alpha else 24)
                 mode = "RGBA" if bits == 32 else "RGB"
                 self.meta["mode"] = mode
                 self._info = size, mode
             else:
                 size = self.meta["size"]
                 mode = self.meta["mode"]
-            bits = srf.get_bitsize()
             if srf.get_size() != size:
                 srf = scale(srf, size)
-#             if mode == "RGB" and bits != 24: srf = srf.convert(24)
-#             elif mode == "RGBA" and bits != 32: srf = srf.convert_alpha()
-            srf = surface(srf, mode)
             data = Image(srf).tobytes()
             if self._append is None or data != self._append: 
                 self._append = data
