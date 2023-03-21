@@ -4,7 +4,7 @@ An educational programming package for [Python 3](https://www.python.org). Inspi
 
 ![Screenshot](https://dmaccarthy.github.io/sc8pr/img/soccer.png)
 
-**sc8pr 2** features include:
+**sc8pr 3** features include:
 * a simple, event-driven approach to creating interactive animations
 * sprite management
 * physics-based collisions
