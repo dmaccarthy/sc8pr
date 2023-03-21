@@ -22,7 +22,7 @@ Latest stable release (3.0) including extras with additional dependencies:
 pip3 install sc8prx
 ```
 
-Latest stable release (3.0), core features that depende only on **pygame**:
+Latest stable release (3.0), core features that depend only on **pygame**:
 ```
 pip3 install sc8pr
 ```
