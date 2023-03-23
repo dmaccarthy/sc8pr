@@ -501,6 +501,7 @@ class Arrow(Polygon):
         if kwargs.get("relative", True):
             T *= length
             H *= length
+        self._shapeInfo = dict(width=T, head=H, angle=A)
         pts = Arrow._vert(length, T, H, A, shape)
         super().__init__(pts, TIP)
         self.config(xy=tip, angle=a)
@@ -522,6 +523,12 @@ class Arrow(Polygon):
         v = self.vertices[0]
         u = self.tail
         return (v[0] + u[0]) / 2, (v[1] + u[1]) / 2
+
+    @property
+    def shapeInfo(self):
+        s = {"relative": False}
+        s.update(self._shapeInfo)
+        return s
 
     @staticmethod
     def _vert(L, T=None, H=None, A=35, shape=0): # www.desmos.com/calculator/kr61ws62tm
