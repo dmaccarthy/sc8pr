@@ -27,6 +27,12 @@ scale = pygame.transform.smoothscale
 
 def nothing(*args): pass
 
+def makeDict(*args, **kwargs):
+    d = {}
+    for a in args: d.update(a)
+    d.update(kwargs)
+    return d
+
 def customEv(**kwargs):
     return pygame.event.Event(pygame.USEREVENT, **kwargs)
 
