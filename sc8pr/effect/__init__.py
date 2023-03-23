@@ -19,18 +19,18 @@ from math import sin, cos, pi, hypot, ceil
 from random import uniform, random, randint
 import pygame
 from sc8pr.util import rgba, surface, hasAlpha
+from pygame.pixelarray import PixelArray
 
 try:
     from pygame.surfarray import pixels_alpha, pixels3d
 except:
     pixels3d = None
-    from pygame.pixelarray import PixelArray
 
 
 class Effect:
     _t0 = _t1 = 0
     remove = True
-    _fill = rgba("#ffffff00")
+    _fill = pygame.Color((0,0,0,0)) # "ffffff00"
 
     @staticmethod
     def shift(img, dt, reverse=False):
@@ -46,7 +46,8 @@ class Effect:
     def fill(self): return self._fill
 
     @fill.setter
-    def fill(self, c): self._fill = rgba(c)
+    def fill(self, c):
+        self._fill = rgba((0,0,0,0) if c is None else c)
 
     def __init__(self, **kwargs): self.config(**kwargs)
 
@@ -156,21 +157,21 @@ class Assemble(Effect):
 class Dissolve(Effect):
     "Replace pixels randomly by a specified or random color"
 
-    _fill = False
+    _fill = None
 
     @property
     def fill(self): return self._fill
 
     @fill.setter
     def fill(self, c):
-        self._fill = c if type(c) is bool else rgba(c)
+        self._fill = c if (c is None or type(c) is bool) else rgba(c)
 
     def apply(self, img, n):
         "Apply pixel-by-pixel effect"
         srf = surface(img, True)
         if n <= 0 or n >= 1: return self.nofx(srf, n)
-        if pixels3d:
-            if self._fill is False: self.sa_dissolve_tr(srf, n)
+        if pixels3d and self._fill is not True:
+            if self._fill is None: self.sa_dissolve_tr(srf, n)
             else: self.sa_dissolve(srf, n, self.fill)
         else: self.pa_dissolve(srf, n, self._fill)
         return srf
@@ -178,11 +179,14 @@ class Dissolve(Effect):
     @staticmethod
     def sa_dissolve(srf, n, c):
         "Use surfarray to dissolve to a specific or random color"
-        if c is not True: c = c[:3]
+        if c is False: c = lambda: [randint(0, 255) for i in range(3)]
+        else:
+            rgb = c[:3]
+            c = lambda: rgb
         for col, cola in zip(pixels3d(srf), pixels_alpha(srf)):
             for r in range(len(cola)):
                 if cola[r] and random() > n:
-                    col[r] = [randint(0, 255) for i in range(3)] if c is True else c
+                    col[r] = c()
 
     @staticmethod
     def sa_dissolve_tr(srf, n):
@@ -197,10 +201,16 @@ class Dissolve(Effect):
         mask = srf.map_rgb((0,0,0,255))
         pxa = PixelArray(srf)
         x = 0
+        if type(c) is bool:
+            if c: c = (lambda: pygame.Color([randint(0, 255) for i in range(4)]))
+            else: c = (lambda: pygame.Color([randint(0, 255) for i in range(3)]))
+        else:
+            rgb = pygame.Color((255, 255, 255, 0)) if c is None else c
+            c = lambda: rgb
         for pxCol in pxa:
             for y in range(len(pxCol)):
                 if random() > n and mask & pxCol[y]:
-                    pxCol[y] = pygame.Color([randint(0, 255) for i in range(3)]) if c is True else c
+                    pxCol[y] = c() # pygame.Color([randint(0, 255) for i in range(3)]) if c is True else c
             x += 1
 
 

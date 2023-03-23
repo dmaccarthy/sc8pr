@@ -30,7 +30,7 @@ class MathEffect(Effect):
     invert = False
     _scaled = True
     above = True
-    _fill = rgba("#00000000")
+#     _fill = rgba("#00000000")
 
     @property
     def _rising(self): return not self.above
