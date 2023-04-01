@@ -16,7 +16,7 @@
 # along with "sc8pr". If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 3, 0, "dev1"
+version = 3, 0, 1
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import sys, struct
@@ -1145,7 +1145,9 @@ class Sketch(Canvas):
 # Resizing methods
 
     @property
-    def size(self): return self.image.get_size()
+    def size(self):
+        try: return self.image.get_size()
+        except: return self._size
 
     @size.setter
     def size(self, size):
