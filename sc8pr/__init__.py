@@ -16,7 +16,7 @@
 # along with "sc8pr". If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 3, 0, 1
+version = 3, 0, 2
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import sys, struct
@@ -26,7 +26,7 @@ import pygame.display as _pd
 from pygame.transform import flip as _pyflip
 from sc8pr._event import EventManager
 from sc8pr._cs import CoordSys
-from sc8pr.geom import transform2d, delta, sigma, vmult, neg # , positiveAngle
+from sc8pr.geom import transform2d, delta, sigma, vmult, neg
 from sc8pr.util import CachedSurface, style, logError, sc8prData, resolvePath, tile, rgba, hasAlpha, surface, drawBorder, crop, export, customEv
 
 # Anchor point constants
@@ -399,6 +399,61 @@ class Graphic:
             try: return srf.get_at((round(x), round(y)))
             except: pass
 
+# Scripted Animation (Experimental!)
+
+    def animation(self, key, *script, adjust=True):
+        "Set animation markers"
+        n = len(script)
+        if n == 1 and script[0] is None: del self._animScript[key]
+        else:
+            sk = self.sketch
+            if sk is not None and adjust is True: adjust = sk.frameCount
+            script = list(script)
+            for i in range(n):
+                if type(script[i]) is int: script[i] = [script[i]]
+                if adjust: script[i][0] += adjust
+            if not hasattr(self, "_animScript"): self._animScript = {}
+            self._animScript[key] = script
+        return self
+
+    def _anim(self, script):
+        "Find current location in script"
+        f0 = self.sketch.frameCount
+        i = f = 0
+        n = len(script)
+        while f < f0 and i < n:
+            f += script[i][0]
+            if f < f0: i += 1
+        if i < n and len(script[i]) == 2:
+            return i, f - f0
+        return i >= n, None
+
+    def _anim_xy(self, f, arg):
+        if f == 0: self.xy = arg
+        elif f > 0:
+            x0, y0 = self.xy
+            self.xy = x0 + (arg[0] - x0) / f, y0 + (arg[1] - y0) / f
+
+    def _anim_theta(self, f, arg):
+        if f == 0: self.theta = arg
+        elif f > 0: self.theta += (arg - self.theta) / f
+
+    def _anim_height(self, f, arg):
+        if f == 0: self.height = arg
+        elif f > 0: self.height += (arg - self.height) / f
+
+    _animateMap = {"xy": _anim_xy, "theta": _anim_theta, "height": _anim_height}
+
+    def animate(self):
+        "Step scripted animation before call to update"
+        done = []
+        for key, script in self._animScript.items():
+            i, f = self._anim(script)
+            if f is not None:
+                self._animateMap[key](self, f, script[i][1])
+            elif i: done.append(key)
+        for key in done: del self._animScript[key]
+
 
 class Renderable(Graphic):
     "Graphics produced by calling a render method"
@@ -701,7 +756,7 @@ class Image(Graphic):
         "Copy the image and replace a (range of) colors"
         srf = self._srf.original.copy()
         if oldColor is True: oldColor = srf.get_at((0, 0))
-        pygame.PixelArray(srf).replace(oldColor, rgba(newColor), dist)
+        pygame.PixelArray(srf).replace(rgba(oldColor), rgba(newColor), dist)
         return Image(srf)
 
     @property
@@ -1255,6 +1310,7 @@ class Sketch(Canvas):
                 self._clock.tick(self.frameRate)
 
                 for gr in list(self.everything()):
+                    if hasattr(gr, "_animScript"): gr.animate()
                     gr.update(customEv(target=gr, handler="ondraw"))
                     r = gr.removeFrame
                     if r and self.frameCount >= r: gr.remove()
