@@ -294,7 +294,7 @@ class CachedSurface:
             srf = pygame.Surface(srf, pygame.SRCALPHA)
             if bg is not None:
                 srf.fill(bg if type(bg) is pygame.Color else rgba(bg))
-        self.original = srf
+        self.original = srf if type(srf) is pygame.Surface else surface(srf)
         self.dumpCache()
 
     def dumpCache(self):
