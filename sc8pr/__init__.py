@@ -16,7 +16,7 @@
 # along with "sc8pr". If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 3, 0, 2
+version = 3, 0, "dev3"
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import sys, struct
@@ -429,20 +429,27 @@ class Graphic:
         return i >= n, None
 
     def _anim_xy(self, f, arg):
+        # Script Format: [duration, (x,y)], pause, [duration, (x,y)]...
         if f == 0: self.xy = arg
         elif f > 0:
             x0, y0 = self.xy
             self.xy = x0 + (arg[0] - x0) / f, y0 + (arg[1] - y0) / f
 
     def _anim_theta(self, f, arg):
+        # Script Format: [duration, theta], pause, [duration, theta]...
         if f == 0: self.theta = arg
         elif f > 0: self.theta += (arg - self.theta) / f
 
     def _anim_height(self, f, arg):
+        # Script Format: [duration, height], pause, [duration, height]...
         if f == 0: self.height = arg
         elif f > 0: self.height += (arg - self.height) / f
 
-    _animateMap = {"xy": _anim_xy, "theta": _anim_theta, "height": _anim_height}
+    def _anim_costumeNumber(self, f, arg):
+        # Script Format [pause, costumeNumber], [pause, costumeNumber]...
+        if f == 0: self.costumeNumber = arg
+
+    _animateMap = {"xy": _anim_xy, "theta": _anim_theta, "height": _anim_height, "costumeNumber": _anim_costumeNumber}
 
     def animate(self):
         "Step scripted animation before call to update"
