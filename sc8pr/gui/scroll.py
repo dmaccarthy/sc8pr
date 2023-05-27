@@ -1,4 +1,4 @@
-# Copyright 2015-2021 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2023 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -18,7 +18,7 @@
 
 import pygame
 from sc8pr.gui.slider import Slider, Knob
-from sc8pr import Image, Canvas, Sketch, BOTTOMLEFT, TOPRIGHT
+from sc8pr import Canvas, Sketch, BOTTOMLEFT, TOPRIGHT
 
 CANVAS = 1
 SCROLL = 2

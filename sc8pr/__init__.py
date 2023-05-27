@@ -16,7 +16,7 @@
 # along with "sc8pr". If not, see <http://www.gnu.org/licenses/>.
 
 
-version = 3, 0, "dev3"
+version = 3, 0, 3
 print("sc8pr {}.{}.{}: https://dmaccarthy.github.io/sc8pr".format(*version))
 
 import sys, struct
@@ -1111,8 +1111,8 @@ class Canvas(Graphic):
         for gr in (self.everything() if recursive else self):
             if criteria(gr): yield gr
 
-    def scroll(self, dx=0, dy=0):
-        raise NotImplementedError("Use ScrollCanvas class.")
+    # def scroll(self, dx=0, dy=0):
+    #     raise NotImplementedError("Use ScrollCanvas class.")
 
     def cover(self):
         return Image(self.size, "#ffffffc0").config(anchor=TOPLEFT)
