@@ -1,4 +1,4 @@
-# Copyright 2015-2022 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
+# Copyright 2015-2023 D.G. MacCarthy <https://dmaccarthy.github.io/sc8pr>
 #
 # This file is part of "sc8pr".
 #
@@ -74,6 +74,7 @@ def _gridlines(cv, x, y, dim, **config):
     while x0 <= x1:
         pts = [(y0, x0), (y1, x0)] if dim else [(x0, y0), (x0, y1)]
         cv += Line(*pts).config(**config)
+        if abs(x0) < x2 / 1e12: cv[-1].axis = True
         x0 += x2
         i += 1
     return i
@@ -84,3 +85,7 @@ def gridlines(cv, x=(0,1,2), y=(0,1,2), **config):
     if len(x) > 2: i += _gridlines(cv, x, y, 0, **config)
     if len(y) > 2: i += _gridlines(cv, y, x, 1, **config)
     return i
+
+def axes(cv):
+    "Return a list of Line instances with axis=True attribute"
+    return [gr for gr in cv.instOf(Line) if getattr(gr, "axis", False)]
