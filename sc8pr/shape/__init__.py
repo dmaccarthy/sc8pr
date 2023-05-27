@@ -413,7 +413,7 @@ class Polygon(Shape):
 
     @angle.setter
     def angle(self, a):
-        self.transform(a - self._angle)
+        self.transform((a - self._angle) if self.clockwise else (self._angle - a))
         self._angle = a
 
     def _segments(self):
@@ -501,8 +501,9 @@ class Arrow(Polygon):
         if kwargs.get("relative", True):
             T *= length
             H *= length
+        self._double = dbl = kwargs.get("double", False)
         self._shapeInfo = dict(width=T, head=H, angle=A)
-        pts = Arrow._vert(length, T, H, A, shape)
+        pts = Arrow._vert(length, T, H, A, shape, dbl)
         super().__init__(pts, TIP)
         self.config(xy=tip, angle=a)
         if anchor == TAIL: self.config(anchor=tail)
@@ -515,8 +516,10 @@ class Arrow(Polygon):
     def tail(self):
         v = self.vertices
         n = len(v) // 2
-        v, u = v[n:n+2]
-        return (v[0] + u[0]) / 2, (v[1] + u[1]) / 2
+        if self._double: return v[n]
+        else:
+            v, u = v[n:n+2]
+            return (v[0] + u[0]) / 2, (v[1] + u[1]) / 2
 
     @property
     def middle(self):
@@ -531,7 +534,7 @@ class Arrow(Polygon):
         return s
 
     @staticmethod
-    def _vert(L, T=None, H=None, A=35, shape=0): # www.desmos.com/calculator/kr61ws62tm
+    def _vert(L, T=None, H=None, A=35, shape=0, double=False): # www.desmos.com/calculator/kr61ws62tm
         if T is None: T = L / 14
         if H is None: H = 4 * T
         A *= pi / 180
@@ -550,6 +553,14 @@ class Arrow(Polygon):
         if (shape or y1 < T2):
             del pts[8]
             del pts[1]
+        if double:
+            flip = lambda p: (-L-p[0], p[1])
+            n = len(pts) // 2
+            pts[n:n+2] = []
+            n -= 1
+            dbl = [flip(pts[i]) for i in range(-n, n+1)]
+            dbl.reverse()
+            pts = pts[:n+1] + dbl + pts[-n:]
         return pts
 
 
