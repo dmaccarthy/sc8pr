@@ -120,6 +120,16 @@ class Button(Canvas):
         icon.config(pos=(padding + w / 2, padding + h / 2), anchor=CENTER)
         return w
 
+    @staticmethod
+    def text(txt, options=None, padding=0, **kwargs):
+        "Create a Button with text"
+        txt = Text(txt).config(**kwargs)
+        w, h = txt.size
+        p = 2 * padding
+        btn = Button((w+p, h+p), options)
+        btn += txt.config(pos=btn.center)
+        return btn
+
     def textIcon(self, text, icon=None, padding=6):
         "Add text and icon to button"
         if type(text) is str: text = Text(text)
