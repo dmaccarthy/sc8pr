@@ -67,14 +67,25 @@ class Font:
                 cls._cacheOrder = order[1:]
         return font
 
-    @classmethod
-    def _get(cls, name, size, style):
+    @staticmethod
+    def _get(name, size, style):
         if name and "." in name:
             font = pf.Font(name, size)
         else:
             font = pf.SysFont(name, size, style & 1, style & 2)
         return font
-    
+
+    @staticmethod
+    def _get_h(name, size, style):
+        return Font._get(name, size, style).size("Mq")[1]
+
+    @staticmethod
+    def byHeight(name, height, style=0, rnd=round):
+        "Estimate fontSize needed to produce the specified height in pixels"
+        h = Font._get_h(name, height, style)
+        h = rnd(height ** 2 / h)
+        return h, Font._get_h(name, h, style)
+
     @classmethod
     def installed(cls):
         if not cls._sort: cls._sort = sorted(pf.get_fonts())
