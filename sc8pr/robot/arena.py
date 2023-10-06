@@ -1,4 +1,4 @@
-# Copyright 2015-2021 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2023 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -34,7 +34,7 @@ class Robot(_Robot):
         self.gyroSample()
 
     def gyroSample(self, t=None):
-        self.gyroChange = 0.0
+        self.gyroChange = None # 0.0
         self._gyro_data = []
         self._gyro_sample = t if t is None else round(self.sketch.frameRate * t)
 
