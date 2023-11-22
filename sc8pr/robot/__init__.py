@@ -44,9 +44,9 @@ class RobotThread(Thread):
         if self.log:
             print('{} is running in thread {}.'.format(*args), file=stderr)
         try:
+            r._uptime = 0
             while r._startup: r.sleep()
 #             r._startTime = time()
-            r._uptime = 0
             r.brain()
             if hasattr(r, "shutdown"): r.shutdown()
             r._uptime = None
@@ -105,7 +105,7 @@ class Robot(Sprite):
 
     @gyro.setter
     def gyro(self, g):
-        self._gyro = (g - self.angle) % 360
+        self._gyro = (self.angle - g) % 360
 
     @property
     def stopped(self):
@@ -136,14 +136,21 @@ class Robot(Sprite):
         return self
 
     def sleep(self, t=None):
-        "Sleep for the specified time"
+        "Sleep for the specified time; updated v3.0.4"
         if not self.active: raise InactiveError()
-        fTime = 1 / self.sketch.frameRate
-        if t:
-            t1 = self._uptime + t
-            while t1 - self.uptime > fTime:
-                sleep(t)
-        else: sleep(fTime)
+        dt = 1 / self.sketch.frameRate
+        t = self.uptime + (t if t else dt)
+        while self.uptime < t: sleep(dt)
+
+#     def sleep(self, t=None):
+#         "Sleep for the specified time"
+#         if not self.active: raise InactiveError()
+#         fTime = 1 / self.sketch.frameRate
+#         if t:
+#             t1 = self._uptime + t
+#             while t1 - self.uptime > fTime:
+#                 sleep(t)
+#         else: sleep(fTime)
 
     @property
     def motors(self): return self._motors
