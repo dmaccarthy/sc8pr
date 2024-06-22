@@ -1,4 +1,4 @@
-# Copyright 2015-2023 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2024 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -25,7 +25,7 @@ from pygame.constants import K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE
 from sc8pr import Image, Sketch
 from sc8pr.sprite import Sprite
 from sc8pr.util import logError, rgba, noise, divAlpha
-from sc8pr.geom import vec2d, delta, DEG, dist, angleDifference, subtend # , positiveAngle
+from sc8pr.geom import vec2d, delta, DEG, dist, angleDifference, subtend
 from sc8pr.shape import Line, Polygon
 
 
@@ -46,7 +46,6 @@ class RobotThread(Thread):
         try:
             r._uptime = 0
             while r._startup: r.sleep()
-#             r._startTime = time()
             r.brain()
             if hasattr(r, "shutdown"): r.shutdown()
             r._uptime = None
@@ -97,7 +96,6 @@ class Robot(Sprite):
 
     @property
     def uptime(self): return self._uptime
-#         return time() - self._startTime
 
     @property
     def gyro(self):
@@ -141,16 +139,6 @@ class Robot(Sprite):
         dt = 1 / self.sketch.frameRate
         t = self.uptime + (t if t else dt)
         while self.uptime < t: sleep(dt)
-
-#     def sleep(self, t=None):
-#         "Sleep for the specified time"
-#         if not self.active: raise InactiveError()
-#         fTime = 1 / self.sketch.frameRate
-#         if t:
-#             t1 = self._uptime + t
-#             while t1 - self.uptime > fTime:
-#                 sleep(t)
-#         else: sleep(fTime)
 
     @property
     def motors(self): return self._motors

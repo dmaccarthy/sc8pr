@@ -1,4 +1,4 @@
-# Copyright 2015-2022 D.G. MacCarthy <http://dmaccarthy.github.io>
+# Copyright 2015-2024 D.G. MacCarthy <http://dmaccarthy.github.io>
 #
 # This file is part of "sc8pr".
 #
@@ -39,7 +39,8 @@ def hsvBox(color, hue=None, sat=None, val=None):
         or _between(s, *sat)) and (val is None or _between(v, *val))
 
 def _between(x, x0, x1):
-    if x0 < x1: return x0 <= x and x <= x1
+    if x0 == x1: return x == x0
+    elif x0 < x1: return x0 <= x and x <= x1
     else: return x >= x0 or x <= x1
 
 def hs_surface(size=(100,100), v=100, wheel=False):
