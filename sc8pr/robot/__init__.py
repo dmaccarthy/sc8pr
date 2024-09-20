@@ -16,7 +16,7 @@
 # along with "sc8pr".  If not, see <http://www.gnu.org/licenses/>.
 
 
-from time import sleep, time
+from time import sleep
 from threading import Thread
 from sys import stderr
 from math import hypot, cos
